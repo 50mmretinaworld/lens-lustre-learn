@@ -125,8 +125,10 @@ BEGIN
 
   -- G7 old suspended flag alone
   DELETE FROM public.account_states WHERE user_id = _m1;
+  -- (as_user always rolls its own work back, so plant the row as the service path first)
+  INSERT INTO public.follows (follower_id, following_id) VALUES (_m2, _m3) ON CONFLICT DO NOTHING;
   UPDATE public.profiles SET is_suspended = true WHERE id = _m2;
-  _r := pg_temp.as_user(_m2, format('DELETE FROM public.follows WHERE follower_id = %L', _m2));
+  _r := pg_temp.as_user(_m2, format('DELETE FROM public.follows WHERE follower_id = %L AND following_id = %L', _m2, _m3));
   IF _r NOT LIKE 'refused 42501 ACCOUNT_UNDER_REVIEW%' THEN _fail := _fail || ('G7 suspended member not refused: ' || _r); END IF;
   UPDATE public.profiles SET is_suspended = false WHERE id = _m2;
 
