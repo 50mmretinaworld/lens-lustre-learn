@@ -33,6 +33,10 @@
  *
  *   So these two edge functions were the only thing doing it.
  *
+ * SINCE 2026-11-15 (A3) the deletion lives in ONE database function,
+ * public.account_delete_execute; both edge functions call the database. The
+ * same two rules are now checked on that function (second describe below).
+ *
  * WHY THIS IS A TEST AND NOT JUST A DELETION
  *   These two files are the P0 deleted-account security fix of 2026-08-06. They
  *   are exactly the kind of file where somebody adds a tidy-up loop later and
@@ -71,21 +75,38 @@ describe("neither delete path erases the sender of a notification", () => {
       expect(code).not.toContain('from("user_notifications")');
     });
 
-    it(`${name}: still nulls the reviewer columns it is supposed to null`, () => {
-      // A guard against "fixing" this by deleting the whole block. Those five
-      // ARE meant to be nulled — a report must outlive the moderator who
-      // reviewed it.
+    it(`${name}: deletes only through the one database delete program`, () => {
+      // Since 2026-11-15 (A3) both edge functions hand the work to the database:
+      // delete-user → admin_delete_member, delete-my-account →
+      // request_my_account_deletion. Neither may grow its own copy again.
       const code = codeOf(f);
-      for (const t of [
-        "comment_reports",
-        "post_reports",
-        "role_applications",
-        "verification_requests",
-        "withdrawal_requests",
-      ]) {
-        expect(code, `${t} must still have its reviewer cleared`).toContain(t);
-      }
-      expect(code).toMatch(/reviewed_by:\s*null/);
+      expect(code).toMatch(/rpc\("(admin_delete_member|request_my_account_deletion)"/);
+      expect(code).not.toContain("admin_delete_auth_user");
+      expect(code).not.toMatch(/\.delete\(\)/);
     });
   }
+});
+
+// The one delete program (A3). Its LAST definition in the migrations is the one
+// that runs; the same two rules apply to it.
+const DELETE_PROGRAM = "supabase/migrations/20261115_1330_a2_a3_deletion_review.sql";
+const sqlOf = (p: string) =>
+  readFileSync(join(process.cwd(), p), "utf8").replace(/--[^\n]*/g, "");
+
+describe("the one delete program keeps the sender and clears the reviewers", () => {
+  const sql = sqlOf(DELETE_PROGRAM);
+  const body = sql.slice(sql.indexOf("CREATE FUNCTION public.account_delete_execute"),
+                         sql.indexOf("CREATE FUNCTION public.admin_delete_member"));
+
+  it("never sets actor_id to NULL", () => {
+    expect(body.length).toBeGreaterThan(0);
+    expect(body).not.toMatch(/actor_id\s*=\s*NULL/i);
+  });
+
+  it("still clears the reviewer on the five tables a report must outlive", () => {
+    for (const t of ["comment_reports", "post_reports", "role_applications", "verification_requests", "withdrawal_requests"]) {
+      expect(body, `${t} must still have its reviewer cleared`).toMatch(
+        new RegExp(`UPDATE public\\.${t}\\s+SET reviewed_by = NULL`, "i"));
+    }
+  });
 });
