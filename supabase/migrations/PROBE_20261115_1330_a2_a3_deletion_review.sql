@@ -69,17 +69,17 @@ BEGIN
   SELECT id INTO _m1 FROM (
     SELECT p.id, row_number() OVER (ORDER BY p.created_at DESC) AS rn FROM public.profiles p JOIN auth.users u ON u.id = p.id
      WHERE NOT p.is_suspended AND NOT coalesce(p.is_banned, false)
-       AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id)
+       AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id AND r.role::text <> 'user')
        AND NOT EXISTS (SELECT 1 FROM public.account_states a WHERE a.user_id = p.id)) x WHERE rn = 1;
   SELECT id INTO _m2 FROM (
     SELECT p.id, row_number() OVER (ORDER BY p.created_at DESC) AS rn FROM public.profiles p JOIN auth.users u ON u.id = p.id
      WHERE NOT p.is_suspended AND NOT coalesce(p.is_banned, false)
-       AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id)
+       AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id AND r.role::text <> 'user')
        AND NOT EXISTS (SELECT 1 FROM public.account_states a WHERE a.user_id = p.id)) x WHERE rn = 2;
   SELECT id INTO _m3 FROM (
     SELECT p.id, row_number() OVER (ORDER BY p.created_at DESC) AS rn FROM public.profiles p JOIN auth.users u ON u.id = p.id
      WHERE NOT p.is_suspended AND NOT coalesce(p.is_banned, false)
-       AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id)
+       AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id AND r.role::text <> 'user')
        AND NOT EXISTS (SELECT 1 FROM public.account_states a WHERE a.user_id = p.id)) x WHERE rn = 3;
   IF _m1 IS NULL OR _m2 IS NULL OR _m3 IS NULL THEN RAISE EXCEPTION 'A2 FAIL: need three plain members to test with'; END IF;
   UPDATE public.system_flags SET value = true WHERE key IN ('account_state_guard', 'job_engine');
