@@ -50,7 +50,9 @@ const DeleteAccountSection = () => {
         setLoading(false);
         return;
       }
-      toast({ title: "Account deleted", description: "Your account and all data have been permanently removed." });
+      // Since 2026-11-15 a member's request is reviewed by an admin first (A2/A3):
+      // nothing is deleted yet, so say exactly that.
+      toast({ title: "Deletion requested", description: "Your account is under review · support@50mmretina.com" });
       // Clear the session locally and leave the app.
       // Declared BEFORE the sign-out: this session is ending because the
       // member deleted their own account, not because anything broke.

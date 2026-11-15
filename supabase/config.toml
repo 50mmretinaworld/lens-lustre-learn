@@ -9,6 +9,14 @@ project_id = "jtdtehuqtinjxropkkcn"
     verify_jwt = false
   [functions.detect-ai-image]
     verify_jwt = false
+  # Pinned to the live value (true on both lanes, d1-deploy-functions inventory
+  # staging run 43729950922, production run 43730034720, 2026-11-15) so the A3
+  # one-delete-program change can deploy. Both are called with the member's /
+  # admin's own JWT and pass it on to the database.
+  [functions.delete-my-account]
+    verify_jwt = true
+  [functions.delete-user]
+    verify_jwt = true
   # Pinned to the live value (true on staging, d1-deploy-functions inventory
   # run 41454742939, 2026-11-02) so the photo plan U1b orphan-key change can
   # deploy. Called by admins with a user JWT, never by a cron without one.
