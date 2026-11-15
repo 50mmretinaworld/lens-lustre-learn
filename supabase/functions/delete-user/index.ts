@@ -5,6 +5,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * ADMIN: DELETE A MEMBER — instantly, everything (Owner decision 2026-11-15).
+ *
+ * The deletion itself is the ONE delete program in the database,
+ * public.account_delete_execute() (migration 20261115_1330), reached through
+ * public.admin_delete_member(user_id, reason), called AS THE CALLER (their JWT):
+ * the database checks the admin role, refuses self-deletion, requires a reason,
+ * deletes (auth user first, then every non-cascading table, the orphan purge),
+ * writes the log row (who, when, reason) and queues the erasure e-mail as a job.
+ *
+ * Kept from the old program, now inside that one place: the reviewer columns
+ * are cleared (comment_reports, post_reports, role_applications,
+ * verification_requests, withdrawal_requests → reviewed_by = null) and the
+ * sender of other members' notifications is NOT erased (Owner option C,
+ * 2026-08-10: the display says "A deleted account").
+ */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -13,198 +29,38 @@ Deno.serve(async (req) => {
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Verify the caller is an admin
     const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user: caller } } = await callerClient.auth.getUser();
     if (!caller) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
 
-    const adminClient = createClient(supabaseUrl, serviceKey);
-    const { data: adminRole } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!adminRole) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: corsHeaders });
-
-    const { user_id } = await req.json();
+    const { user_id, reason } = await req.json();
     if (!user_id || typeof user_id !== "string") {
       return new Response(JSON.stringify({ error: "user_id required" }), { status: 400, headers: corsHeaders });
     }
-
-    // Prevent self-deletion
     if (user_id === caller.id) {
       return new Response(JSON.stringify({ error: "Cannot delete yourself" }), { status: 400, headers: corsHeaders });
     }
 
-    // Capture the target's email + name BEFORE deletion, for the post-deletion
-    // erasure-confirmation notice (profiles cascades away with auth.users).
-    // Non-fatal if unavailable: deletion proceeds, notice is skipped and logged.
-    let notifyEmail: string | null = null;
-    let notifyName: string | null = null;
-    try {
-      const { data: targetUser } = await adminClient.auth.admin.getUserById(user_id);
-      notifyEmail = targetUser?.user?.email ?? null;
-    } catch (lookupErr) {
-      console.error("getUserById failed (erasure notice will be skipped):", lookupErr);
+    const { data, error } = await callerClient.rpc("admin_delete_member", {
+      _user_id: user_id,
+      _reason: typeof reason === "string" && reason.trim() !== "" ? reason.trim() : "Deleted by admin",
+    });
+    if (error) {
+      const status = error.code === "42501" ? 403 : error.code === "22023" ? 400 : 500;
+      return new Response(JSON.stringify({ error: error.message }), { status, headers: corsHeaders });
     }
-    {
-      const { data: prof } = await adminClient
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user_id)
-        .maybeSingle();
-      notifyName = (prof as any)?.full_name ?? null;
-    }
-
-    // Delete the auth user FIRST via a direct RPC. The GoTrue admin API
-    // (auth.admin.deleteUser) fails on this project with an empty error, and doing
-    // it last meant a failure destroyed all the user's data while leaving a
-    // still-logged-in "ghost" account. Deleting auth.users first (a) is proven to
-    // work, (b) cascades the FK-linked public tables, and (c) aborts cleanly on
-    // failure BEFORE any data is touched. Then we clean up the non-FK-linked rows.
-    const { data: authDeleted, error: authError } = await adminClient.rpc(
-      "admin_delete_auth_user",
-      { _uid: user_id },
-    );
-    if (authError) {
-      console.error("admin_delete_auth_user error:", authError);
-      return new Response(JSON.stringify({ error: "Failed to delete auth user: " + authError.message }), { status: 500, headers: corsHeaders });
-    }
-    if (authDeleted === false) {
+    const result = (data ?? {}) as { deleted?: boolean; confirmation_email_queued?: boolean };
+    if (!result.deleted) {
       return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: corsHeaders });
     }
-
-    // Delete from all tables with user_id column
-    const userIdTables = [
-      "activity_logs", "bank_details", "certificate_testimonials", "certificates",
-      "comment_reactions", "comments", "competition_entries", "competition_votes",
-      "course_enrollments", "featured_photos", "gift_announcements", "highlights",
-      "image_comments", "image_reactions", "lesson_progress", "post_comment_reactions",
-      "post_comments", "post_reactions", "posts", "referral_codes", "role_applications",
-      "stories", "support_tickets", "ticket_replies", "user_badges", "user_notifications",
-      "user_roles", "verification_requests", "wallet_transactions", "wallets",
-      "withdrawal_requests",
-      // BUG-050: user-owned personal data / device tokens / queued content that
-      // previously orphaned after deletion (privacy + scheduled-post ghost author).
-      "user_devices", "scheduled_posts", "post_shares", "photo_albums",
-      "notification_preferences", "newsletter_subscribers",
-    ];
-
-    for (const table of userIdTables) {
-      await adminClient.from(table).delete().eq("user_id", user_id);
-    }
-
-    // Delete from tables with other user-referencing columns
-    await adminClient.from("follows").delete().or(`follower_id.eq.${user_id},following_id.eq.${user_id}`);
-    await adminClient.from("friendships").delete().or(`requester_id.eq.${user_id},addressee_id.eq.${user_id}`);
-    await adminClient.from("profile_views").delete().or(`profile_id.eq.${user_id},viewer_id.eq.${user_id}`);
-    await adminClient.from("referrals").delete().or(`referrer_id.eq.${user_id},referred_id.eq.${user_id}`);
-    await adminClient.from("competition_judges").delete().eq("judge_id", user_id);
-    await adminClient.from("judge_comments").delete().eq("judge_id", user_id);
-    await adminClient.from("judge_scores").delete().eq("judge_id", user_id);
-    await adminClient.from("judge_tag_assignments").delete().eq("judge_id", user_id);
-
-    // BUG-050: user-owned rows keyed by non-user_id columns
-    await adminClient.from("portfolio_images").delete().eq("uploaded_by", user_id);
-    // Moderation reports FILED BY the user: reporter_id is NOT NULL, so remove the
-    // report rows (reporter is gone) rather than orphan them.
-    await adminClient.from("reports").delete().eq("reporter_id", user_id);
-    await adminClient.from("comment_reports").delete().eq("reporter_id", user_id);
-    await adminClient.from("post_reports").delete().eq("reporter_id", user_id);
-
-    // Nullify references where we don't want to delete the parent record
-    await adminClient.from("comment_reports").update({ reviewed_by: null }).eq("reviewed_by", user_id);
-    await adminClient.from("post_reports").update({ reviewed_by: null }).eq("reviewed_by", user_id);
-    await adminClient.from("role_applications").update({ reviewed_by: null }).eq("reviewed_by", user_id);
-    await adminClient.from("verification_requests").update({ reviewed_by: null }).eq("reviewed_by", user_id);
-    await adminClient.from("withdrawal_requests").update({ reviewed_by: null }).eq("reviewed_by", user_id);
-
-    // ── actor_id is deliberately NOT nulled here. ──────────────────────────
-    // Owner chose option C on 2026-08-10: keep the id, let the profile go,
-    // and let the display say "A deleted account".
-    //
-    // Nulling it looked like anonymisation and was not. The row's
-    // reference_id still pointed at the same person, so the identity was
-    // recoverable anyway — while the bell lost the ONE fact it needed and
-    // read "A member started following you", which is the wording for a
-    // present member who has set no name. Two different facts, one sentence.
-    // Thirty-five live rows were in that state.
-    //
-    // Verified on production before this line was removed, because the whole
-    // change is pointless if something else nulls it anyway:
-    //   * user_notifications has ZERO foreign keys, so no ON DELETE SET NULL
-    //     and no constraint that could block the profile being deleted;
-    //   * no database function sets actor_id — admin_purge_orphan_user_data,
-    //     the only purge routine, does not touch it.
-    // These two edge functions were the only thing doing it.
-    //
-    // THE PROFILE BEING GONE IS THE ANONYMISATION. No name, no avatar, and
-    // nothing revealed that reference_id did not already carry.
-
-    // BUG-111: purge the remaining user-referencing tables that were still orphaning
-    // after BUG-050 (feed_events, ai_chat_usage, raw_commitments (PII), judge_* work +
-    // decisions, held_result_notifications, notification_emit_log, ad_conversions,
-    // auth_login_attempts, custom_url_history, post_tags) and strip the user from other
-    // users' scheduled_posts.tagged_user_ids[]. Done atomically server-side; financial/
-    // audit ledgers are intentionally preserved. Non-fatal: log and continue on error.
-    {
-      const { data: purge, error: purgeErr } = await adminClient.rpc(
-        "admin_purge_orphan_user_data",
-        { _uid: user_id },
-      );
-      if (purgeErr) {
-        console.error("admin_purge_orphan_user_data error:", purgeErr);
-      } else {
-        console.log("Purged orphan user data:", JSON.stringify(purge));
-      }
-    }
-
-    // profiles was already cascade-deleted by admin_delete_auth_user (profiles.id
-    // -> auth.users is ON DELETE CASCADE); this is a defensive no-op.
-    await adminClient.from("profiles").delete().eq("id", user_id);
-
-    // Erasure-confirmation notice to the deleted account's email (same as the
-    // self-serve delete-my-account path). Rendered/queued/retried/logged by the
-    // standard transactional pipeline; email_send_log is the proof of notice.
-    // A failure here must NEVER fail the deletion itself.
-    let confirmationQueued = false;
-    if (notifyEmail) {
-      try {
-        const res = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceKey}`,
-          },
-          body: JSON.stringify({
-            templateName: "account-deleted",
-            recipientEmail: notifyEmail,
-            idempotencyKey: `account-deleted-${user_id}`,
-            templateData: {
-              fullName: notifyName,
-              deletedAt: new Date().toISOString(),
-            },
-          }),
-        });
-        confirmationQueued = res.ok;
-        if (!res.ok) {
-          console.error("account-deleted email enqueue failed:", res.status, await res.text());
-        }
-      } catch (mailErr) {
-        console.error("account-deleted email error:", mailErr);
-      }
-    } else {
-      console.error("account-deleted email skipped: no email found for target", { user_id });
-    }
-
-    return new Response(JSON.stringify({ success: true, confirmation_email_queued: confirmationQueued }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({ success: true, confirmation_email_queued: result.confirmation_email_queued === true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (err) {
     console.error("Delete user error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: (err as Error).message }), { status: 500, headers: corsHeaders });
   }
 });
