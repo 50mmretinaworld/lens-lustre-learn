@@ -78,9 +78,13 @@ CREATE TABLE public.jobs (
   finished_at     timestamptz,
   updated_at      timestamptz NOT NULL DEFAULT now()
 );
+-- P28: jobs · 0 rows at launch (switch OFF) · enforces never-run-twice per (kind, idempotency_key); used by job_enqueue ON CONFLICT
 CREATE UNIQUE INDEX jobs_kind_key_uq ON public.jobs (kind, idempotency_key) WHERE idempotency_key IS NOT NULL;
+-- P28: jobs · partial, queued rows only · the minute tick's due-work scan (status = 'queued' AND run_at <= now())
 CREATE INDEX jobs_due_idx      ON public.jobs (run_at) WHERE status = 'queued';
+-- P28: jobs · partial, running rows only · per-kind running count and the stuck-lease scan in job_tick
 CREATE INDEX jobs_running_idx  ON public.jobs (kind, lease_until) WHERE status = 'running';
+-- P28: jobs · partial, finished rows only · the daily trim (done > 14 days, failed > 90 days) and the 24 h failed-alarm count
 CREATE INDEX jobs_finished_idx ON public.jobs (finished_at) WHERE status IN ('done', 'failed', 'cancelled');
 
 ALTER TABLE public.job_kinds ENABLE ROW LEVEL SECURITY;
