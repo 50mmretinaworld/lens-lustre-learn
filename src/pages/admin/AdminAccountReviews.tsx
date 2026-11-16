@@ -11,79 +11,23 @@
  *     (who / when / reason) stays 1 year.
  *
  * Every action needs a reason. The database checks admin and the reason itself
- * (see useAccountReviews); this page only collects them.
+ * (see useAccountReviews); this page only collects them. The words, the reason
+ * box and the history list are shared with Admin → Users (AccountActionDialog).
  */
 import { useState } from "react";
 import { Loader2, History, ShieldAlert, UserCheck, Trash2, PauseCircle, CheckCircle2 } from "lucide-react";
 import ProfileTypeaheadPicker from "@/components/admin/ProfileTypeaheadPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import { useAccountReviews, type AccountReviewRow } from "@/hooks/admin/useAccountReviews";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "@/hooks/core/use-toast";
-import {
-  useAccountReviews, useAccountStateHistory, useAccountAction,
-  type AccountAction, type AccountReviewRow,
-} from "@/hooks/admin/useAccountReviews";
+  AccountActionDialog, AccountHistoryList, STATE_LABEL, fmtWhen as fmt,
+  type PendingAccountAction,
+} from "@/components/admin/AccountActionDialog";
 
-type Pending = { kind: AccountAction["kind"]; userId: string; name: string };
+export { ACTION_TEXT } from "@/components/admin/AccountActionDialog";
 
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
-const STATE_LABEL: Record<string, string> = {
-  active: "Active",
-  under_review: "Under review",
-  deletion_requested: "Asked to be deleted",
-};
-
-export const ACTION_TEXT: Record<AccountAction["kind"], { title: string; button: string; body: (name: string) => string }> = {
-  under_review: {
-    title: "Put under review",
-    button: "Put under review",
-    body: (n) => `${n} will only be able to look. They see "Your account is under review" and the support e-mail.`,
-  },
-  active: {
-    title: "Make active again",
-    button: "Make active",
-    body: (n) => `${n} can use the site normally again. Any deletion request is cleared.`,
-  },
-  approve: {
-    title: "Approve deletion",
-    button: "Delete now",
-    body: (n) => `${n} asked to be deleted. Approving wipes the account now. This cannot be undone.`,
-  },
-  hold: {
-    title: "Hold deletion",
-    button: "Hold",
-    body: (n) => `The deletion request of ${n} is held with no end date. The account stays under review.`,
-  },
-  delete: {
-    title: "Delete member",
-    button: "Delete now",
-    body: (n) => `${n} and everything they posted is wiped now. No copy is kept. This cannot be undone.`,
-  },
-};
-
-function HistoryList({ userId }: { userId: string }) {
-  const { data, isLoading, error } = useAccountStateHistory(userId);
-  if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" aria-label="Loading" />;
-  if (error) return <p className="text-xs text-muted-foreground">History not available.</p>;
-  if (!data?.length) return <p className="text-xs text-muted-foreground">No history.</p>;
-  return (
-    <ol className="space-y-1 text-xs" data-testid="account-history">
-      {data.map((h, i) => (
-        <li key={`${h.created_at}-${i}`} className="flex flex-wrap gap-x-2">
-          <span className="tabular-nums text-muted-foreground">{fmt(h.created_at)}</span>
-          <span>{STATE_LABEL[h.from_state ?? "active"] ?? h.from_state} → {STATE_LABEL[h.to_state] ?? h.to_state}</span>
-          <span className="text-muted-foreground">by {h.actor_name ?? "system"}</span>
-          {h.reason && <span className="w-full pl-2 text-muted-foreground">“{h.reason}”</span>}
-        </li>
-      ))}
-    </ol>
-  );
-}
+type Pending = { kind: PendingAccountAction["kind"]; userId: string; name: string };
 
 function ReviewRow({ row, onAction }: { row: AccountReviewRow; onAction: (p: Pending) => void }) {
   const [showHistory, setShowHistory] = useState(false);
@@ -127,34 +71,17 @@ function ReviewRow({ row, onAction }: { row: AccountReviewRow; onAction: (p: Pen
           <History className="mr-1 h-4 w-4" />History
         </Button>
       </div>
-      {showHistory && <HistoryList userId={row.user_id} />}
+      {showHistory && <AccountHistoryList userId={row.user_id} />}
     </li>
   );
 }
 
 export default function AdminAccountReviews() {
   const { data: rows, isLoading, error } = useAccountReviews();
-  const act = useAccountAction();
   const [picked, setPicked] = useState<{ id: string; full_name: string | null } | null>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
-  const [reason, setReason] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<PendingAccountAction | null>(null);
 
-  const open = (p: Pending) => { setReason(""); setPending(p); };
-
-  const confirm = async () => {
-    if (!pending || !reason.trim()) return;
-    setBusy(true);
-    try {
-      await act({ kind: pending.kind, userId: pending.userId, reason: reason.trim() });
-      toast({ title: "Done", description: `${ACTION_TEXT[pending.kind].title}: ${pending.name}` });
-      setPending(null);
-      if (pending.kind === "under_review") setPicked(null);
-    } catch (e) {
-      toast({ title: "Not done", description: e instanceof Error ? e.message : "request failed", variant: "destructive" });
-    }
-    setBusy(false);
-  };
+  const open = (p: Pending) => setPending({ kind: p.kind, userIds: [p.userId], name: p.name });
 
   const underReview = rows?.filter((r) => r.state === "under_review") ?? [];
   const asked = rows?.filter((r) => r.state === "deletion_requested") ?? [];
@@ -200,33 +127,11 @@ export default function AdminAccountReviews() {
         </>
       )}
 
-      <AlertDialog open={!!pending} onOpenChange={(o) => { if (!o && !busy) setPending(null); }}>
-        <AlertDialogContent>
-          {pending && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{ACTION_TEXT[pending.kind].title}</AlertDialogTitle>
-                <AlertDialogDescription>{ACTION_TEXT[pending.kind].body(pending.name)}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <label className="space-y-1 text-sm">
-                <span className="font-medium">Reason (required, kept 1 year)</span>
-                <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} rows={3} data-testid="account-action-reason" />
-              </label>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  disabled={busy || !reason.trim()}
-                  className={pending.kind === "delete" || pending.kind === "approve" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
-                  onClick={(e) => { e.preventDefault(); void confirm(); }}
-                >
-                  {busy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-                  {ACTION_TEXT[pending.kind].button}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
+      <AccountActionDialog
+        pending={pending}
+        onClose={() => setPending(null)}
+        onDone={(p) => { if (p.kind === "under_review") setPicked(null); }}
+      />
     </div>
   );
 }

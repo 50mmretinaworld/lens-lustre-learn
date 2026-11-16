@@ -470,4 +470,15 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
     return screen(<AdminPanel />, "/admin/health", "/admin/*");
   },
+
+  /**
+   * /admin/users — the real AdminPanel on its Users tab, signed in as an admin,
+   * with 1,284 synthetic members (adminUsersSample.ts): suspended, banned,
+   * under review and asked-to-delete among them.
+   */
+  "screen-admin-users": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    (globalThis as { __harnessAdminUsers?: boolean }).__harnessAdminUsers = true;
+    return screen(<AdminPanel />, "/admin/users", "/admin/*");
+  },
 };
