@@ -89,7 +89,7 @@ const COST_UPSTREAM_LEDGER: Record<string, string> = {
   "send-push":
     "admin JWT or the internal shared secret only; never reachable by an ordinary member",
   "send-broadcast-push":
-    "admin JWT only, deliberately with no internal-secret path, because a leaked secret must not be able to message the whole userbase",
+    "admin JWT to write and send; the job engine's internal secret can only release a broadcast an admin already scheduled and that is due (push_broadcast_claim), never write or choose a message — so a leaked secret still cannot message the userbase",
   "process-email-queue":
     "queue worker, not a member-facing endpoint; carries its own Brevo 429 cooldown that stops the batch",
   "verify-email-provider":

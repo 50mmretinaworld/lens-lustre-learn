@@ -42,6 +42,13 @@ project_id = "jtdtehuqtinjxropkkcn"
   # gateway would 401 every push. Pinned so d1-deploy-functions.yml can deploy it.
   [functions.send-push]
     verify_jwt = false
+  # send-broadcast-push: live is verify_jwt=false (d1-deploy-functions list,
+  # production run 43866415718, 16 Nov 2026) — pinned to the live value. The
+  # function checks its own callers: an admin JWT (getUser + has admin role), or
+  # the job engine's x-internal-secret, which can only release a broadcast an
+  # admin already scheduled and that is due (push_broadcast_claim).
+  [functions.send-broadcast-push]
+    verify_jwt = false
   [functions.send-transactional-email]
     verify_jwt = true
   [functions.preview-transactional-email]
