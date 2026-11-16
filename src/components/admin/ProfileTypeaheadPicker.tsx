@@ -13,13 +13,18 @@ interface Props {
   value: string | null;
   onChange: (profile: ProfileRow | null) => void;
   label?: string;
+  /** Help line under the field. Default: the Featured Artist wording. */
+  hint?: string;
 }
+
+const DEFAULT_HINT =
+  "Optional. When linked, the public page pulls name, avatar, and bio from this user's profile. The fields below act as fallback.";
 
 /**
  * Admin-only typeahead. Uses SECURITY DEFINER RPCs that gate on has_role(admin).
  * Searches profiles by full_name OR auth.users.email.
  */
-export default function ProfileTypeaheadPicker({ value, onChange, label = "Link Author Profile" }: Props) {
+export default function ProfileTypeaheadPicker({ value, onChange, label = "Link Author Profile", hint = DEFAULT_HINT }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -138,7 +143,7 @@ export default function ProfileTypeaheadPicker({ value, onChange, label = "Link 
         </div>
       )}
       <p className="text-[10px] text-muted-foreground/70 mt-1.5">
-        Optional. When linked, the public page pulls name, avatar, and bio from this user's profile. The fields below act as fallback.
+        {hint}
       </p>
     </div>
   );
