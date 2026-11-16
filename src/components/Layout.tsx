@@ -42,6 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AnimatePresence } from "framer-motion";
 import { BareLayoutProvider, useIsBareShell } from "@/components/BareLayoutContext";
 import NetworkBanner from "@/components/NetworkBanner";
+import AccountStateBanner from "@/components/AccountStateBanner";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
@@ -407,6 +408,8 @@ const LayoutInner = () => {
       */}
       {/* OFF-3: offline / slow-connection status; renders nothing on a good connection. */}
       <NetworkBanner />
+      {/* A4: "Your account is under review" + support e-mail; nothing for an active member. */}
+      <AccountStateBanner />
       <div className="pb-12 lg:pb-0">
         <div className={isSidebarEligibleRoute ? "flex gap-8 container mx-auto" : undefined}>
           {isSidebarEligibleRoute ? (

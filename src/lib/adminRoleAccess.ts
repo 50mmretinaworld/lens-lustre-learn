@@ -14,7 +14,7 @@ export type AdminTab =
   | "banners" | "potd" | "portfolio" | "on_page_images" | "featured_artist"
   | "journal" | "courses" | "certificates" | "excellence"
   | "competitions" | "competition_health" | "entries" | "judging_tags" | "tag_semantics" | "round_visibility" | "judge_monitoring" | "vote_audit" | "judge_activity" | "vote_rewards" | "verification_requests"
-  | "users" | "applications" | "referrals" | "engagement"
+  | "users" | "account_reviews" | "applications" | "referrals" | "engagement"
   | "employee"
   | "comments" | "keyword_blocklist" | "reports" | "post_reports"
   | "wallet" | "gifts" | "transactions" | "orders"

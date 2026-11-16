@@ -792,6 +792,7 @@ const en: Dict = {
   "adm.grp.helpSupport": "Help & Support",
   "adm.nav.health": "Site Health",
   "adm.nav.notifications_health": "Notification Drift",
+  "adm.nav.account_reviews": "Account Review",
   "adm.nav.notification_centre": "Notification Centre",
   "adm.nav.test_agent": "Test Agent",
   "adm.nav.analytics": "Analytics",
