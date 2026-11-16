@@ -211,6 +211,10 @@ export interface SendResult {
   members?: number;
   note?: string;
   error?: string;
+  /** A short code when a send stopped part-way (NOT_CONFIGURED, GOOGLE_SIGN_IN, DATABASE, SEND_STOPPED). */
+  stopped?: string;
+  /** The picture is not stored on this site, so it was not put in the push. */
+  picture_left_out?: boolean;
   errors?: string[];
 }
 

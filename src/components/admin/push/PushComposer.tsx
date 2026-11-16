@@ -17,6 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { opensOnEveryApp, safeAppLink } from "@/lib/notifications/broadcastTap";
 import { DEFAULT_MEMBER_FILTERS, useAdminMembers } from "@/hooks/admin/useAdminMembers";
 import { MemberAvatar, useMemberLabels } from "@/components/admin/users/memberUi";
 import {
@@ -26,7 +27,15 @@ import { AudiencePanel, PhonePreview } from "./pushUi";
 
 const label = "mb-1 block text-[10px] uppercase tracking-[0.15em] text-muted-foreground";
 const card = "rounded-xl border border-border bg-card p-3 sm:p-4 space-y-3";
-const QUICK_LINKS = ["/feed", "/competitions", "/dashboard", "/notifications"];
+/** Pages that open on every app build (see broadcastTap.ts). */
+const QUICK_LINKS = ["/feed", "/competitions", "/journal", "/courses", "/dashboard"];
+/** Plain words for a send that stopped part-way (push_broadcast_finish._error codes). */
+const STOPPED: Record<string, string> = {
+  NOT_CONFIGURED: "Push is not set up on this site.",
+  GOOGLE_SIGN_IN: "Google refused our sign-in. Nothing more was sent.",
+  DATABASE: "The list of phones could not be read. Nothing more was sent.",
+  SEND_STOPPED: "The send stopped part-way.",
+};
 
 /** ISO → the value a datetime-local input shows (viewer's time). */
 export function toLocalInput(iso: string): string {
@@ -165,10 +174,11 @@ function PictureButton({ onUrl, busy, setBusy, text }: { onUrl: (u: string) => v
 interface Props {
   draft: PushDraft;
   setDraft: (d: PushDraft) => void;
-  onDone: (where: "history" | "scheduled" | "drafts" | "templates") => void;
+  /** After a send or a schedule: the list to show. */
+  onSent: (where: "history" | "scheduled") => void;
 }
 
-export default function PushComposer({ draft, setDraft, onDone }: Props) {
+export default function PushComposer({ draft, setDraft, onSent }: Props) {
   const set = <K extends keyof PushDraft>(k: K, v: PushDraft[K]) => setDraft({ ...draft, [k]: v });
   const [debouncedAudience, setDebouncedAudience] = useState(draft.audience);
   useEffect(() => { const t = setTimeout(() => setDebouncedAudience(draft.audience), 250); return () => clearTimeout(t); }, [draft.audience]);
@@ -185,7 +195,14 @@ export default function PushComposer({ draft, setDraft, onDone }: Props) {
   const titleOk = draft.title.trim().length > 0;
   const audienceOk = draft.audience.kind !== "members" || draft.audience.ids.length > 0;
   const atOk = when === "now" || (!!at && Date.parse(at) > Date.now());
-  const canSend = titleOk && audienceOk && atOk && !busy && !uploading;
+  // Owner bug 16 Nov: say BEFORE sending where a tap will really land.
+  const link = draft.link.trim();
+  const linkOk = !link || safeAppLink(link) !== null;
+  const linkNote = !link ? null
+    : !linkOk ? { bad: true, text: "Use an address inside the site that starts with / — for example /competitions." }
+    : !opensOnEveryApp(link) ? { bad: false, text: "On the app members have today this opens the dashboard. It opens this page after they update the app. The buttons above open on every app." }
+    : null;
+  const canSend = titleOk && audienceOk && atOk && linkOk && !busy && !uploading;
   const audienceText = useMemo(() => audienceLabel(draft.audience), [draft.audience]);
 
   const run = async (kind: NonNullable<typeof busy>) => {
@@ -194,25 +211,38 @@ export default function PushComposer({ draft, setDraft, onDone }: Props) {
       if (kind === "save" || kind === "template") {
         const r = await writes.save({ ...draft, kind: kind === "template" ? "template" : draft.kind, id: kind === "template" && draft.kind !== "template" ? null : draft.id });
         if (r.error) { toast({ title: "Not saved", description: r.error, variant: "destructive" }); return; }
-        toast({ title: kind === "template" ? "Saved as a template ✅" : "Draft saved ✅" });
+        toast({ title: kind === "template" ? "Saved as a template ✅ — find it under Templates" : "Draft saved ✅" });
         if (kind === "save") setDraft({ ...draft, id: r.id });
-        onDone(kind === "template" ? "templates" : "drafts");
       } else if (kind === "test") {
         const { id, result } = await writes.test(draft);
         if (id) setDraft({ ...draft, id });
         setLastTest(result);
+        const noPicture = result.picture_left_out ? " The picture was left out: it is not stored on this site." : "";
         if (result.error) toast({ title: "Test not sent", description: result.error, variant: "destructive" });
         else if (!result.devices) toast({ title: "No phone on your account", description: result.note });
-        else toast({ title: `Test sent to your ${result.sent} phone${result.sent === 1 ? "" : "s"} ✅` });
+        else if (!result.sent) toast({ title: "Your phone refused the test", description: (result.errors ?? []).join(" · ") || undefined, variant: "destructive" });
+        else toast({ title: `Test sent to your ${result.sent} phone${result.sent === 1 ? "" : "s"} ✅`, description: noPicture || undefined });
       } else {
         const { result } = await writes.schedule(draft, when === "now" ? null : at);
         if (result.error) { toast({ title: when === "now" ? "Send failed" : "Not scheduled", description: result.error, variant: "destructive" }); return; }
-        toast({
-          title: when === "now"
-            ? `Sent to ${result.sent ?? 0} phone${result.sent === 1 ? "" : "s"} ✅`
-            : `Scheduled for ${new Date(at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} ✅`,
-        });
-        onDone(when === "now" ? "history" : "scheduled");
+        if (when === "later") {
+          toast({ title: `Scheduled for ${new Date(at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} ✅` });
+        } else if (result.skipped) {
+          // the job engine picked it up in the same second — it is going out; History has the numbers
+          toast({ title: "It is going out now — see History for the numbers" });
+        } else if (result.stopped) {
+          toast({
+            title: `Stopped after ${result.sent ?? 0} phone${result.sent === 1 ? "" : "s"}`,
+            description: STOPPED[result.stopped] ?? STOPPED.SEND_STOPPED, variant: "destructive",
+          });
+        } else {
+          toast({
+            title: `Sent to ${result.sent ?? 0} phone${result.sent === 1 ? "" : "s"} ✅`,
+            description: [result.failed ? `${result.failed} failed — History shows why.` : "",
+              result.picture_left_out ? "The picture was left out: it is not stored on this site." : ""].filter(Boolean).join(" ") || undefined,
+          });
+        }
+        onSent(when === "now" ? "history" : "scheduled");
       }
     } finally {
       setBusy(null);
@@ -242,6 +272,7 @@ export default function PushComposer({ draft, setDraft, onDone }: Props) {
                 <button key={l} type="button" onClick={() => set("link", l)} className={cn("rounded border px-2 py-0.5 text-[10px]", draft.link === l ? "border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/60")}>{l}</button>
               ))}
             </div>
+            {linkNote && <p className={cn("mt-1.5 text-[11px]", linkNote.bad ? "text-destructive" : "text-amber-600")} data-testid="push-link-note">{linkNote.text}</p>}
           </div>
         </section>
 

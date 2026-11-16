@@ -29,6 +29,10 @@ const REASON: Record<string, string> = {
   UNAVAILABLE: "Google was busy",
   INTERNAL: "Google error",
   NETWORK: "network error",
+  NOT_CONFIGURED: "not sent — push is not set up on this site",
+  GOOGLE_SIGN_IN: "not sent — Google refused our sign-in",
+  DATABASE: "not sent — the list of phones could not be read",
+  SEND_STOPPED: "not sent — the send stopped part-way",
 };
 function reasonText(code: string): string {
   const word = code.split(" ").pop() ?? code;

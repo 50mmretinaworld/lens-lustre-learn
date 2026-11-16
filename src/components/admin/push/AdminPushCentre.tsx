@@ -5,7 +5,7 @@
  * On a database without 20261116_1500 it shows the previous one-box page, so
  * the code can ship before the SQL is applied (same rule as the Users table).
  */
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Bell, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +26,11 @@ export default function AdminPushCentre() {
   const [draft, setDraft] = useState<PushDraft>(EMPTY_DRAFT);
   const everyone = usePushAudience({ kind: "all" });
   const scheduled = usePushBroadcasts("scheduled");
+  // Phone: the tab row scrolls sideways — keep the chosen tab fully in view.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    tabsRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [tab]);
 
   if (showPrevious() || everyone.error instanceof PushRpcMissing || scheduled.error instanceof PushRpcMissing) {
     return <Suspense fallback={null}><AdminPushBroadcast /></Suspense>;
@@ -42,7 +47,7 @@ export default function AdminPushCentre() {
   const open = (d: PushDraft) => { setDraft(d); setTab("write"); };
 
   return (
-    <div className="space-y-4" data-testid="push-centre">
+    <div className="space-y-4 px-4 md:px-0" data-testid="push-centre">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
@@ -62,7 +67,7 @@ export default function AdminPushCentre() {
         )}
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-border" role="tablist">
+      <div ref={tabsRef} className="flex gap-1 overflow-x-auto border-b border-border" role="tablist">
         {tabs.map((t) => (
           <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} data-testid={`push-tab-${t.key}`}
             onClick={() => setTab(t.key)}
@@ -77,7 +82,7 @@ export default function AdminPushCentre() {
       </div>
 
       {tab === "write"
-        ? <PushComposer draft={draft} setDraft={setDraft} onDone={(where) => { if (where !== "drafts" && where !== "templates") setDraft(EMPTY_DRAFT); setTab(where); }} />
+        ? <PushComposer draft={draft} setDraft={setDraft} onSent={(where) => { setDraft(EMPTY_DRAFT); setTab(where); }} />
         : <PushList view={tab} onEdit={open} />}
     </div>
   );
