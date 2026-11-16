@@ -7,6 +7,11 @@ import { Loader2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
 const AdminUsers = lazy(() => import("@/components/admin/AdminUsers"));
+// The members table (2026-11-16). It falls back to AdminUsers by itself on a
+// database without admin_search_users_v4. `?usersui=old` (development only)
+// shows the previous list, for the Now-vs-New pictures.
+const AdminMembersTable = lazy(() => import("@/components/admin/users/AdminMembersTable"));
+const showPrevious = () => import.meta.env.DEV && new URLSearchParams(window.location.search).get("usersui") === "old";
 const AdminBadgeRoleDefinitions = lazy(() => import("@/components/admin/AdminBadgeRoleDefinitions"));
 
 const LazyTab = ({ children }: { children: React.ReactNode }) => (
@@ -39,7 +44,7 @@ const UsersModule = ({ user }: Props) => {
         </button>
       </div>
       <LazyTab>
-        {usersSubTab === "manage" && <AdminUsers user={user} />}
+        {usersSubTab === "manage" && (showPrevious() ? <AdminUsers user={user} /> : <AdminMembersTable user={user} />)}
         {usersSubTab === "definitions" && <AdminBadgeRoleDefinitions />}
       </LazyTab>
     </div>
