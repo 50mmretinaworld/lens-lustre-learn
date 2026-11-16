@@ -505,13 +505,22 @@ AS $fn$
 $fn$;
 
 -- _results: [{"d": receipt id, "ok": n, "failed": n, "removed": n, "error": "CODE"}]
-CREATE FUNCTION public.push_broadcast_finish(_id bigint, _results jsonb)
+-- _error:   a short CODE when the send stopped part-way. Receipts it never
+--           reached are then recorded as failed with that code (their phones
+--           are counted as failed) instead of "no device".
+CREATE FUNCTION public.push_broadcast_finish(_id bigint, _results jsonb, _error text DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = ''
 AS $fn$
+DECLARE
+  _stop   text := nullif(left(btrim(coalesce(_error, '')), 40), '');
+  _unsent integer := 0;
 BEGIN
   IF _results IS NULL OR jsonb_typeof(_results) <> 'array' THEN
     RAISE EXCEPTION 'results must be a list' USING ERRCODE = '22023';
+  END IF;
+  IF _stop IS NOT NULL AND _stop !~ '^[A-Z0-9_ ]{1,40}$' THEN
+    _stop := 'SEND_STOPPED';                  -- a code, never free text
   END IF;
   UPDATE public.notification_deliveries d
      SET status = CASE WHEN r.ok > 0 THEN 'sent' ELSE 'failed' END,
@@ -520,13 +529,24 @@ BEGIN
          error = left(nullif(r.error, ''), 300), finished_at = now()
     FROM jsonb_to_recordset(_results) AS r(d bigint, ok integer, failed integer, removed integer, error text)
    WHERE d.id = r.d AND d.broadcast_id = _id AND d.status = 'sending';
-  -- a member whose devices went away between claim and send (signed out)
-  UPDATE public.notification_deliveries d SET status = 'no_device', finished_at = now()
-   WHERE d.broadcast_id = _id AND d.status = 'sending';
+
+  -- receipts with no result: the send stopped before them (_error), or the
+  -- member's devices went away between claim and send (signed out)
+  WITH rest AS (
+    UPDATE public.notification_deliveries d
+       SET status = CASE WHEN _stop IS NULL THEN 'no_device' ELSE 'failed' END,
+           error = _stop, finished_at = now()
+     WHERE d.broadcast_id = _id AND d.status = 'sending'
+    RETURNING d.user_id AS uid
+  )
+  SELECT count(*) INTO _unsent
+    FROM public.push_tokens t JOIN rest ON rest.uid = t.user_id
+   WHERE _stop IS NOT NULL;
 
   UPDATE public.push_broadcasts b
-     SET delivered = s.ok, failed = s.failed, removed = s.removed,
-         fail_reasons = s.reasons,
+     SET delivered = s.ok, failed = s.failed + _unsent, removed = s.removed,
+         fail_reasons = s.reasons
+                        || CASE WHEN _unsent > 0 THEN jsonb_build_object(_stop, _unsent) ELSE '{}'::jsonb END,
          status = CASE WHEN s.ok = 0 AND coalesce(b.devices, 0) > 0 THEN 'failed' ELSE 'sent' END,
          finished_at = now(), updated_at = now()
     FROM (SELECT coalesce(sum(greatest(r.ok, 0)), 0)::int AS ok,
@@ -599,7 +619,7 @@ REVOKE ALL ON FUNCTION public.admin_push_broadcasts(text, integer, integer) FROM
 REVOKE ALL ON FUNCTION public.register_push_device(text, text, text, text[]) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.report_push_permission(text, text, text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.push_broadcast_claim(bigint) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.push_broadcast_finish(bigint, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.push_broadcast_finish(bigint, jsonb, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.push_broadcast_targets(bigint, bigint, integer) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.push_broadcast_targets(bigint, bigint, integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.admin_push_audience(jsonb) TO authenticated;
@@ -611,7 +631,7 @@ GRANT EXECUTE ON FUNCTION public.admin_push_broadcasts(text, integer, integer) T
 GRANT EXECUTE ON FUNCTION public.register_push_device(text, text, text, text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.report_push_permission(text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.push_broadcast_claim(bigint) TO service_role;
-GRANT EXECUTE ON FUNCTION public.push_broadcast_finish(bigint, jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.push_broadcast_finish(bigint, jsonb, text) TO service_role;
 
 -- ── 13. post checks ───────────────────────────────────────────────────────
 DO $post$
@@ -635,7 +655,7 @@ BEGIN
       RAISE EXCEPTION 'PC-1500-POST-003: % has no admin gate', n;
     END IF;
   END LOOP;
-  FOREACH n IN ARRAY ARRAY['public.push_broadcast_claim(bigint)', 'public.push_broadcast_finish(bigint, jsonb)',
+  FOREACH n IN ARRAY ARRAY['public.push_broadcast_claim(bigint)', 'public.push_broadcast_finish(bigint, jsonb, text)',
                            'public.push_broadcast_targets(bigint, bigint, integer)',
                            'public.push_audience_members(jsonb)', 'public.push_audience_check(jsonb)'] LOOP
     f := to_regprocedure(n);

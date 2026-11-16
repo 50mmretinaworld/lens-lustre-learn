@@ -37,7 +37,7 @@ DROP FUNCTION public.admin_push_broadcast_cancel(bigint);
 DROP FUNCTION public.admin_push_broadcast_delete(bigint);
 DROP FUNCTION public.admin_push_broadcasts(text, integer, integer);
 DROP FUNCTION public.push_broadcast_claim(bigint);
-DROP FUNCTION public.push_broadcast_finish(bigint, jsonb);
+DROP FUNCTION public.push_broadcast_finish(bigint, jsonb, text);
 DROP FUNCTION public.push_broadcast_targets(bigint, bigint, integer);
 DROP FUNCTION public.register_push_device(text, text, text, text[]);
 DROP FUNCTION public.report_push_permission(text, text, text);
