@@ -3,7 +3,7 @@
 -- Staging has run with the guard ON since 15 Nov (20261115_1320, run 43726116664).
 -- A4 (the "Your account is under review · Contact support@50mmretina.com" banner)
 -- is on main (#1083), so a member under review sees why instead of errors.
--- Effect on live: members under review (today 1 suspended + 1 banned) can look
+-- Effect on live: members under review, suspended or banned (15 Nov: 1 suspended + 1 banned) can look
 -- but not write. Every other member is unchanged.
 -- Refuses on staging. Refuses when A1 (20261115_1310) is not applied.
 -- Rollback: supabase/rollback/20261116_0900_a1_guard_on_production_ROLLBACK.sql
@@ -21,8 +21,9 @@ DO $g$ BEGIN
   END IF;
 END $g$;
 UPDATE public.system_flags SET value = true WHERE key = 'account_state_guard';
-DO $r$ DECLARE _n int; BEGIN
-  SELECT count(*) INTO _n FROM public.account_states WHERE state <> 'active';
-  RAISE NOTICE 'A1-ON production: guard = on; account_states rows (under review or asked to delete) = %', _n;
+DO $r$ DECLARE _s int; _p int; BEGIN
+  SELECT count(*) INTO _s FROM public.account_states WHERE state <> 'active';
+  SELECT count(*) INTO _p FROM public.profiles WHERE is_suspended OR coalesce(is_banned, false);
+  RAISE NOTICE 'A1-ON production: guard = on; under review / asked to delete = %, suspended or banned profiles = %', _s, _p;
 END $r$;
 COMMIT;
