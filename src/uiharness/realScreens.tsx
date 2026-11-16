@@ -481,4 +481,15 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessAdminUsers?: boolean }).__harnessAdminUsers = true;
     return screen(<AdminPanel />, "/admin/users", "/admin/*");
   },
+  /**
+   * PN3 · Admin → Push Notification, the REAL AdminPanel route with the push
+   * centre sample (adminPushSample.ts) — shaped like production 16 Nov 2026.
+   * The members sample answers the role/badge lists and the member search.
+   */
+  "screen-admin-push": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    (globalThis as { __harnessAdminUsers?: boolean }).__harnessAdminUsers = true;
+    (globalThis as { __harnessAdminPush?: boolean }).__harnessAdminPush = true;
+    return screen(<AdminPanel />, "/admin/push_notification", "/admin/*");
+  },
 };
