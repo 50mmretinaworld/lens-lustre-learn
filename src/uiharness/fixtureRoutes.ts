@@ -28,6 +28,10 @@ import { storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleCo
 import { sampleHashtagInfo, sampleHashtagPosts } from "./hashtagSample";
 import type { FakeRoute } from "./fakeBackend";
 import {
+  adminUsersSampleOn, sampleSearchV3, samplePlatformCounts, sampleSearchV4, sampleFacets,
+  sampleUserRoles, sampleUserBadges, sampleProfiles, sampleRoleDefinitions, sampleBadgeDefinitions,
+} from "./adminUsersSample";
+import {
   HARNESS_USER_ID, fixtureImage,
   adCreatives, categories, certificates, dashboardInit, dbAuditLogs, faqEntries, featuredArtists, follows, heroBanners,
   photoOfTheDay, portfolioImages, posts, postComments, postReactions, profiles, profilesPublicData, siteSettings,
@@ -310,6 +314,12 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   // A4 account review. Default: an active member (no banner) — every existing
   // scene renders exactly as before. ?review=1: the member is under review
   // (banner shows) and the admin Account Review page has one row of each kind.
+  // Admin → Users (scene screen-admin-users, adminUsersSample.ts): the current
+  // list (v3 + platform counts) and the new table (v4 + facets), same members.
+  admin_search_users_v3: (b) => (adminUsersSampleOn() ? sampleSearchV3(b) : []),
+  admin_user_platform_counts: (b) => (adminUsersSampleOn() ? samplePlatformCounts(b) : []),
+  admin_search_users_v4: (b) => (adminUsersSampleOn() ? sampleSearchV4(b) : []),
+  admin_user_facets: (b) => (adminUsersSampleOn() ? sampleFacets(b) : []),
   my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
   admin_list_account_reviews: () => (reviewSampleOn() ? [
     { user_id: profiles[1].id, full_name: profiles[1].full_name, state: "deletion_requested", reason: "member asked to delete the account", set_at: "2026-11-14T10:00:00.000Z", set_by_name: profiles[1].full_name, deletion_requested_at: "2026-11-14T10:00:00.000Z", auto_approve_at: "2027-05-13T10:00:00.000Z" },
@@ -623,6 +633,23 @@ export const fixtureRoutes: FakeRoute[] = [
     const table = m[1];
     // ?stories=1 only: the profile's highlights row for the Stories renders.
     if (table === "highlights" && storySampleOn()) return countable(sampleHighlights(), method);
+    // Admin → Users sample: the members' roles, badges and activity rows.
+    if (adminUsersSampleOn()) {
+      const sample: Record<string, () => unknown[]> = {
+        user_roles: () => [...(harnessRoleRows() ?? []), ...sampleUserRoles()],
+        user_badges: sampleUserBadges,
+        profiles: () => [...profiles, ...sampleProfiles()],
+        role_display_config: () => sampleRoleDefinitions,
+        badge_definitions: () => sampleBadgeDefinitions,
+        // AdminPanel's own header counters: nothing open, nothing unread.
+        support_tickets: () => [],
+        admin_notifications: () => [],
+      };
+      if (sample[table]) {
+        const matched = applyFilters(sample[table](), params);
+        return countable(narrow(matched, params) as unknown[], method, matched.length);
+      }
+    }
     if (table in EMPTY_BY_DESIGN) return countable([], method);
     const rows = table === "user_roles" ? harnessRoleRows() ?? TABLES[table] : TABLES[table];
     if (!rows) return undefined; // unknown table: report it, never invent it
