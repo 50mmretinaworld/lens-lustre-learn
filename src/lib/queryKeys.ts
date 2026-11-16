@@ -50,6 +50,7 @@ export const queryKeys = {
   accountStateHistory: (userId: string) => ["account-state-history", userId] as const,
   /** Admin → Users table — rpc admin_search_users_v4 + admin_user_facets (useAdminMembers). */
   adminMembers: () => ["admin-members"] as const,
+  adminPush: () => ["admin-push"] as const,
   /** The set of admin user ids — who gets the brand name and the brand tick. */
   adminIds: () => ["admin-ids"] as const,
   juryUsers: () => ["jury-users"] as const,

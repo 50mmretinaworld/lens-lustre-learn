@@ -54,7 +54,8 @@ const AdminAdvertisements = lazy(() => import("@/components/admin/AdminAdvertise
 const AdminVideoFeature = lazy(() => import("@/components/admin/video/AdminVideoFeature"));
 const AdminVideoConversion = lazy(() => import("@/components/admin/video/AdminVideoConversion"));
 const AdminFeedMix = lazy(() => import("@/components/admin/feed/AdminFeedMix"));
-const AdminPushBroadcast = lazy(() => import("@/components/admin/AdminPushBroadcast"));
+// PN3: the push centre; it falls back to the one-box AdminPushBroadcast itself when 1500 is not applied.
+const AdminPushCentre = lazy(() => import("@/components/admin/push/AdminPushCentre"));
 const AdminPerformance = lazy(() => import("@/components/admin/AdminPerformance"));
 const AdminAnnouncements = lazy(() => import("@/components/admin/AdminAnnouncements"));
 const AdminHealth = lazy(() => import("@/components/admin/AdminHealth"));
@@ -336,7 +337,7 @@ const AdminPanel = () => {
       {currentRoute === "competition_fullsize" && <LazyTab><AdminVideoFeature feature="competition_fullsize_purge" /></LazyTab>}
       {currentRoute === "mention_groups" && <LazyTab><AdminVideoFeature feature="mention_groups" /></LazyTab>}
       {currentRoute === "mention_all_blocked" && <LazyTab><AdminVideoFeature feature="mention_all_blocked" /></LazyTab>}
-      {currentRoute === "push_notification" && <LazyTab><AdminPushBroadcast /></LazyTab>}
+      {currentRoute === "push_notification" && <LazyTab><AdminPushCentre /></LazyTab>}
       {currentRoute === "performance" && <LazyTab><AdminPerformance user={user} /></LazyTab>}
       {currentRoute === "announcements" && <LazyTab><AdminAnnouncements user={user} /></LazyTab>}
       {currentRoute === "newsletter_faq" && <LazyTab><AdminNewsletterFaq /></LazyTab>}
