@@ -21,6 +21,9 @@
  */
 
 import { unreadSampleOn, sampleUnreadGroups } from "./storySample";
+
+/** A4 sample switch: ?review=1 (under-review banner + admin Account Review rows). */
+const reviewSampleOn = () => typeof location !== "undefined" && new URLSearchParams(location.search).get("review") === "1";
 import { storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleComments, sampleViewers, sampleOlderComments } from "./storySample";
 import { sampleHashtagInfo, sampleHashtagPosts } from "./hashtagSample";
 import type { FakeRoute } from "./fakeBackend";
@@ -304,6 +307,18 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
    * existed — which is the property the Off default promises. A scene that
    * wants the video button sets `window.__harnessFeatures = ["video_posts"]`.
    */
+  // A4 account review. Default: an active member (no banner) — every existing
+  // scene renders exactly as before. ?review=1: the member is under review
+  // (banner shows) and the admin Account Review page has one row of each kind.
+  my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
+  admin_list_account_reviews: () => (reviewSampleOn() ? [
+    { user_id: profiles[1].id, full_name: profiles[1].full_name, state: "deletion_requested", reason: "member asked to delete the account", set_at: "2026-11-14T10:00:00.000Z", set_by_name: profiles[1].full_name, deletion_requested_at: "2026-11-14T10:00:00.000Z", auto_approve_at: "2027-05-13T10:00:00.000Z" },
+    { user_id: profiles[2].id, full_name: profiles[2].full_name, state: "under_review", reason: "Copied photos reported by three members", set_at: "2026-11-13T08:30:00.000Z", set_by_name: "Admin", deletion_requested_at: null, auto_approve_at: null },
+  ] : []),
+  admin_account_state_history: () => (reviewSampleOn() ? [
+    { created_at: "2026-11-13T08:30:00.000Z", from_state: "active", to_state: "under_review", reason: "Copied photos reported by three members", actor_name: "Admin" },
+  ] : []),
+
   // @all / @followers sample (?mentionall=1, &verified=0 = no blue tick): what the server would offer.
   mention_groups_me: () => {
     const s = typeof location !== "undefined" ? location.search : "";

@@ -42,6 +42,12 @@ export const queryKeys = {
 
   /* ── Auth / Roles ── */
   isAdmin: (userId: string) => ["is-admin", userId] as const,
+  /** A4: rpc my_account_state() → 'active' | 'under_review' (useMyAccountState). */
+  myAccountState: (userId: string) => ["my-account-state", userId] as const,
+  /** A4: admin review page — rpc admin_list_account_reviews() (useAccountReviews). */
+  accountReviews: () => ["account-reviews"] as const,
+  /** A4: one member's state log — rpc admin_account_state_history(_user_id). */
+  accountStateHistory: (userId: string) => ["account-state-history", userId] as const,
   /** The set of admin user ids — who gets the brand name and the brand tick. */
   adminIds: () => ["admin-ids"] as const,
   juryUsers: () => ["jury-users"] as const,

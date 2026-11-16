@@ -34,7 +34,7 @@ import { CommentsOverlayProvider } from "@/contexts/CommentsOverlayContext";
 import CommentsOverlay from "@/components/comments/CommentsOverlay";
 
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { useGlobalConversionTracker } from "@/hooks/core/useGlobalConversionTracker";
@@ -42,6 +42,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AnimatePresence } from "framer-motion";
 import { BareLayoutProvider, useIsBareShell } from "@/components/BareLayoutContext";
 import NetworkBanner from "@/components/NetworkBanner";
+/* A4: lazy — keeps the entry bundle under its P13 ceiling; renders nothing for most members anyway. */
+const AccountStateBanner = lazy(() => import("@/components/AccountStateBanner"));
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
@@ -407,6 +409,8 @@ const LayoutInner = () => {
       */}
       {/* OFF-3: offline / slow-connection status; renders nothing on a good connection. */}
       <NetworkBanner />
+      {/* A4: "Your account is under review" + support e-mail; nothing for an active member. */}
+      {user && <Suspense fallback={null}><AccountStateBanner /></Suspense>}
       <div className="pb-12 lg:pb-0">
         <div className={isSidebarEligibleRoute ? "flex gap-8 container mx-auto" : undefined}>
           {isSidebarEligibleRoute ? (
