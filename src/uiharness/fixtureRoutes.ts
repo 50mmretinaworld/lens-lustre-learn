@@ -31,6 +31,7 @@ import {
   adminUsersSampleOn, sampleSearchV3, samplePlatformCounts, sampleSearchV4, sampleFacets,
   sampleUserRoles, sampleUserBadges, sampleProfiles, sampleRoleDefinitions, sampleBadgeDefinitions,
 } from "./adminUsersSample";
+import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import {
   HARNESS_USER_ID, fixtureImage,
   adCreatives, categories, certificates, dashboardInit, dbAuditLogs, faqEntries, featuredArtists, follows, heroBanners,
@@ -320,6 +321,13 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_user_platform_counts: (b) => (adminUsersSampleOn() ? samplePlatformCounts(b) : []),
   admin_search_users_v4: (b) => (adminUsersSampleOn() ? sampleSearchV4(b) : []),
   admin_user_facets: (b) => (adminUsersSampleOn() ? sampleFacets(b) : []),
+  // PN3 push centre (screen-admin-push). Writes answer as the SQL would.
+  admin_push_audience: (b) => (adminPushSampleOn() ? sampleAudience(b) : []),
+  admin_push_broadcasts: (b) => (adminPushSampleOn() ? sampleBroadcasts(b) : []),
+  admin_push_broadcast_save: (b) => (typeof b._id === "number" ? b._id : 101),
+  admin_push_broadcast_schedule: (b) => (typeof b._at === "string" ? b._at : new Date().toISOString()),
+  admin_push_broadcast_cancel: () => true,
+  admin_push_broadcast_delete: () => true,
   my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
   admin_list_account_reviews: () => (reviewSampleOn() ? [
     { user_id: profiles[1].id, full_name: profiles[1].full_name, state: "deletion_requested", reason: "member asked to delete the account", set_at: "2026-11-14T10:00:00.000Z", set_by_name: profiles[1].full_name, deletion_requested_at: "2026-11-14T10:00:00.000Z", auto_approve_at: "2027-05-13T10:00:00.000Z" },
@@ -658,8 +666,11 @@ export const fixtureRoutes: FakeRoute[] = [
   },
 
   // ── Edge functions ───────────────────────────────────────────────────────
-  ({ method, path }) => {
+  ({ method, path, body }) => {
     if (method !== "POST") return undefined;
+    if (path === "/functions/v1/send-broadcast-push" && adminPushSampleOn()) {
+      return { body: sampleSendResult(body as Record<string, unknown> | undefined) };
+    }
     if (path === "/functions/v1/dashboard-init") {
       // P23 S10a-2 — see harnessRoles(). Unset: answered exactly as before.
       const roles = harnessRoles();
