@@ -65,7 +65,7 @@ BEGIN
     -- F1
     IF NOT public.account_can_act(_conv) THEN _fail := _fail || 'F1 converter cannot act'::text; END IF;
     -- F3
-    _r := pg_temp.as_user(_conv, $q$SELECT public.photo_blur_record('[{"url":"probe://a1-fix-20261116","hash":"PROBE"}]'::jsonb)$q$);
+    _r := pg_temp.as_user(_conv, $q$SELECT public.photo_blur_record('[{"url":"probe://a1-fix-20261116","hash":"A1FIXPROBE0"}]'::jsonb)$q$);
     IF _r <> 'ok 1' THEN _fail := _fail || ('F3 converter blur record: ' || _r); END IF;
   END IF;
 
