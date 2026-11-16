@@ -74,10 +74,8 @@ export interface PushBroadcast {
   actions: PushAction[];
   audience: PushAudience;
   scheduled_at: string | null;
-  created_at: string;
   updated_at: string;
   started_at: string | null;
-  finished_at: string | null;
   created_by_name: string | null;
   sent_by_name: string | null;
   audience_members: number | null;
@@ -131,10 +129,8 @@ export function parseBroadcasts(rows: unknown): { items: PushBroadcast[]; total:
       actions: Array.isArray(r.actions) ? (r.actions as PushAction[]) : [],
       audience: (r.audience as PushAudience) ?? { kind: "all" },
       scheduled_at: (r.scheduled_at as string) ?? null,
-      created_at: String(r.created_at ?? ""),
       updated_at: String(r.updated_at ?? ""),
       started_at: (r.started_at as string) ?? null,
-      finished_at: (r.finished_at as string) ?? null,
       created_by_name: (r.created_by_name as string) ?? null,
       sent_by_name: (r.sent_by_name as string) ?? null,
       audience_members: numOrNull(r.audience_members),
