@@ -77,6 +77,8 @@ const AdminNotificationsHealth = lazy(() => import("@/pages/admin/AdminNotificat
 const AdminNotificationCentre = lazy(() => import("@/components/admin/AdminNotificationCentre"));
 const AdminCompetitionHealth = lazy(() => import("@/pages/admin/AdminCompetitionHealth"));
 const AdminTestAgent = lazy(() => import("@/pages/admin/AdminTestAgent"));
+/* A4: under review / deletion requests / admin delete (20261115_1310, 1330). */
+const AdminAccountReviews = lazy(() => import("@/pages/admin/AdminAccountReviews"));
 
 const AdminGallery = lazy(() => import("@/components/admin/AdminGallery"));
 const AdminOnPageImages = lazy(() => import("@/components/admin/AdminOnPageImages"));
@@ -93,7 +95,7 @@ const VALID_ROUTES = new Set([
   "banners", "potd", "on_page_images", "portfolio", "featured_artist",
   "journal", "courses", "certificates", "excellence",
   "competitions", "competition_health", "entries", "judging_tags", "tag_semantics", "judge_monitoring", "vote_audit", "judge_activity", "vote_rewards",
-  "users", "applications", "referrals", "engagement", "employee",
+  "users", "account_reviews", "applications", "referrals", "engagement", "employee",
   "comments", "keyword_blocklist", "reports", "post_reports",
   "wallet", "gifts", "transactions", "orders",
   "seo", "advertisements", "features", "push_notification", "performance", "announcements", "newsletter_faq", "analytics",
@@ -150,6 +152,7 @@ const tabGroups = [
   ] as const },
   { label: "Users & Community", items: [
     ["users", "Users", UserCog],
+    ["account_reviews", "Account Review", Shield],
     ["applications", "Role Applications", Briefcase],
     ["referrals", "Referrals", UserPlus],
     ["engagement", "Engagement", Heart],
@@ -302,6 +305,7 @@ const AdminPanel = () => {
 
       {/* Users — modularized */}
       {currentRoute === "users" && <LazyTab><UsersModule user={user} /></LazyTab>}
+      {currentRoute === "account_reviews" && <LazyTab><AdminAccountReviews /></LazyTab>}
       {currentRoute === "applications" && <LazyTab><RoleApplicationsModule userId={user?.id || ""} /></LazyTab>}
 
       {/* Employment */}
