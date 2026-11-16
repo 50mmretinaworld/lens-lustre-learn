@@ -3,6 +3,7 @@
  * status chip, member avatar, role/badge labels. One copy each.
  */
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBadgeDefinitions } from "@/hooks/profile/useBadgeDefinitions";
 import { useRoleDefinitions } from "@/hooks/profile/useRoleDefinitions";
 import type { AdminMember, MemberStatus } from "@/hooks/admin/useAdminMembers";
@@ -37,14 +38,13 @@ export function StatusChip({ status, className }: { status: MemberStatus; classN
 }
 
 export function MemberAvatar({ m, size = 36 }: { m: Pick<AdminMember, "avatar_url" | "full_name" | "email">; size?: number }) {
-  const style = { width: size, height: size };
-  if (m.avatar_url) {
-    return <img referrerPolicy="no-referrer" loading="lazy" decoding="async" src={m.avatar_url} alt="" style={style} className="shrink-0 rounded-full border border-border object-cover" />;
-  }
   return (
-    <span style={style} className="flex shrink-0 items-center justify-center rounded-full border border-border bg-muted text-sm font-medium text-muted-foreground" aria-hidden>
-      {(m.full_name || m.email || "?")[0]?.toUpperCase()}
-    </span>
+    <Avatar style={{ width: size, height: size }} className="shrink-0 border border-border">
+      {m.avatar_url && <AvatarImage src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="object-cover" />}
+      <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">
+        {(m.full_name || m.email || "?")[0]?.toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 

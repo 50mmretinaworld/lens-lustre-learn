@@ -243,7 +243,10 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Live: any role, badge or profile change repaints the page being looked at.
+  // Live: a profile change (sign-in, suspension, ban, name) repaints the page
+  // being looked at. Role and badge changes made here refresh the table
+  // themselves (useMemberWrites); ones made elsewhere show on the next
+  // refetch — no unfiltered feed of user_roles / user_badges (audit-v6 0B-4).
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const refresh = () => {
@@ -252,8 +255,6 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
     };
     const channel = supabase
       .channel("admin-members-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_badges" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, refresh)
       .subscribe();
     return () => { if (timer) clearTimeout(timer); void supabase.removeChannel(channel); };
