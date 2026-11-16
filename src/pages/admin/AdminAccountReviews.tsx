@@ -160,7 +160,7 @@ export default function AdminAccountReviews() {
   const asked = rows?.filter((r) => r.state === "deletion_requested") ?? [];
 
   return (
-    <div className="space-y-6" data-testid="admin-account-reviews">
+    <div className="space-y-6 px-4 py-4 sm:px-0" data-testid="admin-account-reviews">
       <header>
         <h2 className="text-lg font-semibold">Account Review</h2>
         <p className="text-xs text-muted-foreground">
@@ -170,7 +170,7 @@ export default function AdminAccountReviews() {
 
       <section className="space-y-2 rounded-xl border border-border p-4" aria-labelledby="put-under-review">
         <h3 id="put-under-review" className="flex items-center gap-2 font-medium"><ShieldAlert className="h-4 w-4" />Put a member under review</h3>
-        <ProfileTypeaheadPicker label="Member" value={picked?.id ?? null} onChange={(p) => setPicked(p ? { id: p.id, full_name: p.full_name } : null)} />
+        <ProfileTypeaheadPicker label="Member" hint="Search by name or e-mail. You give the reason on the next step." value={picked?.id ?? null} onChange={(p) => setPicked(p ? { id: p.id, full_name: p.full_name } : null)} />
         <Button size="sm" disabled={!picked} onClick={() => picked && open({ kind: "under_review", userId: picked.id, name: picked.full_name ?? "This member" })}>
           Put under review…
         </Button>
