@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/core/useAuth";
 import { getNotifLink } from "@/lib/notificationLinks";
+import { safeAppLink } from "@/lib/notifications/broadcastTap";
 import { inAppHistoryDepth } from "@/hooks/core/useAndroidBackButton";
 import { openNotificationTarget } from "@/lib/navigationContract";
 
@@ -47,8 +48,13 @@ const PushNotificationsGate = () => {
           const type = typeof data?.type === "string" ? data.type : "";
           const referenceId =
             typeof data?.reference_id === "string" ? data.reference_id : null;
-          if (!type) return;
-          openNotificationTarget(navigate, getNotifLink({ type, reference_id: referenceId }), inAppHistoryDepth(), type, hereRef.current);
+          // PN4: an admin push names its page in `link` — opened first (only an
+          // address inside this site). type + reference_id stay the fallback,
+          // and the only route for every other push.
+          const link = safeAppLink(data?.link);
+          if (!link && !type) return;
+          const route = link ?? getNotifLink({ type, reference_id: referenceId });
+          openNotificationTarget(navigate, route, inAppHistoryDepth(), type || "broadcast", hereRef.current);
         });
       } catch {
         /* push is optional — never break the app because of it */

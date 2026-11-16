@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { appLinkTarget } from "@/lib/native/appLinks";
 import { inAppHistoryDepth } from "@/hooks/core/useAndroidBackButton";
 import { openNotificationTarget } from "@/lib/navigationContract";
+import { reportPushOpened } from "@/lib/notifications/pushOpened";
 
 const FILE = "src/lib/native/appLinkOpen.ts";
 
@@ -43,6 +44,9 @@ export function installAppLinkHandler(
     const target = appLinkTarget(url);
     if (!target) return;
     last = url;
+    // PN4: a rich push tap carries its receipt — count the open (fire-and-forget,
+    // the RPC only marks a receipt that belongs to the signed-in member)
+    if (target.pushReceipt) void reportPushOpened({ delivery_id: target.pushReceipt });
     if (target.tokens) {
       const { error } = await supabase.auth.setSession(target.tokens);
       if (error) {

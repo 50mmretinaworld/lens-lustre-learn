@@ -5,6 +5,7 @@ import { fcmErrorCode } from "../_shared/pushReceipts.ts";
 import { sendWithRetry } from "../_shared/pushRetry.ts";
 import { isDeadToken, fcmDetailCode } from "../_shared/pushTokens.ts";
 import { laneImageHosts } from "../_shared/laneImageHosts.ts";
+import { canonicalOrigin } from "../_shared/laneConfig.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // send-broadcast-push — the admin push (PUSH CENTRE PN1, 20261116_1500).
@@ -216,6 +217,9 @@ Deno.serve(async (req) => {
     if (!b) return json({ error: "No such message" }, 404);
     const content = b as unknown as BroadcastContent & { status: string };
     const imageHosts = laneImageHosts();
+    // the site a rich push opens on a tap (www host — the one Android verifies); none → a tap opens the app only
+    let origin: string | null = null;
+    try { origin = canonicalOrigin(); } catch { /* SITE_ORIGIN unset: the push still goes */ }
     // a picture this lane may not send is left out of the push — say so, never silently
     const pictureLeftOut = !!content.image_url && !isSafeImageUrl(content.image_url, imageHosts);
 
@@ -231,7 +235,7 @@ Deno.serve(async (req) => {
       const fcm = await fcmReady();
       const results = await sendEach(
         mine.map((t: { token: string; caps: string[] | null }) => ({ delivery_id: null, token: t.token, caps: t.caps })),
-        (t) => buildBroadcastMessage(content, t, { imageHosts, test: true }),
+        (t) => buildBroadcastMessage(content, t, { imageHosts, test: true, origin }),
         fcm,
       );
       const removed = await prune(results);
@@ -270,7 +274,7 @@ Deno.serve(async (req) => {
         stage = "SEND_STOPPED";
         results.push(...await sendEach(
           rows.map((r) => ({ delivery_id: r.delivery_id, token: r.token, caps: r.caps })),
-          (t) => buildBroadcastMessage(content, t, { imageHosts, deliveryId: t.delivery_id }),
+          (t) => buildBroadcastMessage(content, t, { imageHosts, deliveryId: t.delivery_id, origin }),
           fcm,
         ));
         after = Math.max(...rows.map((r) => r.delivery_id));

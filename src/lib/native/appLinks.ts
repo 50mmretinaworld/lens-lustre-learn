@@ -45,6 +45,8 @@ export interface AppLinkTarget {
   tokens: { access_token: string; refresh_token: string } | null;
   /** The link carried an auth error (expired / used link). */
   authError: boolean;
+  /** Push receipt id from a rich push tap (?pn=<id>), already removed from `route`. */
+  pushReceipt?: string | null;
 }
 
 /**
@@ -74,8 +76,19 @@ export function appLinkTarget(url: string): AppLinkTarget | null {
     ? frag.get("type") === "recovery" ? "#type=recovery" : ""
     : authError ? "" : u.hash;
 
-  const route = (path === "/" ? "/feed" : path) + u.search + keepHash;
-  return { route: authError ? "/login" : route, tokens, authError };
+  // PUSH CENTRE PN4: a rich push tap opens origin + link + "?pn=<receipt>" so the
+  // open is counted (PushRichNotifier.open). The receipt never stays in the route.
+  const pnRaw = u.searchParams.get("pn");
+  const pushReceipt = pnRaw && /^[1-9][0-9]{0,15}$/.test(pnRaw) ? pnRaw : null;
+  let search = u.search; // untouched unless it carries pn — never re-encode an ordinary link
+  if (u.searchParams.has("pn")) {
+    u.searchParams.delete("pn");
+    const rest = u.searchParams.toString();
+    search = rest ? `?${rest}` : "";
+  }
+
+  const route = (path === "/" ? "/feed" : path) + search + keepHash;
+  return { route: authError ? "/login" : route, tokens, authError, pushReceipt };
 }
 
 /**
