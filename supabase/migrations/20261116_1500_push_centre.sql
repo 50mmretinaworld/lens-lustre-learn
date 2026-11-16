@@ -125,7 +125,7 @@ CREATE TABLE public.push_broadcasts (
   fail_reasons     jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(fail_reasons) = 'object'),
   CHECK (kind = 'message' OR status = 'draft')
 );
--- the history / scheduled lists, newest first
+-- P28: push_broadcasts · 0 rows at launch, a few per week · the admin lists (history / scheduled / drafts / templates) filter kind + status, newest first
 CREATE INDEX push_broadcasts_list_idx ON public.push_broadcasts (kind, status, created_at DESC);
 ALTER TABLE public.push_broadcasts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.push_broadcasts FROM PUBLIC, anon, authenticated;
@@ -133,7 +133,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.push_broadcasts TO service_role;
 
 ALTER TABLE public.notification_deliveries
   ADD COLUMN broadcast_id bigint REFERENCES public.push_broadcasts (id) ON DELETE SET NULL;
--- a broadcast's receipts (opened count, finish) — partial, broadcast rows only
+-- P28: notification_deliveries · partial, broadcast rows only (30-day table) · push_broadcast_targets paging, push_broadcast_finish and the FK ON DELETE SET NULL scan
 CREATE INDEX notification_deliveries_broadcast_idx ON public.notification_deliveries (broadcast_id)
   WHERE broadcast_id IS NOT NULL;
 
@@ -418,8 +418,8 @@ CREATE FUNCTION public.admin_push_broadcasts(_view text, _limit integer DEFAULT 
 RETURNS TABLE (
   id bigint, kind text, status text, stuck boolean, name text, title text, body text, image_url text,
   images text[], link text, countdown_until timestamptz, actions jsonb, audience jsonb,
-  scheduled_at timestamptz, created_at timestamptz, updated_at timestamptz, started_at timestamptz,
-  finished_at timestamptz, created_by_name text, sent_by_name text,
+  scheduled_at timestamptz, updated_at timestamptz, started_at timestamptz,
+  created_by_name text, sent_by_name text,
   audience_members integer, reached_members integer, devices integer, delivered integer, failed integer,
   removed integer, opened integer, fail_reasons jsonb, total_count bigint)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
@@ -435,7 +435,7 @@ BEGIN
   SELECT b.id, b.kind, b.status,
          (b.status = 'sending' AND b.started_at < now() - interval '15 minutes'),
          b.name, b.title, b.body, b.image_url, b.images, b.link, b.countdown_until, b.actions, b.audience,
-         b.scheduled_at, b.created_at, b.updated_at, b.started_at, b.finished_at,
+         b.scheduled_at, b.updated_at, b.started_at,
          (SELECT p.full_name::text FROM public.profiles p WHERE p.id = b.created_by),
          (SELECT p.full_name::text FROM public.profiles p WHERE p.id = b.sent_by),
          b.audience_members, b.reached_members, b.devices, b.delivered, b.failed, b.removed, b.opened,
