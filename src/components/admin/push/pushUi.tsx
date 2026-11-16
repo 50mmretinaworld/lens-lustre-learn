@@ -2,7 +2,8 @@
  * PUSH CENTRE (PN3) — small shared pieces: status chips, the live countdown,
  * the phone preview (new app vs older app) and the honest audience panel.
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useVisibilityInterval } from "@/lib/timers/visibilityInterval";
 import { Bell, ChevronLeft, ChevronRight, Clock, Smartphone } from "lucide-react";
 import OptimizedImage from "@/components/OptimizedImage";
 import { cn } from "@/lib/utils";
@@ -36,11 +37,8 @@ export function useCountdown(iso: string | null | undefined): string | null {
   const [now, setNow] = useState(() => Date.now());
   const end = iso ? Date.parse(iso) : NaN;
   const live = Number.isFinite(end) && end > now;
-  useEffect(() => {
-    if (!live) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [live]);
+  // P10: the one timer — stops while the page is hidden, catches up on return
+  useVisibilityInterval(() => setNow(Date.now()), live ? 1000 : null, { runOnVisible: true });
   if (!live) return null;
   const s = Math.floor((end - now) / 1000);
   const d = Math.floor(s / 86400);
@@ -65,11 +63,7 @@ interface PreviewProps {
 
 function Carousel({ images }: { images: string[] }) {
   const [i, setI] = useState(0);
-  useEffect(() => {
-    if (images.length < 2) return;
-    const t = setInterval(() => setI((x) => (x + 1) % images.length), 2500);
-    return () => clearInterval(t);
-  }, [images.length]);
+  useVisibilityInterval(() => setI((x) => (x + 1) % images.length), images.length > 1 ? 2500 : null);
   const at = Math.min(i, images.length - 1);
   return (
     <div className="relative mt-2 overflow-hidden rounded-lg bg-muted">

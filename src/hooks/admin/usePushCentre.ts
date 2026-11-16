@@ -194,8 +194,10 @@ export function usePushBroadcasts(view: PushView, page = 0, pageSize = 25) {
       return parseBroadcasts(data);
     },
     placeholderData: keepPreviousData,
-    // a sending broadcast fills in its numbers by itself
-    refetchInterval: (q) => (q.state.data?.items.some((b) => b.status === "sending" || b.status === "scheduled") ? 10_000 : false),
+    // P10: polls ONLY while a listed message is sending or scheduled, so its
+    // delivered / failed numbers fill in by themselves on an admin-only page;
+    // stops as soon as nothing is in flight. 30 s is the P10 floor.
+    refetchInterval: (q) => (q.state.data?.items.some((b) => b.status === "sending" || b.status === "scheduled") ? 30_000 : false),
     retry: (n, e) => !(e instanceof PushRpcMissing) && n < 2,
   });
 }
