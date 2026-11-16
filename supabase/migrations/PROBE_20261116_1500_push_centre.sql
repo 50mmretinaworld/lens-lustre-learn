@@ -89,7 +89,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  FOREACH n IN ARRAY ARRAY['public.push_broadcast_claim(bigint)', 'public.push_broadcast_finish(bigint, jsonb)',
+  FOREACH n IN ARRAY ARRAY['public.push_broadcast_claim(bigint)', 'public.push_broadcast_finish(bigint, jsonb, text)',
                            'public.push_broadcast_targets(bigint, bigint, integer)',
                            'public.push_audience_members(jsonb)', 'public.push_audience_check(jsonb)'] LOOP
     f := to_regprocedure(n);

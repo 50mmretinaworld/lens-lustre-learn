@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildBroadcastMessage, type BroadcastContent } from "../_shared/broadcastMessage.ts";
-import { buildFcmMessage } from "../_shared/pushMessage.ts";
+import { buildBroadcastMessage, legacyTapTarget, safeLink, type BroadcastContent } from "../_shared/broadcastMessage.ts";
+import { buildFcmMessage, isSafeImageUrl } from "../_shared/pushMessage.ts";
 import { fcmErrorCode } from "../_shared/pushReceipts.ts";
 import { sendWithRetry } from "../_shared/pushRetry.ts";
 import { isDeadToken, fcmDetailCode } from "../_shared/pushTokens.ts";
@@ -190,11 +190,14 @@ Deno.serve(async (req) => {
       if (devices.length === 0) return json({ success: true, sent: 0, devices: 0, people: 0, note: "No devices are registered yet" });
       const fcm = await fcmReady();
       const imageHosts = image_url ? laneImageHosts() : [];
+      // Owner bug 16 Nov: apps ≤ 1.2.49 ignore `link`; legacyTapTarget also sends
+      // it as a type their own table opens (see broadcastMessage.ts).
+      const tapLink = safeLink(typeof link === "string" ? link.trim() : null);
       const results = await sendEach(
         devices.map((t: { token: string }) => ({ delivery_id: null, token: t.token, caps: [] })),
         (t) => buildFcmMessage({
           token: t.token, title: String(title), body: body ? String(body) : "",
-          data: { type: "broadcast", ...(link ? { link: String(link) } : {}) },
+          data: { ...legacyTapTarget(tapLink), ...(tapLink ? { link: tapLink } : {}) },
           imageUrl: image_url ? String(image_url) : null, imageHosts,
         }),
         fcm,
@@ -213,6 +216,8 @@ Deno.serve(async (req) => {
     if (!b) return json({ error: "No such message" }, 404);
     const content = b as unknown as BroadcastContent & { status: string };
     const imageHosts = laneImageHosts();
+    // a picture this lane may not send is left out of the push — say so, never silently
+    const pictureLeftOut = !!content.image_url && !isSafeImageUrl(content.image_url, imageHosts);
 
     // ── test: the admin's own phones only ──
     if (input?.test === true) {
@@ -233,6 +238,7 @@ Deno.serve(async (req) => {
       return json({
         success: true, test: true, devices: results.length, sent: results.filter((r) => r.ok).length, removed,
         errors: [...new Set(results.filter((r) => !r.ok).map((r) => r.code))].slice(0, 3),
+        ...(pictureLeftOut ? { picture_left_out: true } : {}),
       });
     }
 
@@ -245,16 +251,23 @@ Deno.serve(async (req) => {
     }
 
     const results: DeviceResult[] = [];
+    // a short CODE for the record (push_broadcast_finish._error) — never the raw error text
     let failure: string | null = null;
+    let stage: "NOT_CONFIGURED" | "GOOGLE_SIGN_IN" | "DATABASE" | "SEND_STOPPED" = "NOT_CONFIGURED";
     try {
+      if (!Deno.env.get("FCM_SERVICE_ACCOUNT")) throw new Error("FCM_SERVICE_ACCOUNT secret is not set");
+      stage = "GOOGLE_SIGN_IN";
       const fcm = await fcmReady();
       let after = 0;
       for (;;) {
+        // 200 members a page: their devices stay far under the API's row cap
+        stage = "DATABASE";
         const { data: page, error: pErr } = await admin.rpc("push_broadcast_targets",
-          { _id: broadcastId, _after: after, _limit: 500 });
+          { _id: broadcastId, _after: after, _limit: 200 });
         if (pErr) throw new Error(pErr.message);
         const rows = (page ?? []) as Array<{ delivery_id: number; token: string; caps: string[] | null }>;
         if (rows.length === 0) break;
+        stage = "SEND_STOPPED";
         results.push(...await sendEach(
           rows.map((r) => ({ delivery_id: r.delivery_id, token: r.token, caps: r.caps })),
           (t) => buildBroadcastMessage(content, t, { imageHosts, deliveryId: t.delivery_id }),
@@ -263,8 +276,8 @@ Deno.serve(async (req) => {
         after = Math.max(...rows.map((r) => r.delivery_id));
       }
     } catch (err) {
-      failure = (err as Error)?.message ?? "send stopped";
-      console.error("send-broadcast-push stopped part-way", failure);
+      failure = stage;
+      console.error("send-broadcast-push stopped part-way", stage, (err as Error)?.message);
     }
 
     // one outcome per member receipt; a dead token is removed and counted
@@ -281,7 +294,8 @@ Deno.serve(async (req) => {
       byReceipt.set(r.delivery_id, e);
     }
     const removed = await prune(results);
-    const { error: fErr } = await admin.rpc("push_broadcast_finish", { _id: broadcastId, _results: [...byReceipt.values()] });
+    const { error: fErr } = await admin.rpc("push_broadcast_finish",
+      { _id: broadcastId, _results: [...byReceipt.values()], _error: failure });
     if (fErr) console.error("push_broadcast_finish failed", fErr.message);
 
     return json({
@@ -291,7 +305,8 @@ Deno.serve(async (req) => {
       removed,
       devices: results.length,
       members: byReceipt.size,
-      ...(failure ? { error: failure } : {}),
+      ...(failure ? { stopped: failure } : {}),
+      ...(pictureLeftOut ? { picture_left_out: true } : {}),
     });
   } catch (err) {
     console.error("send-broadcast-push error:", err);

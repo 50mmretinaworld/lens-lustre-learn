@@ -47,6 +47,49 @@ export function safeLink(link: unknown): string | null {
   return typeof link === "string" && link.length <= 300 && SAFE_LINK.test(link) ? link : null;
 }
 
+/**
+ * OWNER BUG 16 Nov 2026 — "I set /competitions and it does not open there".
+ *
+ * App builds up to 1.2.49 never read `data.link`. A tap goes through the
+ * app's own table getNotifLink(type, reference_id) (src/lib/notificationLinks.ts),
+ * and type "broadcast" is not in it, so EVERY admin push opened the dashboard.
+ * Those builds stay in members' hands for months, so the link is ALSO sent as
+ * a type (+ reference_id) that their table already understands. Builds from
+ * 1.2.50 read `link` first and never look at this.
+ *
+ * A page with no entry here still opens the dashboard on old builds — the
+ * composer says which pages are safe.
+ */
+export function legacyTapTarget(link: string | null | undefined): { type: string; reference_id?: string } {
+  const safe = safeLink(link);
+  if (!safe) return { type: "broadcast" };
+  const seg = safe.split(/[?#]/)[0].split("/").filter(Boolean);
+  /** "/x" → the list page; "/x/<id>" → that item; anything deeper → not known to old builds. */
+  const listOrItem = (type: string) =>
+    seg.length === 1 ? { type } : seg.length === 2 ? { type, reference_id: seg[1] } : { type: "broadcast" };
+  const only = (type: string) => (seg.length === 1 ? { type } : { type: "broadcast" });
+  if (seg.length === 0) return { type: "potd_featured" };                   // "/" → home
+  switch (seg[0]) {
+    case "feed": return only("new_post_from_following");
+    case "post": return seg.length === 2 ? { type: "new_post_from_following", reference_id: seg[1] } : { type: "broadcast" };
+    case "competitions": return listOrItem("new_competition");
+    case "journal": return listOrItem("journal_published");
+    case "courses": return listOrItem("course_published");
+    case "friends": return only("friend_request");
+    case "certificates": return only("badge_awarded");
+    case "discover": return only("image_reaction");
+    case "help-support": return only("ticket_reply");
+    case "wallet": return only("deposit_approved");
+    default: return { type: "broadcast" };                                  // "/dashboard" and unknown pages
+  }
+}
+
+/** Pages a tap opens on EVERY app build (the first path part). The admin page lists them. */
+export const LEGACY_TAP_PAGES = [
+  "/", "/feed", "/post", "/competitions", "/journal", "/courses", "/friends", "/certificates", "/discover",
+  "/help-support", "/wallet", "/dashboard",
+] as const;
+
 /** "Ends 18 Nov, 6:00 pm IST" — members are in India; the plain line is fixed text. */
 export function endsLine(iso: string): string | null {
   const t = Date.parse(iso);
@@ -76,7 +119,8 @@ export function buildBroadcastMessage(
       token: device.token,
       title,
       body,
-      data: { type: "broadcast", broadcast_id: String(b.id), ...(link ? { link } : {}) },
+      // type (+ reference_id): where builds ≤ 1.2.49 open on a tap; link: builds from 1.2.50
+      data: { ...legacyTapTarget(link), broadcast_id: String(b.id), ...(link ? { link } : {}) },
       imageUrl: b.image_url,
       imageHosts: opts.imageHosts,
       deliveryId: opts.deliveryId ?? null,
