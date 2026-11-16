@@ -1,6 +1,7 @@
 /**
- * A4 · under-review banner. Owner decision (2026-11-15): the member sees ONLY
- * "Your account is under review" and support@50mmretina.com — no reason, no
+ * A4 · under-review banner. Owner decision (2026-11-15, wording fixed
+ * 2026-11-16): the member sees ONLY
+ * "Your account is under review · Contact support@50mmretina.com" — no reason, no
  * dates, no admin name. Kept literal (not translated) because the Owner fixed
  * the exact words.
  *
@@ -24,6 +25,7 @@ export default function AccountStateBanner() {
     >
       {ACCOUNT_REVIEW_TEXT}
       <span aria-hidden="true"> · </span>
+      Contact{" "}
       <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">
         {SUPPORT_EMAIL}
       </a>

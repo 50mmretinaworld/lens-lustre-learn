@@ -28,7 +28,7 @@ describe("A4 under-review banner", () => {
     const b = screen.getByTestId("account-state-banner");
     expect(ACCOUNT_REVIEW_TEXT).toBe("Your account is under review");
     expect(SUPPORT_EMAIL).toBe("support@50mmretina.com");
-    expect(b.textContent).toBe("Your account is under review · support@50mmretina.com");
+    expect(b.textContent).toBe("Your account is under review · Contact support@50mmretina.com");
     expect(screen.getByRole("link").getAttribute("href")).toBe("mailto:support@50mmretina.com");
   });
 
