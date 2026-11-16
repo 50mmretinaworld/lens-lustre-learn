@@ -1,0 +1,51 @@
+name: D1 · J4 cron-engine ratchet
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CONNECTS TO NOTHING. HOLDS NO SECRET. READS supabase/migrations/ AND THE
+# ALLOW-LIST, WRITES NOTHING.
+#
+# Job Engine plan Part 1 · J4: a new pg_cron job must run through the job engine
+# (SELECT public.cron_run('<job>'); + a cron.<job> job kind). The 29 jobs that
+# ran outside it on 16 Nov 2026 are frozen in scripts/db-j4-cron-engine-allow.json;
+# that list may only shrink (compared with the PR's base branch). The live half
+# is supabase/migrations/PROBE_j4_cron_engine_live.sql. Self-test runs first (C-34).
+#
+# ⚠ NO `${{ ... }}` MAY APPEAR INSIDE ANY `run:` BLOCK — F-47's bright line.
+# ═══════════════════════════════════════════════════════════════════════════
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/db-j4-cron-engine-check.mjs'
+      - 'scripts/db-j4-cron-engine-check.test.mjs'
+      - 'scripts/db-j4-cron-engine-allow.json'
+      - 'scripts/db-p9-cron-http-check.mjs'
+      - 'scripts/db-p5-cron-cadence-check.mjs'
+      - '.github/workflows/d1-j4-cron-engine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cron-engine:
+    name: New cron jobs go through the job engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Self-test — the check catches what it must and nothing else (C-34)
+        run: node scripts/db-j4-cron-engine-check.test.mjs
+      - name: The allow-list of the base branch (the list may only shrink)
+        run: |
+          : > "$RUNNER_TEMP/j4-base-allow.json"
+          if [ -n "$GITHUB_BASE_REF" ] && git fetch --depth=1 origin "$GITHUB_BASE_REF"; then
+            git show FETCH_HEAD:scripts/db-j4-cron-engine-allow.json > "$RUNNER_TEMP/j4-base-allow.json" 2>/dev/null \
+              || { echo "base has no allow-list yet — first PR, nothing to compare"; : > "$RUNNER_TEMP/j4-base-allow.json"; }
+          fi
+      - name: The check — every cron job is on the engine or on the frozen list
+        run: node scripts/db-j4-cron-engine-check.mjs . --base "$RUNNER_TEMP/j4-base-allow.json"

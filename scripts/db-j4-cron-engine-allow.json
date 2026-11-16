@@ -1,0 +1,39 @@
+{
+  "_comment": "J4 ratchet (20261116): cron jobs allowed to run OUTSIDE the job engine. Frozen on 16 Nov 2026 from git + the live J0 inventory (production run 43860634605: 35 jobs = these 29 + job-engine-tick + 5 on cron_run). This list may only SHRINK: a new job goes through public.cron_run('<job>') and a cron.<job> job kind. Moving one of these onto the engine = remove its line in the same PR. The same names are embedded in supabase/migrations/PROBE_j4_cron_engine_live.sql (the CI check compares them).",
+  "jobs": {
+    "competition-fullsize-retire": "SQL job, 20261110_0103",
+    "emit-birthday-notifications": "SQL job, 20260804161000",
+    "first-post-reminders": "SQL job, 20261102_0200",
+    "mark-expiring-post-drafts": "SQL job, 20260812110000",
+    "mention-groups-tick": "SQL job, 20261113_0100",
+    "notification-delivery-alarm": "SQL job, 20261104_0160",
+    "notification-stray-writer-check": "SQL job, 20261104_0130",
+    "notification-weekly-summary": "SQL job, 20261104_0200",
+    "ops-monitor-tick": "SQL job, 20261103_0300",
+    "ops-video-alarms": "SQL job, 20261030_0702",
+    "p1-backfill-last-seen": "SQL job, 20260920_0001",
+    "p26-audit-retention": "SQL job, 20261031_0627",
+    "process-email-queue": "SQL tick that calls HTTP only when there is mail, 20261004_0006",
+    "process-post-jobs": "SQL job, 20261004_0002",
+    "prune-client-errors": "SQL job, 20260805030000",
+    "prune-old-notifications": "SQL job, 20260802210000",
+    "publish-scheduled-posts": "SQL tick that calls HTTP only when a post is due, 20261004_0007",
+    "purge-client-telemetry": "SQL job, 20261028_0001",
+    "purge-cron-history": "SQL job, 20261004_0004",
+    "purge-feed-signals": "SQL job, 20261018_0001",
+    "purge-user-block-notices": "SQL job, 20261005_0002",
+    "refresh-feed-scores": "SQL job, 20261018_0002",
+    "rollup-engagement-daily": "SQL job, 20260811180000",
+    "stories-cleanup": "SQL job, 20261111_0100",
+    "video-housekeeping": "SQL job, 20261005_0005",
+    "video-orphan-sweep": "SQL job, 20261030_0700",
+    "video-source-housekeeping": "SQL job, 20261012_0002",
+    "video-source-unposted-cleanup": "SQL job, 20261013_0006"
+  },
+  "outside_git": {
+    "judging-invariants-nightly": "edge call via cron_http_call (20261005_0003 moved it, created outside git); not moved in J3c because judging work is STOPPED (Owner)"
+  },
+  "dynamic_files": {
+    "supabase/migrations/20261005_0003_p9c_cron_http_into_vault.sql": "P9-c: re-schedules the six HTTP jobs onto cron_http_call by name in a loop"
+  }
+}
