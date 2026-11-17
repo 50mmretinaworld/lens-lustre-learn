@@ -288,3 +288,25 @@ describe("the depth counter stays honest", () => {
     await waitFor(() => expect(depth!()).toBe(1));
   });
 });
+
+describe("PN4 · an admin push opens its own page (link first)", () => {
+  it("opens data.link, with the feed beneath it", async () => {
+    coldStartAt("/");
+    app();
+    await waitFor(() => expect(tapListener).not.toBeNull());
+    await act(async () => { tapNotification({ type: "new_competition", link: "/competitions/spring?x=1" }); });
+    await waitFor(() => expect(where()).toBe("/competitions/spring?x=1"));
+    await press();
+    await waitFor(() => expect(where()).toBe("/feed"));
+  });
+
+  it("an address outside the site is ignored; type + reference_id decide", async () => {
+    coldStartAt("/");
+    app();
+    await waitFor(() => expect(tapListener).not.toBeNull());
+    await act(async () => {
+      tapNotification({ type: "post_comment", reference_id: "post-1", link: "//evil.example/x" });
+    });
+    await waitFor(() => expect(where()).toBe("/post/post-1"));
+  });
+});

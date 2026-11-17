@@ -45,6 +45,7 @@ import { postMedia } from "@/lib/posts/subjectMedia";
 import { fetchPostVideoMap, type FeedVideo } from "@/lib/video/postVideoRead";
 import { useNetworkQuality } from "@/hooks/core/useNetworkQuality";
 import { screenState } from "@/lib/offline/screenState";
+import PushPermissionCard from "@/components/notifications/PushPermissionCard";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -302,6 +303,9 @@ const Notifications = () => {
           {t("notifications.title", "Notifications")}
         </h1>
       </div>
+
+      {/* PN4 item 9: only in the app, only when the phone has this app's notifications off */}
+      <PushPermissionCard className="mb-4" />
 
       {screen === "loading" && (
         <p className="py-10 text-center text-xs text-muted-foreground animate-pulse" style={bodyFont}>
