@@ -1540,6 +1540,37 @@ jobs:
           done
           test "$found" = 1 || { echo "::error::ExitInfoPlugin is not in the release bundle - crash / OOM reasons would never reach Admin -> Health"; exit 1; }
 
+      # PN4 push centre (Owner 16 Nov, items 7-10): rich admin pushes are drawn by
+      # OUR service. If it, its plugin or its layouts are missing, the app still
+      # registers caps ['rich'] and members get data-only pushes nothing draws.
+      - name: Prove the push centre (rich pushes) is inside the RELEASE bundle (blocking)
+        run: |
+          set -euo pipefail
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          DEX=$(mktemp -d)
+          unzip -q -o "$AAB" 'base/dex/*.dex' -d "$DEX"
+          for c in PushRichService PushRichNotifier PushCentrePlugin; do
+            hit=""
+            for d in "$DEX"/base/dex/classes*.dex; do
+              grep -a -F -q "Lcom/fiftymmretina/app/$c;" "$d" && hit="${d#"$DEX"/}"
+            done
+            test -n "$hit" || { echo "::error::$c is not in the release bundle - rich admin pushes would never be drawn"; exit 1; }
+            echo "OK: $c is in $hit"
+          done
+          unzip -p "$AAB" base/resources.pb > /tmp/pn4-res.pb
+          for l in push_rich_big push_rich_slide; do
+            grep -a -F -q "$l" /tmp/pn4-res.pb || { echo "::error::layout $l is not in the release bundle"; exit 1; }
+            echo "OK: layout $l"
+          done
+          unzip -p "$AAB" base/manifest/AndroidManifest.xml > /tmp/pn4-manifest
+          python3 - <<'PY'
+          data = open("/tmp/pn4-manifest", "rb").read()
+          hay = data.decode("latin-1") + data.decode("utf-16-le", "ignore")
+          if "com.fiftymmretina.app.PushRichService" not in hay:
+              raise SystemExit("PushRichService is not declared in the bundled manifest - pushes would still go to the plugin's service only")
+          print("OK: PushRichService declared in the bundled manifest")
+          PY
+
       - name: Prove native debug symbols are in the bundle (blocking)
         run: |
           set -euo pipefail
