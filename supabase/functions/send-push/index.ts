@@ -2,17 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildFcmMessage } from "../_shared/pushMessage.ts";
 import { startPushReceipt, finishPushReceipt, fcmErrorCode } from "../_shared/pushReceipts.ts";
 import { sendWithRetry } from "../_shared/pushRetry.ts";
-import { cdnHost, siteOrigin } from "../_shared/laneConfig.ts";
-
-/** This lane's own hosts, from its environment. Missing config → no images (never a guess). */
-function laneImageHosts(): string[] {
-  const hosts: string[] = [];
-  for (const read of [() => cdnHost(), () => new URL(siteOrigin()).hostname,
-                      () => new URL(Deno.env.get("SUPABASE_URL") ?? "").hostname]) {
-    try { const h = read(); if (h) hosts.push(h.toLowerCase()); } catch { /* not configured on this lane */ }
-  }
-  return hosts;
-}
+import { laneImageHosts } from "../_shared/laneImageHosts.ts";
+import { isDeadToken } from "../_shared/pushTokens.ts";
 
 // Send a push notification to all of a user's registered devices via Firebase
 // Cloud Messaging HTTP v1. Auth: either an internal secret header (for calls from
@@ -171,8 +162,9 @@ Deno.serve(async (req) => {
           // Receipt keeps the HTTP status and FCM's error code only — never the
           // raw body, which can echo request details.
           lastError = `${r.status} ${fcmErrorCode(errText)}`;
-          // Token no longer valid → prune it.
-          if (r.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/i.test(errText)) stale.push(token);
+          // Token no longer valid → prune it. Only when FCM blames the TOKEN
+          // (PN1: a bad message used to remove good phones too).
+          if (isDeadToken(r.status, errText)) stale.push(token);
           console.error("FCM send failed", r.status, errText);
         }
       }
