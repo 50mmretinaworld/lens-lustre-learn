@@ -56,6 +56,22 @@ describe("rich message — builds with caps ['rich']", () => {
     expect(JSON.parse(m.data.actions)).toEqual([{ label: "Enter now", link: "/competitions/42" }]);
     expect(m.data.delivery_id).toBe("8");
   });
+  it("carries the site origin the phone opens the link on, and only a clean https origin", () => {
+    const withOrigin = (origin: string | null) =>
+      (buildBroadcastMessage(base, { token: "t", caps: ["rich"] }, { imageHosts: HOSTS, now: NOW, origin }) as {
+        data: Record<string, string>;
+      }).data.origin;
+    expect(m.data.origin).toBeUndefined();
+    expect(withOrigin("https://www.example.test")).toBe("https://www.example.test");
+    for (const bad of ["http://www.example.test", "https://www.example.test/", "https://x.test/path", "javascript:x", null]) {
+      expect(withOrigin(bad)).toBeUndefined();
+    }
+    // the plain message (old builds) never carries it — they read type + reference_id
+    const plain = buildBroadcastMessage(base, { token: "t" }, { imageHosts: HOSTS, now: NOW, origin: "https://www.example.test" }) as {
+      data: Record<string, string>;
+    };
+    expect(plain.data.origin).toBeUndefined();
+  });
   it("drops a countdown that has already ended", () => {
     const past = buildBroadcastMessage({ ...base, countdown_until: "2026-11-01T00:00:00Z" }, { token: "t", caps: ["rich"] },
       { imageHosts: HOSTS, now: NOW }) as { data: Record<string, string>; android: { ttl?: string } };

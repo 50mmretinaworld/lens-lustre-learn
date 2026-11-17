@@ -129,6 +129,15 @@ if (params.get("native") === "1") {
       App: {
         getInfo: async () => ({ build: "1095", version: "1.2.7" }),
       },
+      /**
+       * PN4 item 9 — `&pushoff=1`: the phone answers "this app's notifications
+       * are off", so the "Turn on notifications" card is photographed
+       * (tools/uishot/push-card-shots.mjs). Opt-in only: every other app-mode
+       * scene keeps its baseline. A stub, not proof the plugin works on a phone.
+       */
+      ...(params.get("pushoff") === "1"
+        ? { PushCentre: { status: async () => ({ enabled: false, rich: true }), openSettings: async () => {} } }
+        : {}),
     },
   };
 }

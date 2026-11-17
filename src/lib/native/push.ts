@@ -17,6 +17,7 @@ import { reportPushOpened } from "@/lib/notifications/pushOpened";
 
 const FILE = "src/lib/native/push.ts";
 import { isNativeCapacitorApp } from "@/lib/native/authDeepLink";
+import { pushCentre, pushStatus } from "@/lib/native/pushCentre";
 
 type PushToken = { token?: string };
 
@@ -33,7 +34,10 @@ type FirebaseMessagingPlugin = {
 
 type CapGlobal = {
   getPlatform?: () => string;
-  Plugins?: { FirebaseMessaging?: FirebaseMessagingPlugin };
+  Plugins?: {
+    FirebaseMessaging?: FirebaseMessagingPlugin;
+    App?: { getInfo?: () => Promise<{ version?: string }> };
+  };
 };
 
 const cap = (): CapGlobal | undefined =>
@@ -51,6 +55,69 @@ const platform = (): string => {
 };
 
 let started = false;
+/** The tap handler of the last init call, so a later retry routes taps the same way. */
+let lastOnOpen: ((data: Record<string, unknown>) => void) | undefined;
+
+/**
+ * PN4 · what this build can show. "rich" (live countdown, buttons, picture
+ * slides) only when the native PushRichService is in the build — the
+ * PushCentre plugin ships with it.
+ */
+async function deviceInfo(): Promise<{ version: string | null; caps: string[] }> {
+  let version: string | null = null;
+  try {
+    version = (await cap()?.Plugins?.App?.getInfo?.())?.version ?? null;
+  } catch {
+    /* unknown version is fine */
+  }
+  if (version && !/^[0-9A-Za-z._-]{1,32}$/.test(version)) version = null;
+  return { version, caps: pushCentre() ? ["rich"] : [] };
+}
+
+/**
+ * Store the token WITH what the build can show (20261116_1500). A database
+ * that does not have that function yet — or refuses the extra fields — gets
+ * the old call, so a device is never left unregistered.
+ */
+async function registerToken(token: string): Promise<void> {
+  const { version, caps } = await deviceInfo();
+  const { error } = await supabase.rpc("register_push_device" as never, {
+    _token: token,
+    _platform: platform(),
+    _app_version: version,
+    _caps: caps,
+  } as never);
+  if (!error) return;
+  await supabase.rpc("register_push_token" as never, {
+    _token: token,
+    _platform: platform(),
+  } as never);
+}
+
+/**
+ * Tell the server the member's answer, so Admin → Push Notification can say
+ * "said No" instead of guessing. Never blocks or fails setup.
+ */
+async function reportPermission(answer: "granted" | "denied"): Promise<void> {
+  try {
+    const { version } = await deviceInfo();
+    await supabase.rpc("report_push_permission" as never, {
+      _permission: answer,
+      _platform: platform(),
+      _app_version: version,
+    } as never);
+  } catch {
+    /* a report is never allowed to break push setup */
+  }
+}
+
+/**
+ * Run setup again with the same tap handler — the "Turn on notifications"
+ * card calls this when the member comes back from the phone's settings.
+ */
+export function retryPushSetup(): Promise<void> {
+  return initPushNotifications(lastOnOpen);
+}
 
 /**
  * Ask for notification permission (once), register this device's FCM token so
@@ -65,6 +132,7 @@ let started = false;
 export async function initPushNotifications(
   onOpen?: (data: Record<string, unknown>) => void,
 ): Promise<void> {
+  if (onOpen) lastOnOpen = onOpen;
   if (!isNativeCapacitorApp() || started) return;
   const fm = messaging();
   if (!fm) return; // plugin not in this build — nothing to do
@@ -72,30 +140,26 @@ export async function initPushNotifications(
   started = true;
   try {
     // Android 13+ / iOS show the OS permission prompt here. Declining is final
-    // until the user changes it in system settings, so we never re-prompt.
+    // until the user changes it in system settings, so we never re-prompt —
+    // the "Turn on notifications" card (PushPermissionCard) is the way back.
     const perm = await fm.requestPermissions();
-    if (perm?.receive !== "granted") {
+    // Android 12 and older answer "granted" even when the member blocked the
+    // app's notifications in settings; the phone's own switch is the truth.
+    const phone = await pushStatus();
+    if (perm?.receive !== "granted" || phone?.enabled === false) {
+      void reportPermission("denied");
       started = false;
       return;
     }
+    void reportPermission("granted");
 
     const { token } = await fm.getToken();
-    if (token) {
-      await supabase.rpc("register_push_token" as never, {
-        _token: token,
-        _platform: platform(),
-      } as never);
-    }
+    if (token) await registerToken(token);
 
     // FCM rotates tokens; persist the new one when it does.
     await fm.addListener("tokenReceived", async (e: Record<string, unknown>) => {
       const t = (e as { token?: string })?.token;
-      if (t) {
-        await supabase.rpc("register_push_token" as never, {
-          _token: t,
-          _platform: platform(),
-        } as never);
-      }
+      if (t) await registerToken(t);
     });
 
     // Tap on a notification → hand the payload to the caller for deep-linking.

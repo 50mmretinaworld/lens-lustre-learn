@@ -77,6 +77,20 @@ describe("appLinkTarget — link → in-app screen", () => {
     expect(t?.route).toBe("/reset-password?recovery_token=T&recovery_email=a%40b.c");
     expect(t?.tokens).toBeNull();
   });
+  it("rich push tap (PN4): the receipt is taken out of the route and handed over", () => {
+    const a = appLinkTarget("https://www.50mmretina.com/competitions/42?pn=8");
+    expect(a?.route).toBe("/competitions/42");
+    expect(a?.pushReceipt).toBe("8");
+    const b = appLinkTarget("https://www.50mmretina.com/feed?tab=new&pn=123");
+    expect(b?.route).toBe("/feed?tab=new");
+    expect(b?.pushReceipt).toBe("123");
+    // a malformed receipt is dropped from the route and never reported
+    const c = appLinkTarget("https://www.50mmretina.com/journal?pn=0x1");
+    expect(c?.route).toBe("/journal");
+    expect(c?.pushReceipt).toBeNull();
+    // ordinary links: no receipt, query untouched
+    expect(appLinkTarget("https://www.50mmretina.com/post/abc?c=1")?.pushReceipt).toBeNull();
+  });
   it("expired link goes to login", () => {
     const t = appLinkTarget("https://www.50mmretina.com/#error=access_denied&error_description=expired");
     expect(t?.route).toBe("/login");

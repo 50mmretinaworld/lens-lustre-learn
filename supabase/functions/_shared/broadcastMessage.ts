@@ -42,6 +42,8 @@ export interface BroadcastDevice {
 }
 
 const SAFE_LINK = /^\/([A-Za-z0-9_-][A-Za-z0-9/_.?=&%#-]*)?$/;
+/** https://host.tld, no path, no trailing slash — the rule PushRichNotifier.open() checks again on the phone. */
+const SAFE_ORIGIN = /^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
 
 export function safeLink(link: unknown): string | null {
   return typeof link === "string" && link.length <= 300 && SAFE_LINK.test(link) ? link : null;
@@ -103,7 +105,14 @@ export function endsLine(iso: string): string | null {
 export function buildBroadcastMessage(
   b: BroadcastContent,
   device: BroadcastDevice,
-  opts: { deliveryId?: number | null; imageHosts: readonly string[]; test?: boolean; now?: number },
+  opts: {
+    deliveryId?: number | null;
+    imageHosts: readonly string[];
+    test?: boolean;
+    now?: number;
+    /** This lane's site (canonicalOrigin()). The app opens origin + link on a tap; without it a tap only opens the app. */
+    origin?: string | null;
+  },
 ): FcmMessage | DataOnlyMessage {
   const title = (opts.test ? "Test · " : "") + b.title;
   const link = safeLink(b.link);
@@ -134,6 +143,7 @@ export function buildBroadcastMessage(
     body: b.body ?? "",
   };
   if (link) data.link = link;
+  if (typeof opts.origin === "string" && SAFE_ORIGIN.test(opts.origin)) data.origin = opts.origin;
   if (isSafeImageUrl(b.image_url, opts.imageHosts)) data.image = b.image_url as string;
   const images = (b.images ?? []).filter((u) => isSafeImageUrl(u, opts.imageHosts)).slice(0, 5);
   if (images.length) data.images = JSON.stringify(images);

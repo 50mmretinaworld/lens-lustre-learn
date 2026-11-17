@@ -968,6 +968,9 @@ jobs:
           # 1.2.50 carries A4 (#1079/#1081/#1082: "Your account is under review · Contact support@50mmretina.com" banner,
           # admin Account Review page; Owner 16 Nov "rest all approved") and A3b's delete-account request text (#1077).
           # The live account guard switch stays as it is (OFF) — it is a database switch, not part of the app.
+          # 2026-11-17: 1.2.50 re-fired (first run 43821462690 stopped at phone-check, DEPENDENCY DIED on the
+          # virtual phone — nothing handed over, number still free). Now also carries the push centre app part
+          # (PN4, #1098): PushRichService / PushRichNotifier / PushCentrePlugin + the Turn-on-notifications card.
           # 2026-11-13 (evening): bumped 1.2.48 -> 1.2.49. 1.2.48 (run 152, vc1152, d77cb59f) is spent (handed to the Owner).
           # 1.2.49 carries the ONE Trending card in the app feed below the 4th post (#1033, Owner 13 Nov "Approved. GO",
           # real renders trending-everywhere/). The app's feed videos keep starting with sound (Owner: "don't change it").
@@ -1543,6 +1546,37 @@ jobs:
             fi
           done
           test "$found" = 1 || { echo "::error::ExitInfoPlugin is not in the release bundle - crash / OOM reasons would never reach Admin -> Health"; exit 1; }
+
+      # PN4 push centre (Owner 16 Nov, items 7-10): rich admin pushes are drawn by
+      # OUR service. If it, its plugin or its layouts are missing, the app still
+      # registers caps ['rich'] and members get data-only pushes nothing draws.
+      - name: Prove the push centre (rich pushes) is inside the RELEASE bundle (blocking)
+        run: |
+          set -euo pipefail
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          DEX=$(mktemp -d)
+          unzip -q -o "$AAB" 'base/dex/*.dex' -d "$DEX"
+          for c in PushRichService PushRichNotifier PushCentrePlugin; do
+            hit=""
+            for d in "$DEX"/base/dex/classes*.dex; do
+              grep -a -F -q "Lcom/fiftymmretina/app/$c;" "$d" && hit="${d#"$DEX"/}"
+            done
+            test -n "$hit" || { echo "::error::$c is not in the release bundle - rich admin pushes would never be drawn"; exit 1; }
+            echo "OK: $c is in $hit"
+          done
+          unzip -p "$AAB" base/resources.pb > /tmp/pn4-res.pb
+          for l in push_rich_big push_rich_slide; do
+            grep -a -F -q "$l" /tmp/pn4-res.pb || { echo "::error::layout $l is not in the release bundle"; exit 1; }
+            echo "OK: layout $l"
+          done
+          unzip -p "$AAB" base/manifest/AndroidManifest.xml > /tmp/pn4-manifest
+          python3 - <<'PY'
+          data = open("/tmp/pn4-manifest", "rb").read()
+          hay = data.decode("latin-1") + data.decode("utf-16-le", "ignore")
+          if "com.fiftymmretina.app.PushRichService" not in hay:
+              raise SystemExit("PushRichService is not declared in the bundled manifest - pushes would still go to the plugin's service only")
+          print("OK: PushRichService declared in the bundled manifest")
+          PY
 
       - name: Prove native debug symbols are in the bundle (blocking)
         run: |

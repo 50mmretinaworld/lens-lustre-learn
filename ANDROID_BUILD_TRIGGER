@@ -1,3 +1,14 @@
+Build 1.2.50 - 2026-11-17 - FROM MAIN AFTER THE PUSH CENTRE (APP PART, PN4)
+
+  Owner, 17 Nov ("build now"; items 7-10 approved 16 Nov, card renders
+  "Approved"): rich admin pushes with a live countdown, up to 2 buttons and
+  picture slides (PushRichService); a tap opens the chosen page and counts the
+  open; a "Notifications are off / Turn on" card on Notifications and
+  Notification settings. Also carries everything below (A4 screens, A3b text).
+  The first 1.2.50 run (43821462690) never handed anything over: its phone
+  check stopped because the virtual phone's Play services died
+  (DEPENDENCY DIED), so 1.2.50 is still free.
+
 Build 1.2.50 - 2026-11-16 - FROM MAIN AFTER A4 ACCOUNT REVIEW SCREENS
 
   Owner, 16 Nov ("Your account is under review · Contact support@50mmretina.com";

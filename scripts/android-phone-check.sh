@@ -38,12 +38,32 @@ else
 fi
 
 # 3. A link opens INSIDE the app, and the app has no "Get the App" button.
-for path in login signup; do
+# Why Android last ended the app: the reason of the NEWEST exit record (dumpsys lists newest first).
+last_exit() { adb shell dumpsys activity exit-info "$PKG" | tr -d '\r' | grep -m1 "process=$PKG " || true; }
+
+open_link() {
   adb shell am force-stop "$PKG"
   adb logcat -c || true
-  adb shell am start -W -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://$HOST/$path" | tee "shots/open-$path.txt"
+  adb shell am start -W -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://$HOST/$1" | tee -a "shots/open-$1.txt"
   sleep 20
-  f=$(focus); echo "$f" | tee -a "shots/open-$path.txt"
+  f=$(focus); echo "$f" | tee -a "shots/open-$1.txt"
+}
+
+for path in login signup; do
+  open_link "$path"
+  # 1.2.50 run 43821462690: the app opened /signup, then Android ended it with
+  # reason=12 DEPENDENCY DIED — Google Play services' FontsProvider process on the
+  # VIRTUAL phone died and took the app with it. Not the app's fault. ONLY that
+  # system-side reason earns one retry, after Play services has had time to come
+  # back; a crash, ANR or any other exit still fails the check at once.
+  if ! echo "$f" | grep -q "$PKG"; then
+    why=$(last_exit); echo "exit: $why" | tee -a "shots/open-$path.txt"
+    if echo "$why" | grep -q "reason=12 (DEPENDENCY DIED)"; then
+      echo "::warning::/$path: the virtual phone's Play services died and Android ended the app with it (DEPENDENCY DIED) — one retry"
+      sleep 30
+      open_link "$path"
+    fi
+  fi
   shot "02-link-$path"
   if echo "$f" | grep -q "$PKG"; then
     echo "PASS: https://$HOST/$path opened in the app"

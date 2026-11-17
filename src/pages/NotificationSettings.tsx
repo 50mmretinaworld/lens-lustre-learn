@@ -12,6 +12,7 @@ import QuietHoursSetting from "@/components/notifications/QuietHoursSetting";
 import { useCentreUi } from "@/lib/notifications/centreUi";
 import { useT } from "@/i18n/I18nContext";
 import { isNativeIOSApp } from "@/lib/native/authDeepLink";
+import PushPermissionCard from "@/components/notifications/PushPermissionCard";
 
 interface ToggleRowProps {
   icon: React.ReactNode;
@@ -138,6 +139,9 @@ const NotificationSettings = () => {
               <p className="text-sm text-muted-foreground">{t("notif.subtitle")}</p>
             </div>
           </div>
+
+          {/* PN4 item 9: only in the app, only when the phone has this app's notifications off */}
+          <PushPermissionCard className="mb-6" />
 
           {isLoading ? (
             <div className="space-y-4">
