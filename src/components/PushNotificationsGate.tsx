@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/core/useAuth";
 import { getNotifLink } from "@/lib/notificationLinks";
-import { safeAppLink } from "@/lib/notifications/broadcastTap";
 import { inAppHistoryDepth } from "@/hooks/core/useAndroidBackButton";
 import { openNotificationTarget } from "@/lib/navigationContract";
 
@@ -42,7 +41,11 @@ const PushNotificationsGate = () => {
     void (async () => {
       try {
         // Dynamic import: keeps the native module out of the initial web bundle.
-        const { initPushNotifications } = await import("@/lib/native/push");
+        // safeAppLink rides along, so the link rule stays out of the entry bundle (P13).
+        const [{ initPushNotifications }, { safeAppLink }] = await Promise.all([
+          import("@/lib/native/push"),
+          import("@/lib/notifications/broadcastTap"),
+        ]);
         if (cancelled) return;
         await initPushNotifications((data) => {
           const type = typeof data?.type === "string" ? data.type : "";

@@ -1,14 +1,14 @@
 /**
  * PN4 push centre — the build step that puts the rich push service into the
  * app (scripts/android-native-plugins.mjs), and what the app tells the server
- * it can show (src/lib/native/push.ts → register_push_device caps).
+ * it can show — see pushRegisterCaps.test.ts.
  *
  * The Android project is generated in CI (`npx cap add android`), so the
  * installer is proven here against a temp project shaped like Capacitor's.
  * The plugin's build.gradle line is the real one from
  * @capacitor-firebase/messaging 8.4.0 (the version android-build.yml pins).
  */
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -141,73 +141,5 @@ describe("installPushCentre — into a generated Android project", () => {
     expect(java).toContain(`import ${PLUGIN_PUSH_SERVICE};`);
     expect(java).toMatch(/public class PushRichService extends MessagingService\b/);
     expect(java).toContain("super.onMessageReceived(message);"); // every other push still reaches the plugin
-  });
-});
-
-describe("push.ts — what this build tells the server it can show", () => {
-  const calls: Array<{ fn: string; args: Record<string, unknown> }> = [];
-  let failNew = false;
-
-  vi.mock("@/integrations/supabase/client", () => ({
-    supabase: {
-      rpc: async (fn: string, args: Record<string, unknown>) => {
-        calls.push({ fn, args });
-        if (fn === "register_push_device" && failNew) return { error: { code: "PGRST202", message: "not found" } };
-        return { error: null };
-      },
-    },
-  }));
-
-  function app({ pushCentre }: { pushCentre: boolean }) {
-    (window as unknown as { Capacitor: unknown }).Capacitor = {
-      isNativePlatform: () => true,
-      getPlatform: () => "android",
-      Plugins: {
-        App: { getInfo: async () => ({ version: "1.2.50" }) },
-        FirebaseMessaging: {
-          requestPermissions: async () => ({ receive: "granted" }),
-          getToken: async () => ({ token: "tok-1" }),
-          addListener: async () => ({ remove: () => {} }),
-          removeAllListeners: async () => {},
-          deleteToken: async () => {},
-        },
-        ...(pushCentre
-          ? { PushCentre: { status: async () => ({ enabled: true, rich: true }), openSettings: async () => {} } }
-          : {}),
-      },
-    };
-  }
-
-  afterEach(async () => {
-    const { unregisterPushNotifications } = await import("@/lib/native/push");
-    await unregisterPushNotifications();
-    delete (window as unknown as { Capacitor?: unknown }).Capacitor;
-    calls.length = 0;
-    failNew = false;
-  });
-
-  it("a build with the push centre registers caps ['rich'] and its version", async () => {
-    app({ pushCentre: true });
-    const { initPushNotifications } = await import("@/lib/native/push");
-    await initPushNotifications();
-    const reg = calls.find((c) => c.fn === "register_push_device");
-    expect(reg?.args).toMatchObject({ _token: "tok-1", _platform: "android", _app_version: "1.2.50", _caps: ["rich"] });
-    expect(calls.find((c) => c.fn === "report_push_permission")?.args).toMatchObject({ _permission: "granted" });
-  });
-
-  it("a build without it registers no caps (plain pushes only)", async () => {
-    app({ pushCentre: false });
-    const { initPushNotifications } = await import("@/lib/native/push");
-    await initPushNotifications();
-    expect(calls.find((c) => c.fn === "register_push_device")?.args).toMatchObject({ _caps: [] });
-  });
-
-  it("a database without register_push_device still gets the device (old call)", async () => {
-    app({ pushCentre: true });
-    failNew = true;
-    const { initPushNotifications } = await import("@/lib/native/push");
-    await initPushNotifications();
-    expect(calls.map((c) => c.fn)).toContain("register_push_token");
-    expect(calls.find((c) => c.fn === "register_push_token")?.args).toEqual({ _token: "tok-1", _platform: "android" });
   });
 });
