@@ -77,6 +77,27 @@ try {
   if (!(await page.locator("[data-testid='story-caption-more']").count())) fail("after 'Show less' the two-line caption with 'more' is not back");
   await page.screenshot({ path: join(OUT, "story-NEW-less-REAL.png") });
   console.log("story-NEW-less: saved");
+
+  // ROOT tag rule (Owner 18 Nov): the comment says "@[Sourav P.](a4)", the member's profile says
+  // "Sourav Pal" → the screen shows the profile's name; a member who no longer exists keeps the typed name.
+  const tagPage = await context.newPage();
+  await tagPage.goto(`${BASE}/uiharness.html?scene=screen-feed&strict=0&native=1&stories=1&storylong=1&tagrename=1`, { waitUntil: "load", timeout: 180000 });
+  await tagPage.getByText("Dipannita Sen").first().click({ timeout: 60000 });
+  await tagPage.waitForSelector("[data-testid='story-caption']", { timeout: 30000 });
+  await tagPage.getByRole("button", { name: "Pause" }).click();
+  await tagPage.waitForFunction(() => [...document.images].some((i) => /picsum/.test(i.currentSrc || i.src) && i.complete && i.naturalWidth > 600), null, { timeout: 60000 })
+    .catch(() => fail("the story photo never loaded — the picture would be black"));
+  await tagPage.waitForSelector("[data-member-tag='a4']", { timeout: 30000 });
+  await tagPage.waitForFunction(() => document.querySelector("[data-member-tag='a4']")?.textContent === "Sourav Pal", null, { timeout: 15000 })
+    .catch(() => fail("the renamed member's tag does not show the profile's current name"));
+  await tagPage.waitForTimeout(600);
+  const body = await tagPage.locator("body").innerText();
+  if (body.includes("@[")) fail("a stored mention @[…](…) is on screen (renamed-member story)");
+  if (body.includes("Sourav P.")) fail("the OLD copied name is on screen — the tag is not reading the profile");
+  if (!body.includes("@Old Friend") && !body.includes("Old Friend")) fail("a gone member's typed name is missing");
+  if (await tagPage.locator("[data-member-tag='gone-1'][href]").count()) fail("a gone member's tag is a link");
+  await tagPage.screenshot({ path: join(OUT, "story-NEW-tag-renamed-REAL.png") });
+  console.log("story-NEW-tag-renamed: saved");
   await browser.close();
 } catch (e) {
   console.error(e);

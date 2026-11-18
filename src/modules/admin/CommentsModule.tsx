@@ -12,8 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
 import type { User } from "@supabase/supabase-js";
-import { memberTextPlain } from "@/lib/memberText";
 import AdminCommentSuggestions from "@/components/admin/AdminCommentSuggestions";
+import MemberText from "@/components/MemberText";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 
@@ -160,7 +160,7 @@ const CommentsModule = ({ user }: Props) => {
                     </span>
                   </div>
                   <p className="text-sm text-foreground/85 leading-relaxed mb-1.5 line-clamp-3" style={{ fontFamily: "var(--font-body)" }}>
-                    {memberTextPlain(c.content)}
+                    <MemberText text={c.content} />
                   </p>
                   {c.context_title && (
                     <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
