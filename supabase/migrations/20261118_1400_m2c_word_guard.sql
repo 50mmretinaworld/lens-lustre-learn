@@ -32,6 +32,9 @@ BEGIN
   IF to_regprocedure('public.message_admin_check(text)') IS NULL THEN
     RAISE EXCEPTION 'M2C-PRE-001: M2b (20261118_1300) is not applied';
   END IF;
+  IF to_regprocedure('public.ops_alarm_set(text,boolean,text,jsonb)') IS NULL THEN
+    RAISE EXCEPTION 'M2C-PRE-003: ops_alarm_set is missing';
+  END IF;
   IF to_regprocedure('public.message_admin_word_add(text,text,text,text,text)') IS NOT NULL THEN
     RAISE EXCEPTION 'M2C-PRE-002: word guard already installed — not re-applying';
   END IF;
@@ -79,10 +82,12 @@ BEGIN
   IF NOT FOUND THEN RETURN 'ok'; END IF;
   IF _hit.action = 'help' THEN
     INSERT INTO public.message_guard_events (user_id, rule_id, action) VALUES (_uid, _hit.id, 'help');
-    INSERT INTO public.admin_notifications (type, title, message, reference_id)
-    VALUES ('message_help', 'A member may need help',
-            'The messages word guard flagged a self-harm phrase from user ' || _uid::text || '. Please review and reach out. (No message text is attached.)',
-            _uid);
+    -- the alert goes through the ops alarm channel (never a direct write to the notification tables:
+    -- the N5 ratchet forbids it). One open alarm 'messages:help'; each hit is also a message_guard_events row.
+    PERFORM public.ops_alarm_set('messages:help', true,
+      format('Messages word guard: %s self-harm hit(s) in the last 24 hours — review message_guard_events',
+             (SELECT count(*) FROM public.message_guard_events e WHERE e.action = 'help' AND e.created_at > now() - interval '24 hours')),
+      jsonb_build_object('latest_user_id', _uid, 'at', now()));
   END IF;
   RETURN _hit.action;
 END

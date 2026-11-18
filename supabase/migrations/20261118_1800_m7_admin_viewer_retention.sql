@@ -140,6 +140,10 @@ BEGIN
   PERFORM public.ops_alarm_set('messages:admin_reads', _firing,
     CASE WHEN _firing THEN format('One admin opened %s different private chats in 24 hours', _w.chats) ELSE 'Admin chat reads are normal' END,
     CASE WHEN _firing THEN jsonb_build_object('admin_id', _w.admin_id, 'chats_24h', _w.chats) ELSE '{}'::jsonb END);
+  -- the word guard's self-harm alarm closes by itself once 24 hours pass without a hit
+  IF NOT EXISTS (SELECT 1 FROM public.message_guard_events e WHERE e.action = 'help' AND e.created_at > now() - interval '24 hours') THEN
+    PERFORM public.ops_alarm_set('messages:help', false, 'No self-harm hits in the last 24 hours', '{}'::jsonb);
+  END IF;
 END
 $fn$;
 

@@ -3,7 +3,7 @@
 -- Before 20261118_1400: FAIL (message_admin_word_add missing). After: M2c PASS.
 --   W1  block word → refused MSG-060, nothing stored
 --   W2  hold word → stored as 'held', invisible to the receiver, guard event written
---   W3  help word → delivered, help = true, guard event + admin alert, no message text in the alert
+--   W3  help word → delivered, help = true, guard event + ops alarm 'messages:help', no message text in the alarm
 --   W4  strictest hit wins (block beats help in one text); whole-word match ("skill" is not "kill you"); case-insensitive
 --   W5  non-ASCII phrase matches as a phrase; a regex-looking rule is only plain text
 --   W6  admin can add / switch off a rule with a reason (logged); a member cannot
@@ -93,7 +93,7 @@ BEGIN
   IF _r NOT LIKE '%"status": "held"%' THEN _fail := _fail || ('W2 hold word not held: ' || _r); END IF;
 
   -- W3 help
-  SELECT count(*) INTO _a0 FROM public.admin_notifications WHERE type = 'message_help';
+  _a0 := 0;
   PERFORM set_config('request.jwt.claims', json_build_object('sub', _m1, 'role', 'authenticated')::text, true);
   PERFORM set_config('request.jwt.claim.sub', _m1::text, true);
   _r := public.message_send(_m2, 'I want to commit suicide', gen_random_uuid())::text;
@@ -101,10 +101,9 @@ BEGIN
   IF _r NOT LIKE '%"help": true%' OR _r NOT LIKE '%"status": "sent"%' THEN _fail := _fail || ('W3 help word: expected delivered + help flag: ' || _r); END IF;
   SELECT count(*) INTO _n FROM public.message_guard_events WHERE user_id = _m1 AND action = 'help';
   IF _n <> 1 THEN _fail := _fail || ('W3 expected 1 help event, got ' || _n); END IF;
-  SELECT count(*) INTO _n FROM public.admin_notifications WHERE type = 'message_help';
-  IF _n <> _a0 + 1 THEN _fail := _fail || 'W3 admin alert not written'; END IF;
-  IF EXISTS (SELECT 1 FROM public.admin_notifications WHERE type = 'message_help' AND message ILIKE '%commit suicide%') THEN
-    _fail := _fail || 'W3 alert contains the message text';
+  IF NOT EXISTS (SELECT 1 FROM public.ops_alarms WHERE alarm_key = 'messages:help' AND closed_at IS NULL) THEN _fail := _fail || 'W3 help alarm not opened'; END IF;
+  IF EXISTS (SELECT 1 FROM public.ops_alarms WHERE alarm_key = 'messages:help' AND (summary || coalesce(detail::text, '')) ILIKE '%commit suicide%') THEN
+    _fail := _fail || 'W3 alarm contains the message text';
   END IF;
 
   -- W2b held message hidden from the receiver (planted by the service path through the real door's status rule)
