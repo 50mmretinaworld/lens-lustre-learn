@@ -48,6 +48,10 @@ export const queryKeys = {
   accountReviews: () => ["account-reviews"] as const,
   /** A4: one member's state log — rpc admin_account_state_history(_user_id). */
   accountStateHistory: (userId: string) => ["account-state-history", userId] as const,
+  /** J5a: admin Job Engine page — rpc admin_jobs_overview() (useAdminJobs). */
+  adminJobsOverview: () => ["admin-jobs-overview"] as const,
+  /** J5a: recent jobs — rpc admin_jobs_list(_status, _kind). */
+  adminJobsList: (status: string, kind: string) => ["admin-jobs-list", status, kind] as const,
   /** Admin → Users table — rpc admin_search_users_v4 + admin_user_facets (useAdminMembers). */
   adminMembers: () => ["admin-members"] as const,
   adminPush: () => ["admin-push"] as const,
