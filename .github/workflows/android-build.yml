@@ -984,8 +984,12 @@ jobs:
           # 2026-11-12: bumped 1.2.45 -> 1.2.46. 1.2.45 (run 149, vc1149) is LIVE on Play. 1.2.46 carries app-first links
           # (Owner 12 Nov: every 50mmretina.com link opens the app; verified https filter for www + assetlinks.json) and
           # the new phone-check job (virtual phone proves the link opens the app before the Owner uploads). No switch changed.
-          sed -i 's/versionName "1.0"/versionName "1.2.50"/' android/app/build.gradle
-          echo "versionCode=${VC} versionName=1.2.50 (1.2.49 run 153 vc1153 is spent - handed to the Owner)"
+          # 2026-11-18: bumped 1.2.50 -> 1.2.51. 1.2.50 (run 155, vc1155) is LIVE on Play. 1.2.51 carries today's three
+          # Owner-approved changes: the story caption (2 lines + more / Show less, #1111), member tags read from the
+          # member's profile everywhere (#1110/#1114), and photography suggestions under the comment box (#1115).
+          # Owner 18 Nov: "all approved go ahead", "build the App". No switch changed.
+          sed -i 's/versionName "1.0"/versionName "1.2.51"/' android/app/build.gradle
+          echo "versionCode=${VC} versionName=1.2.51 (1.2.50 run 155 vc1155 is spent - on Play)"
           grep -E "versionCode|versionName" android/app/build.gradle
           cat android/variables.gradle
           # S11: prove both edits landed — exactly one versionCode, the derived
