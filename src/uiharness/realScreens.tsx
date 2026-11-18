@@ -501,4 +501,9 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessAdminJobs?: boolean }).__harnessAdminJobs = true;
     return screen(<AdminPanel />, "/admin/jobs", "/admin/*");
   },
+  /** Admin → Comments: the "Suggestions under the comment box" editor (Owner 18 Nov 2026). */
+  "screen-admin-comments": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    return screen(<AdminPanel />, "/admin/comments", "/admin/*");
+  },
 };

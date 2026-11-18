@@ -12,13 +12,14 @@
  * to `hideComposer`, this is what the caller renders instead, and the two are
  * expected to be visually identical.
  */
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import MentionInput from "@/components/MentionInput";
 import { REPLY_PREVIEW_MAX, type ReplyTarget } from "@/components/comments/replyTarget";
 import MemberText from "@/components/MemberText";
 import { Avatar } from "@/components/comments/CommentThread";
 import { COMMENT_PLACEHOLDER } from "@/components/comments/CommentThread";
+const CommentSuggestionChips = lazy(() => import("@/components/comments/CommentSuggestionChips"));
 
 /**
  * THE QUICK-REACTION ROW.
@@ -131,13 +132,25 @@ const CommentComposer = ({
    * limit the input enforces; an emoji that would breach it is dropped rather
    * than silently truncating the member's sentence to make room for it.
    */
-  const appendEmoji = (char: string) => {
+  const appendEmoji = (char: string, spaced = false) => {
     if (submitting) return;
-    setValue((current) => (current.length + char.length > maxLength ? current : current + char));
+    setValue((current) => {
+      // A suggested phrase (spaced) goes after a space, never glued to the last word.
+      const add = spaced && current && !/\s$/.test(current) ? ` ${char}` : char;
+      return current.length + add.length > maxLength ? current : current + add;
+    });
   };
 
   return (
     <div className={className}>
+      {quickReactions && (
+        /* Owner 18 Nov: photography phrases (src/lib/comments/photoSuggestions.ts) —
+           one row that scrolls sideways; a tap adds the words to the box.
+           Lazy: the phrases stay out of the entry bundle (P13). */
+        <Suspense fallback={null}>
+          <CommentSuggestionChips onPick={(phrase) => appendEmoji(phrase, true)} disabled={submitting} />
+        </Suspense>
+      )}
       {quickReactions && (
         <div
           className="mb-1.5 flex items-center gap-0.5"

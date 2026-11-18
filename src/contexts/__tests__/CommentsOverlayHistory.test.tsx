@@ -45,6 +45,7 @@ vi.mock("@/hooks/feed/usePostComments", () => ({
     deleteComment: vi.fn(), toggleLike: vi.fn(), togglePin: vi.fn(), reportComment: vi.fn(), reload: vi.fn(),
   }),
 }));
+vi.mock("@/hooks/core/useCommentSuggestions", () => ({ useCommentSuggestions: () => [] })); // no QueryClientProvider here; the phrases are not what this test is about
 vi.mock("@/hooks/core/useBlockedUsers", () => ({
   useBlockedUsers: () => ({
     blockedIds: new Set<string>(), blockedRows: [], isBlocked: () => false, block: () => {},
