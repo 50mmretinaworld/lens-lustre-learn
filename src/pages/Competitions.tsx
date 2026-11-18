@@ -101,13 +101,14 @@ const Competitions = () => {
                   className="group block h-full border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden rounded-xl md:rounded-2xl hover:shadow-2xl hover:shadow-primary/5"
                 >
                   {/* Image with hover-reveal overlay */}
-                  <div className="relative aspect-[2/3] overflow-hidden bg-muted">
+                  {/* 4:5 = same frame as a feed photo; the poster is fitted whole (object-contain), never cut. */}
+                  <div className="relative aspect-[4/5] overflow-hidden bg-muted">
                     {comp.cover_image_url ? (
                       <CoverImage
                         src={comp.cover_image_url}
                         alt={comp.title}
                         sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-data-[expanded=true]:scale-110"
+                        className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110 group-data-[expanded=true]:scale-110"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
