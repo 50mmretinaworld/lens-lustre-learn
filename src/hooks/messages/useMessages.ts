@@ -8,20 +8,21 @@
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/core/useAuth";
-import { queryKeys } from "@/lib/queryKeys";
+import { messageKeys } from "@/lib/messages/keys";
 import {
   acceptRequest, declineRequest, fetchConversations, fetchThread,
   markConversationRead, newClientMsgId, sendMessage, sendPhotos, setConversationMuted,
   type MessageFolder, type SendResult,
 } from "@/lib/messages/api";
 
-// The two top-bar hooks live in useMessagesNav.ts (the first download); re-exported so the pages import one place.
-export { useMessagingAllowed, useUnreadCounts } from "./useMessagesNav";
+// The top-bar hook (useMessagingAllowed, first download) and the badge hook are re-exported so the pages import one place.
+export { useMessagingAllowed } from "./useMessagingAllowed";
+export { useUnreadCounts } from "./useUnreadCounts";
 
 export function useConversations(folder: MessageFolder) {
   const { user, loading } = useAuth();
   return useQuery({
-    queryKey: queryKeys.messageConversations(user?.id ?? "", folder),
+    queryKey: messageKeys.conversations(user?.id ?? "", folder),
     queryFn: () => fetchConversations(folder),
     enabled: !!user && !loading,
     staleTime: 10_000,
@@ -33,7 +34,7 @@ export function useConversations(folder: MessageFolder) {
 export function useThread(conversationId: string | null) {
   const { user, loading } = useAuth();
   return useQuery({
-    queryKey: queryKeys.messageThread(conversationId ?? ""),
+    queryKey: messageKeys.thread(conversationId ?? ""),
     queryFn: () => fetchThread(conversationId as string),
     enabled: !!user && !loading && !!conversationId,
     staleTime: 5_000,

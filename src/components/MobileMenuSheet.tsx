@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Bell, ChevronRight, MessageCircle, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUnreadCounts } from "@/hooks/messages/useUnreadCounts";
 
 /**
  * STYLE 2 · BOTTOM DOCK — the sheet ☰ opens (Owner-approved 8 Nov 2026,
@@ -17,14 +18,16 @@ import { motion } from "framer-motion";
 const BRAND = "bg-gradient-to-br from-primary to-amber-400";
 const hf = { fontFamily: "var(--font-heading)" };
 
-export default function MobileMenuSheet({ unread, onClose, onNotifications, onSearch, onMessages, messageUnread = 0 }: {
+export default function MobileMenuSheet({ unread, onClose, onNotifications, onSearch, onMessages }: {
   unread: number;
   onClose: () => void;
   onNotifications: () => void;
   onSearch: () => void;
   onMessages?: () => void;
-  messageUnread?: number;
 }) {
+  // the sheet is lazy, so the messages count is read here and not in the first download
+  const mu = useUnreadCounts();
+  const messageUnread = mu.inbox + mu.requests;
   useEffect(() => {
     const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", k);

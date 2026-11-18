@@ -151,7 +151,8 @@ export async function fetchThread(conversationId: string, beforeId: number | nul
   return parseThread(data);
 }
 // fetchUnread / fetchMessagingAllowed live in ./nav (the top bar needs them in the first download)
-export { fetchUnread, fetchMessagingAllowed } from "./nav";
+export { fetchMessagingAllowed } from "./nav";
+export { fetchUnread } from "./unread";
 
 export async function sendMessage(to: string, body: string, clientMsgId: string): Promise<SendResult> {
   const { data, error } = await rpc("message_send", { _to: to, _body: body, _client_msg_id: clientMsgId });

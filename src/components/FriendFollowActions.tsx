@@ -1,6 +1,6 @@
 import { UserPlus, UserMinus, UserCheck, Users, Heart, Clock, MessageCircle } from "lucide-react";
 import PendingMark from "@/components/offline/PendingMark";
-import { useMessagingAllowed } from "@/hooks/messages/useMessagesNav";
+import { useMessagingAllowed } from "@/hooks/messages/useMessagingAllowed";
 import { useFriendFollow } from "@/hooks/social/useFriendFollow";
 import { useNavigate } from "react-router-dom";
 import { useConnections, type ConnectionKind } from "@/components/ConnectionsSheet";
