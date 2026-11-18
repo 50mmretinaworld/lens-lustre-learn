@@ -291,8 +291,8 @@ const CompetitionsModule = ({ user }: Props) => {
         category: data.category || "General", cover_image_url: data.cover_image_url || "",
         entry_fee: String(Math.min(parseFloat(String(data.entry_fee || 0)), 10000)),
         prize_info: data.prize_info || "",
-        max_entries_per_user: String(Math.max(1, Math.min(parseInt(String(data.max_entries_per_user || 1)), 50))),
-        max_photos_per_entry: String(Math.max(1, Math.min(parseInt(String(data.max_photos_per_entry || 5)), 20))),
+        max_entries_per_user: String(Math.max(0, Math.min(Number(data.max_entries_per_user ?? 1) || 0, 50))),
+        max_photos_per_entry: String(Math.max(0, Math.min(Number(data.max_photos_per_entry ?? 5) || 0, 20))),
         starts_at: data.starts_at ? data.starts_at.slice(0, 16) : "",
         ends_at: data.ends_at ? data.ends_at.slice(0, 16) : "",
         voting_ends_at: data.voting_ends_at ? data.voting_ends_at.slice(0, 16) : "",
@@ -314,10 +314,13 @@ const CompetitionsModule = ({ user }: Props) => {
     if (form.title.trim().length > 200) { toast({ title: t("cm.titleLimit"), variant: "destructive" }); return; }
     const entryFee = parseFloat(form.entry_fee) || 0;
     if (entryFee < 0 || entryFee > 10000) { toast({ title: t("cm.feeRange"), variant: "destructive" }); return; }
-    const maxEntries = parseInt(form.max_entries_per_user) || 1;
-    if (maxEntries < 1 || maxEntries > 50) { toast({ title: t("cm.maxEntriesRange"), variant: "destructive" }); return; }
-    const maxPhotos = parseInt(form.max_photos_per_entry) || 5;
-    if (maxPhotos < 1 || maxPhotos > 20) { toast({ title: t("cm.maxPhotosRange"), variant: "destructive" }); return; }
+    // 0 is a real value: it closes submissions (no Submit button) while the competition stays announced.
+    const parsedEntries = parseInt(form.max_entries_per_user);
+    const maxEntries = Number.isNaN(parsedEntries) ? 1 : parsedEntries;
+    if (maxEntries < 0 || maxEntries > 50) { toast({ title: t("cm.maxEntriesRange"), variant: "destructive" }); return; }
+    const parsedPhotos = parseInt(form.max_photos_per_entry);
+    const maxPhotos = Number.isNaN(parsedPhotos) ? 5 : parsedPhotos;
+    if (maxPhotos < 0 || maxPhotos > 20) { toast({ title: t("cm.maxPhotosRange"), variant: "destructive" }); return; }
 
     const startDate = new Date(form.starts_at);
     const endDate = new Date(form.ends_at);
