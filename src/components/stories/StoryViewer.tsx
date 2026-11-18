@@ -43,6 +43,7 @@ import { memberPath } from "@/lib/urlHelpers";
 import StoryHighlightPicker from "./StoryHighlightPicker";
 import { CommentFloatList } from "@/components/comments/CommentThread";
 import RichContentRenderer from "@/components/RichContentRenderer";
+import StoryCaption from "@/components/stories/StoryCaption";
 import { postPath } from "@/lib/posts/postPath";
 
 const FILE = "src/components/stories/StoryViewer.tsx";
@@ -105,7 +106,7 @@ interface FrameProps {
   onNext: () => void;
   onHold: (held: boolean) => void;
   /** Owner 7 Nov: the owner taps 👁 / 💬 for the full lists */
-  onOpenSheet: (which: "viewers" | "comments") => void;
+  onOpenSheet: (which: "viewers" | "comments" | "caption") => void;
   /** the floating comments reached their top: load older ones */
   onOlder: () => void;
   /** a panel drawn over this story (Seen by / All comments) */
@@ -208,9 +209,11 @@ export function StoryFrame(p: FrameProps) {
         </div>
       </div>
 
+      {/* Owner 18 Nov: a dark fade under the text, so it reads on a bright photo too */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
       <div className="absolute inset-x-4 bottom-4 space-y-3 text-white">
         <CommentFloatList comments={p.comments} on={scrollOlder(p.onOlder)} />
-        {!own && story?.caption && <p className="text-[15px] font-medium drop-shadow"><RichContentRenderer content={story.caption} /></p>}
+        {!own && story?.caption && <StoryCaption caption={story.caption} onMore={() => p.onOpenSheet("caption")} />}
         {story?.post_id && (
           <button type="button" onClick={p.onViewPost}
             className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1.5 text-sm font-semibold backdrop-blur">
@@ -385,7 +388,7 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
   const [picker, setPicker] = useState(false);
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [likedLocal, setLikedLocal] = useState<Record<string, boolean>>({});
-  const [sheet, setSheet] = useState<null | "viewers" | "comments">(null);
+  const [sheet, setSheet] = useState<null | "viewers" | "comments" | "caption">(null);
   const olderDone = useRef(false);
   const olderBusy = useRef(false);
   const firstOpen = useRef(true);
@@ -683,6 +686,13 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
           {comments.length > 0
             ? <CommentFloatList comments={comments} tall on={scrollOlder(() => void loadOlder())} />
             : <p className="text-sm text-white/70">No comments yet.</p>}
+        </StorySheet>
+      )}
+      {sheet === "caption" && story?.caption && (
+        <StorySheet title={person.name} onClose={() => setSheet(null)}>
+          <p data-testid="story-caption-full" className="whitespace-pre-line break-words text-[15px] leading-relaxed">
+            <RichContentRenderer content={story.caption} />
+          </p>
         </StorySheet>
       )}
     </StoryFrame>

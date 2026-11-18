@@ -157,6 +157,7 @@ const gu: Dict = {
   "notif.title": "સૂચના સેટિંગ્સ",
   "notif.subtitle": "તમે શેના વિશે સૂચના મેળવવા માંગો છો તે પસંદ કરો",
   "notif.alwaysOn": "હંમેશા ચાલુ",
+  "story.more": "વધુ જુઓ",
   "push.off.title": "સૂચનાઓ બંધ છે",
   "push.off.body": "ટિપ્પણીઓ, લાઇક્સ અને સ્પર્ધાઓ વિશે જાણવા માટે તેમને ચાલુ કરો.",
   "push.off.button": "ચાલુ કરો",
