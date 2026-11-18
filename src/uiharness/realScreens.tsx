@@ -503,6 +503,11 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessAdminJobs?: boolean }).__harnessAdminJobs = true;
     return screen(<AdminPanel />, "/admin/jobs", "/admin/*");
   },
+  /** Another member's wall for a signed-in member who may message: the Message button beside Follow. */
+  "screen-wall-messages": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<PublicProfile />, "/profile/22222222-2222-4222-8222-222222222222", "/profile/:userId");
+  },
   /** Messages inbox (Messages + Requests tabs), the REAL page with the synthetic sample (messagesSample.ts). */
   "screen-messages": () => {
     (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;

@@ -33,7 +33,7 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
-import { messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
+import { messagesFlag, messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
   HARNESS_USER_ID, fixtureImage,
   adCreatives, categories, certificates, dashboardInit, dbAuditLogs, faqEntries, featuredArtists, follows, heroBanners,
@@ -335,7 +335,7 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_jobs_list: (b) => (adminJobsSampleOn() ? sampleJobsList(b) : []),
   // Messages (screen-messages …). EVERY signed-in scene asks message_allowed_me / message_unread_counts (top bar), so they
   // answer in every scene: "not allowed, nothing unread" unless the messages sample is on.
-  message_allowed_me: () => messagesSampleOn(),
+  message_allowed_me: () => messagesSampleOn() && !messagesFlag("sendoff"),
   message_unread_counts: () => (messagesSampleOn() ? sampleUnread() : { inbox: 0, requests: 0 }),
   message_my_conversations: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
   message_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),
@@ -343,7 +343,7 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   message_accept_request: () => true,
   message_decline_request: () => true,
   message_set_muted: () => true,
-  message_send: () => ({ message_id: 999, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: false }),
+  message_send: () => ({ message_id: 999, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: messagesFlag("help") }),
   message_send_photo: () => ({ message_id: 1000, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: false }),
   my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
   admin_list_account_reviews: () => (reviewSampleOn() ? [
@@ -658,6 +658,12 @@ export const fixtureRoutes: FakeRoute[] = [
     const table = m[1];
     // ?stories=1 only: the profile's highlights row for the Stories renders.
     if (table === "highlights" && storySampleOn()) return countable(sampleHighlights(), method);
+    // Messages sample: the harness member follows the second member, so the Message button shows on that wall.
+    if (table === "follows" && messagesSampleOn()) {
+      const rows = [...((TABLES.follows as unknown[] | undefined) ?? []), { id: "f-msg-1", follower_id: HARNESS_USER_ID, following_id: profiles[1].id, created_at: "2026-11-01T10:00:00.000Z" }];
+      const matched = applyFilters(rows, params);
+      return countable(narrow(matched, params) as unknown[], method, matched.length);
+    }
     // ?tagrename=1: the renamed member's profile (storySample.ts) — the tag shows THIS name.
     if (table === "profiles_public_data" && tagRenameOn()) return countable([...profilesPublicData, ...sampleTagProfiles()], method);
     // Admin → Users sample: the members' roles, badges and activity rows.

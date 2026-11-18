@@ -40,8 +40,22 @@ async function waitForServer() {
 const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 390, height: 844 };
 
-/** [file, scene, viewport, wait-for testid, steps(page)] */
+/** [file, scene(+query), viewport, wait-for testid, steps(page)] */
 const SHOTS = [
+  ["menu-phone", "screen-messages", PHONE, "conversation-row", async (p) => {
+    await p.getByRole("button", { name: /^Menu/ }).first().click();
+    await p.getByRole("dialog", { name: "Menu" }).waitFor({ timeout: 30000 });
+    await p.waitForTimeout(900);
+  }],
+  ["profile-button-desktop", "screen-wall-messages", DESKTOP, "message-btn", null],
+  ["profile-button-phone", "screen-wall-messages", PHONE, "message-btn", null],
+  ["chat-helpline-phone", "screen-message-thread&help=1", PHONE, "bubble-mine", async (p) => {
+    await p.getByLabel("Message…").fill("I feel like I want to die");
+    await p.getByRole("button", { name: "Send" }).click();
+    await p.getByTestId("helpline-card").waitFor({ timeout: 30000 });
+    await p.waitForTimeout(600);
+  }],
+  ["chat-reading-only-phone", "screen-message-thread&sendoff=1", PHONE, "send-off-note", null],
   ["inbox-desktop", "screen-messages", DESKTOP, "conversation-row", null],
   ["inbox-phone", "screen-messages", PHONE, "conversation-row", null],
   ["requests-phone", "screen-messages", PHONE, "conversation-row", async (p) => { await p.getByRole("tab", { name: /Requests/ }).click(); await p.waitForTimeout(800); }],
@@ -60,7 +74,7 @@ try {
     const missing = [];
     page.on("console", (m) => { if (/NO FIXTURE/.test(m.text())) missing.push(m.text().slice(0, 160)); });
     await page.goto(`${BASE}/uiharness.html?scene=${scene}&strict=0`, { waitUntil: "load", timeout: 180000 });
-    await page.waitForSelector(`[data-testid='${testid}']`, { timeout: 60000 });
+    await page.waitForSelector(`[data-testid='${testid}']:visible`, { timeout: 60000 });
     await page.waitForTimeout(1500);
     if (steps) await steps(page);
     await page.screenshot({ path: join(OUT, `messages-${name}-REAL.png`), fullPage: false });

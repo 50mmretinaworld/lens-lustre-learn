@@ -68,7 +68,7 @@ export default function MessageThread() {
   const lastMarked = useRef<number | null>(null);
 
   const newestId = messages.length ? messages[messages.length - 1].id : null;
-  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [newestId]);
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [newestId, help]);
   useEffect(() => {
     if (convId && newestId !== null && lastMarked.current !== newestId) {
       lastMarked.current = newestId;

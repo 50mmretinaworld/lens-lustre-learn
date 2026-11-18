@@ -10,6 +10,10 @@ export function messagesSampleOn(): boolean {
   return (globalThis as { __harnessMessages?: boolean }).__harnessMessages === true;
 }
 
+/** ?sendoff=1 → the member may read but not send; ?help=1 → the next send answers with the helpline flag. */
+export const messagesFlag = (name: string): boolean =>
+  typeof location !== "undefined" && new URLSearchParams(location.search).get(name) === "1";
+
 const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
 const person = (i: number) => {
   const p = profiles[i % profiles.length];
