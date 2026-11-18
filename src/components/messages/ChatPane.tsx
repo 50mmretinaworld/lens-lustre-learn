@@ -4,7 +4,8 @@
  * same text reuses its message id, so the server stores it once. Photos are re-encoded to WebP in the browser first.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import ProfileLink from "@/components/ProfileLink";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, Loader2, SendHorizontal, Smile, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
@@ -152,9 +153,9 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           {person?.username && <p className="truncate text-xs text-muted-foreground">@{person.username}</p>}
         </div>
         {otherId && (
-          <Link to={`/profile/${otherId}`} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
+          <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
             <UserRound className="h-5 w-5" />
-          </Link>
+          </ProfileLink>
         )}
       </header>
 
