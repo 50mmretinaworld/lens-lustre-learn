@@ -10,36 +10,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/core/useAuth";
 import { queryKeys } from "@/lib/queryKeys";
 import {
-  acceptRequest, declineRequest, fetchConversations, fetchMessagingAllowed, fetchThread, fetchUnread,
+  acceptRequest, declineRequest, fetchConversations, fetchThread,
   markConversationRead, newClientMsgId, sendMessage, sendPhotos, setConversationMuted,
   type MessageFolder, type SendResult,
 } from "@/lib/messages/api";
 
-/** Whether the Message button / inbox entry should show for this member (the server still refuses a send). */
-export function useMessagingAllowed(): boolean {
-  const { user, loading } = useAuth();
-  const { data } = useQuery({
-    queryKey: queryKeys.messageAllowed(user?.id ?? ""),
-    queryFn: fetchMessagingAllowed,
-    enabled: !!user && !loading,
-    staleTime: 60_000,
-  });
-  return !!user && data === true;
-}
-
-export function useUnreadCounts() {
-  const { user, loading } = useAuth();
-  const q = useQuery({
-    queryKey: queryKeys.messageUnread(user?.id ?? ""),
-    queryFn: fetchUnread,
-    enabled: !!user && !loading,
-    staleTime: 15_000,
-    // P10: 45 s, only while the tab is visible (react-query pauses hidden tabs). The unread badge is
-    // the only live number on the nav; a push covers a member who is away, so a slower poll is enough.
-    refetchInterval: 45_000,
-  });
-  return q.data ?? { inbox: 0, requests: 0 };
-}
+// The two top-bar hooks live in useMessagesNav.ts (the first download); re-exported so the pages import one place.
+export { useMessagingAllowed, useUnreadCounts } from "./useMessagesNav";
 
 export function useConversations(folder: MessageFolder) {
   const { user, loading } = useAuth();

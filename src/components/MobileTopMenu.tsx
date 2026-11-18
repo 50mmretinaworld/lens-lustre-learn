@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/core/useAuth";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
 import { useNotificationsQuery } from "@/hooks/notifications/useNotificationsQuery";
-import { useMessagingAllowed, useUnreadCounts } from "@/hooks/messages/useMessages";
+import { useMessagingAllowed, useUnreadCounts } from "@/hooks/messages/useMessagesNav";
 
 /** GlobalSearch listens for this and opens its sheet (its own icon is hidden on phones). */
 export const OPEN_SEARCH_EVENT = "app:open-search";

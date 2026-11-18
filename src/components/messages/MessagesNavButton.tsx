@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
-import { useMessagingAllowed, useUnreadCounts } from "@/hooks/messages/useMessages";
+import { useMessagingAllowed, useUnreadCounts } from "@/hooks/messages/useMessagesNav";
 
 /**
  * The desktop top-bar entry to private messages, next to the bell. It renders only for a

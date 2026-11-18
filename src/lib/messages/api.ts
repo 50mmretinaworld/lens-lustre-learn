@@ -150,16 +150,8 @@ export async function fetchThread(conversationId: string, beforeId: number | nul
   if (error) throw new Error(error.message ?? "message_thread failed");
   return parseThread(data);
 }
-export async function fetchUnread(): Promise<{ inbox: number; requests: number }> {
-  const { data, error } = await rpc("message_unread_counts");
-  if (error) return { inbox: 0, requests: 0 };
-  return parseUnread(data);
-}
-/** Whether the Message button should show. The server refuses a send anyway. */
-export async function fetchMessagingAllowed(): Promise<boolean> {
-  const { data, error } = await rpc("message_allowed_me");
-  return !error && data === true;
-}
+// fetchUnread / fetchMessagingAllowed live in ./nav (the top bar needs them in the first download)
+export { fetchUnread, fetchMessagingAllowed } from "./nav";
 
 export async function sendMessage(to: string, body: string, clientMsgId: string): Promise<SendResult> {
   const { data, error } = await rpc("message_send", { _to: to, _body: body, _client_msg_id: clientMsgId });

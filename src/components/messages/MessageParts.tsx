@@ -4,6 +4,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { HeartHandshake } from "lucide-react";
+import OptimizedImage from "@/components/OptimizedImage";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson } from "@/lib/messages/api";
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
@@ -12,7 +13,9 @@ export function PersonAvatar({ person, size = 44 }: { person: MessagePerson | nu
   const name = person?.fullName?.trim() || "Member";
   const initial = name.charAt(0).toUpperCase();
   return person?.avatarUrl ? (
-    <img src={person.avatarUrl} alt="" width={size} height={size} loading="lazy" className="shrink-0 rounded-full object-cover bg-muted" style={{ width: size, height: size }} />
+    <span className="shrink-0 overflow-hidden rounded-full bg-muted" style={{ width: size, height: size }}>
+      <OptimizedImage src={person.avatarUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+    </span>
   ) : (
     <span aria-hidden className="grid shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground" style={{ width: size, height: size }}>
       {initial}
@@ -63,7 +66,9 @@ function PhotoTile({ path, width, height }: { path: string; width: number | null
   const { data: url } = useQuery({ queryKey: ["messages", "photo", path], queryFn: () => signedPhotoUrl(path), staleTime: 4 * 60_000 });
   const ratio = width && height ? `${width} / ${height}` : "4 / 3";
   return url ? (
-    <img src={url} alt="Photo in this chat" loading="lazy" className="w-full rounded-xl object-cover" style={{ aspectRatio: ratio }} />
+    <div className="w-full overflow-hidden rounded-xl" style={{ aspectRatio: ratio }}>
+      <OptimizedImage src={url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" />
+    </div>
   ) : (
     <div aria-hidden className="w-full animate-pulse rounded-xl bg-muted" style={{ aspectRatio: ratio }} />
   );
