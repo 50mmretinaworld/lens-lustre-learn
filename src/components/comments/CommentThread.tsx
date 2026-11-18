@@ -1097,7 +1097,8 @@ export function CommentFloatList({ comments, tall, on }: { comments: FloatCommen
             <div className="h-7 w-7 rounded-full bg-white/25" />
           )}
           <p className="max-w-[80%] rounded-2xl bg-black/45 px-3 py-1.5 text-[13px] leading-snug backdrop-blur-sm">
-            <span className="font-semibold">{c.full_name || "Member"}</span> {c.content}
+            {/* the ONE renderer: a tag reads "@Name", never the stored @[Name](id) (Owner 18 Nov) */}
+            <span className="font-semibold">{c.full_name || "Member"}</span> <RichContentRenderer content={c.content} />
           </p>
         </div>
       ))}

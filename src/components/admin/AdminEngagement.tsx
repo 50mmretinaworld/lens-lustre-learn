@@ -7,6 +7,7 @@ import { toast } from "@/hooks/core/use-toast";
 import { Search, ThumbsUp, Heart, Vote, Plus, Minus, Loader2, Image as ImageIcon, Eye, Pin, TrendingUp, Clock, MessageCircle, Zap, Calendar } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { safeRandomUUID } from "@/lib/safeUuid";
+import { memberTextPlain } from "@/lib/memberText";
 
 interface Props {
   user: User | null;
@@ -462,7 +463,7 @@ const AdminEngagement = ({ user }: Props) => {
                       <div key={c.id} className="border border-border rounded-sm p-3 flex items-start gap-3">
                         <MessageCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-foreground/90 mb-1">{c.content}</p>
+                          <p className="text-xs text-foreground/90 mb-1">{memberTextPlain(c.content)}</p>
                           <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
                             <span>{c.image_type}</span>
                             <span>•</span>
