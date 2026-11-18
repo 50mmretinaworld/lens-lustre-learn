@@ -25,6 +25,7 @@
  */
 import { useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
+import MemberText from "@/components/MemberText";
 
 export interface CommentSearchBarProps {
   value: string;
@@ -78,7 +79,7 @@ const CommentSearchBar = ({
         {subjectLabel && (
           <>
             <span aria-hidden="true" className="text-muted-foreground/70">·</span>
-            <span className="truncate text-primary/90">{truncateLabel(subjectLabel)}</span>
+            <span className="truncate text-primary/90"><MemberText text={subjectLabel} max={LABEL_MAX} /></span>
           </>
         )}
       </button>

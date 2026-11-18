@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { fetchProfileMap } from "@/lib/profileMapCache";
+import { useMemo } from "react";
+import { useMemberNames } from "@/hooks/profile/useMemberNames";
 
 /**
  * id -> name-URL handle, for lists whose own source cannot carry one.
@@ -69,24 +69,14 @@ import { fetchProfileMap } from "@/lib/profileMapCache";
  * header records the measurement: 52 requests per feed load became 4.
  */
 export function useMemberHandles(ids: Array<string | null | undefined>): Map<string, string | null> {
-  const [handles, setHandles] = useState<Map<string, string | null>>(new Map());
-  // Sorted + deduped, so the effect depends on the SET of ids and not on the
-  // array identity a parent re-render produces.
-  const key = [...new Set(ids.filter((id): id is string => !!id))].sort().join(",");
-
-  useEffect(() => {
-    if (!key) { setHandles(new Map()); return; }
-    let cancelled = false;
-    void fetchProfileMap(key.split(",")).then((map) => {
-      if (cancelled) return;
-      const next = new Map<string, string | null>();
-      map.forEach((entry, id) => next.set(id, entry.custom_url ?? null));
-      setHandles(next);
-    });
-    return () => { cancelled = true; };
-  }, [key]);
-
-  return handles;
+  // The ONE fetcher is useMemberNames (sorted + deduped inside, so it depends on
+  // the SET of ids and not on the array identity a parent re-render produces).
+  const rows = useMemberNames(ids.filter((id): id is string => !!id));
+  return useMemo(() => {
+    const next = new Map<string, string | null>();
+    rows.forEach((entry, id) => next.set(id, entry.custom_url ?? null));
+    return next;
+  }, [rows]);
 }
 
 /**
