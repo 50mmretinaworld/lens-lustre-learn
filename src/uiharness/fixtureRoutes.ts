@@ -32,6 +32,7 @@ import {
   sampleUserRoles, sampleUserBadges, sampleProfiles, sampleRoleDefinitions, sampleBadgeDefinitions,
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
+import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
 import {
   HARNESS_USER_ID, fixtureImage,
   adCreatives, categories, certificates, dashboardInit, dbAuditLogs, faqEntries, featuredArtists, follows, heroBanners,
@@ -328,6 +329,9 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_push_broadcast_schedule: (b) => (typeof b._at === "string" ? b._at : new Date().toISOString()),
   admin_push_broadcast_cancel: () => true,
   admin_push_broadcast_delete: () => true,
+  // J5a Job Engine page (screen-admin-jobs): read-only sample shaped like production 18 Nov.
+  admin_jobs_overview: () => (adminJobsSampleOn() ? sampleJobsOverview() : { checked_at: null, switches: {}, kinds: [], alarms: [] }),
+  admin_jobs_list: (b) => (adminJobsSampleOn() ? sampleJobsList(b) : []),
   my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
   admin_list_account_reviews: () => (reviewSampleOn() ? [
     { user_id: profiles[1].id, full_name: profiles[1].full_name, state: "deletion_requested", reason: "member asked to delete the account", set_at: "2026-11-14T10:00:00.000Z", set_by_name: profiles[1].full_name, deletion_requested_at: "2026-11-14T10:00:00.000Z", auto_approve_at: "2027-05-13T10:00:00.000Z" },
