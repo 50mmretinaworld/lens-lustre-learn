@@ -19,9 +19,11 @@
  *
  * `fit="contain-blur"` (Owner, 2026-11-18): the picture is shown WHOLE, never
  * cut, and any space it does not cover is filled with a blurred copy of the same
- * picture — the same recipe the feed photo uses (PostMedia: scale-125 blur-2xl
- * brightness-[0.8]). The caller's box must be `relative`. Use it for any cover
- * whose box shape is not guaranteed to equal the picture's shape.
+ * picture (feed recipe: scale-125 blur-2xl). NOT dimmed — a dimmed backdrop
+ * showed as a second "border" line at the picture's edge — and the picture is
+ * overscanned 0.4% so a sub-pixel gap can never show a seam. The caller's box
+ * must be `relative`. Use it for any cover whose box shape is not guaranteed to
+ * equal the picture's shape.
  */
 import OptimizedImage from "@/components/OptimizedImage";
 import { cn } from "@/lib/utils";
@@ -50,7 +52,7 @@ export default function CoverImage({ src, alt, className, sizes = "(min-width: 7
           sizes={sizes}
           srcSetWidths={COVER_WIDTHS}
           loading={priority ? "eager" : "lazy"}
-          className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl brightness-[0.8] pointer-events-none bg-muted"
+          className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl pointer-events-none bg-muted"
         />
         <OptimizedImage
           src={src}
@@ -59,7 +61,7 @@ export default function CoverImage({ src, alt, className, sizes = "(min-width: 7
           srcSetWidths={COVER_WIDTHS}
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "auto"}
-          className={cn("relative w-full h-full object-contain bg-transparent", className)}
+          className={cn("relative w-full h-full object-contain bg-transparent scale-[1.004]", className)}
         />
       </>
     );
