@@ -105,16 +105,18 @@ const CompetitionSubmit = () => {
       const col = isUuid ? "id" : "slug";
       const { data } = await supabase
         .from("competitions")
-        .select("id, title, max_photos_per_entry, status, phase, entry_fee, ai_images_allowed, starts_at, ends_at, voting_ends_at, judging_completed")
+        .select("id, title, max_photos_per_entry, max_entries_per_user, status, phase, entry_fee, ai_images_allowed, starts_at, ends_at, voting_ends_at, judging_completed")
         .eq(col, slugOrId)
         .single();
       if (data) {
         setId(data.id);
         const phase = resolvePhase(data as any);
-        setCompetitionPhase(phase);
+        // Max photos or max entries = 0 closes submissions (admin "announce only" mode).
+        const closedByLimit = !(((data as any).max_entries_per_user ?? 1) > 0) || !((data.max_photos_per_entry ?? 5) > 0);
+        setCompetitionPhase(phase === "submission_open" && closedByLimit ? "limit_closed" : phase);
         setCompTitle(data.title);
-        if (phase === "submission_open") {
-          setMaxPhotos(data.max_photos_per_entry || 5);
+        if (phase === "submission_open" && !closedByLimit) {
+          setMaxPhotos(data.max_photos_per_entry ?? 5);
           setEntryFee((data as any).entry_fee || 0);
           setAiImagesAllowed((data as any).ai_images_allowed !== false);
         }
