@@ -67,8 +67,11 @@ describe("applyCaptionMentions — picked names become comment-style markup", ()
       join(__dirname, "..", "..", "components", "RichContentRenderer.tsx"),
       "utf8",
     );
-    // The renderer's token regex parses @[Name](id) — the exact shape we emit.
-    expect(rendererSrc).toContain("@\\[([^\\]]+)\\]\\(([^)]+)\\)");
+    const ruleSrc = readFileSync(join(__dirname, "..", "memberText.ts"), "utf8");
+    // The renderer builds its token regex from the ONE mention source in memberText.ts,
+    // which parses @[Name](id) — the exact shape we emit.
+    expect(rendererSrc).toContain("MENTION_SOURCE");
+    expect(ruleSrc).toContain("@\\[([^\\]]+)\\]\\(([^)]+)\\)");
     const out = applyCaptionMentions("@Ana B", [{ display: "Ana B", id: ID_A }]);
     expect(out).toMatch(/@\[([^\]]+)\]\(([^)]+)\)/);
   });
