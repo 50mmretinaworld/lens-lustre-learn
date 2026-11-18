@@ -183,7 +183,9 @@ const CompetitionDetail = () => {
     );
   }
 
-  const canSubmit = competition.phase === "submission_open" && user && userEntryCount < competition.max_entries_per_user;
+  // A limit of 0 (entries or photos) closes submissions: competition stays visible, no Submit button.
+  const submissionsClosedByLimit = !(competition.max_entries_per_user > 0) || !((competition.max_photos_per_entry ?? 5) > 0);
+  const canSubmit = competition.phase === "submission_open" && user && !submissionsClosedByLimit && userEntryCount < competition.max_entries_per_user;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
