@@ -26,6 +26,7 @@ import { realJobDeps } from "@/lib/video/jobDeps";
 import { fetchOwnVideo, type FeedVideo } from "@/lib/video/postVideoRead";
 import { adMedia, NO_MEDIA, postMedia } from "@/lib/posts/subjectMedia";
 import { videoFrameAspect } from "@/lib/video/videoFrame";
+import { memberTextPlain } from "@/lib/memberText";
 
 const FeedVideoCard = lazy(() => import("./FeedVideoCard"));
 
@@ -104,7 +105,7 @@ export default function ServerVideoReview({ job, onClose, video: given, renderPl
           </div>
 
           {/* pre-line, not pre-wrap: the member's line breaks stay, and no space hangs past the edge at a wrap. */}
-          {!ad && job.post.content && <p className="line-clamp-4 whitespace-pre-line break-words text-sm">{job.post.content}</p>}
+          {!ad && job.post.content && <p className="line-clamp-4 whitespace-pre-line break-words text-sm">{memberTextPlain(job.post.content)}</p>}
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
             {!ad && <><span className="inline-flex items-center gap-1">{privacyIcon(audience.value)}{audience.label}</span><span aria-hidden="true">·</span></>}
             <span className="min-w-0">{categories.join(", ")}</span>

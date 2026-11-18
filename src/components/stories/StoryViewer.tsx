@@ -42,6 +42,7 @@ import { fetchProfileMap } from "@/lib/profileMapCache";
 import { memberPath } from "@/lib/urlHelpers";
 import StoryHighlightPicker from "./StoryHighlightPicker";
 import { CommentFloatList } from "@/components/comments/CommentThread";
+import RichContentRenderer from "@/components/RichContentRenderer";
 import { postPath } from "@/lib/posts/postPath";
 
 const FILE = "src/components/stories/StoryViewer.tsx";
@@ -209,7 +210,7 @@ export function StoryFrame(p: FrameProps) {
 
       <div className="absolute inset-x-4 bottom-4 space-y-3 text-white">
         <CommentFloatList comments={p.comments} on={scrollOlder(p.onOlder)} />
-        {!own && story?.caption && <p className="text-[15px] font-medium drop-shadow">{story.caption}</p>}
+        {!own && story?.caption && <p className="text-[15px] font-medium drop-shadow"><RichContentRenderer content={story.caption} /></p>}
         {story?.post_id && (
           <button type="button" onClick={p.onViewPost}
             className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1.5 text-sm font-semibold backdrop-blur">

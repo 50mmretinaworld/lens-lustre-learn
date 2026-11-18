@@ -52,6 +52,7 @@ import PostCommentsSection from "@/components/PostCommentsSection";
 import AdComments from "@/components/ads/AdComments";
 import { hasMedia, type SubjectMedia } from "@/lib/posts/subjectMedia";
 import { memberPhotoSrc } from "@/lib/photoProtection";
+import { memberTextPlain } from "@/lib/memberText";
 
 // Lazy (P13): the overlay is mounted at the app root; the video card's code is
 // fetched the first time a video subject's comments open, never before.
@@ -110,7 +111,7 @@ const CommentsOverlay = () => {
         postId={post.id}
         postOwnerId={post.user_id}
         postOwnerHandle={post.author_handle}
-        subjectLabel={post.content}
+        subjectLabel={memberTextPlain(post.content)}
         onCommentCountChange={notifyCommentCountChange}
         focusCommentId={subject.focusCommentId ?? null}
       />
