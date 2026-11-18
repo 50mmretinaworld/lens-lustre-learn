@@ -12,7 +12,7 @@ export default function CommentSuggestionChips({ onPick, disabled }: { onPick: (
   if (suggestions.length === 0) return null;
   return (
     <div
-      className="-mx-1 mb-1.5 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="-mx-1 mb-1.5 flex w-full min-w-0 max-w-full gap-1.5 overflow-x-auto px-1 pb-0.5 [contain:inline-size] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       role="group"
       aria-label="Add a suggestion to your comment"
       data-testid="comment-suggestions"
