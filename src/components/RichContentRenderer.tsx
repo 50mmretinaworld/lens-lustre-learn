@@ -1,7 +1,8 @@
 import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { memberPath } from "@/lib/urlHelpers";
-import { useMemberHandles } from "@/hooks/profile/useMemberHandles";
+import { useMemberNames } from "@/hooks/profile/useMemberNames";
+import { MENTION_SOURCE, tagName, taggedMemberIds } from "@/lib/memberText";
 import { sanitizeUserContent } from "@/lib/htmlSanitizer";
 import { isGroupMentionId } from "@/lib/groupMentions";
 import { HASHTAG_TOKEN_SOURCE, MAX_TAGS_PER_POST, hashtagPath, sameTagKey } from "@/lib/hashtags/hashtagRule";
@@ -20,26 +21,18 @@ interface Props {
 // Matches @[Display Name](uuid) or #tag — the tag part is THE hashtag rule
 // (src/lib/hashtags/hashtagRule.ts, mirrored from the database), so a tag in
 // any language is a link, and a link is always a tag the hashtag page knows.
-const TOKEN_REGEX = new RegExp(String.raw`@\[([^\]]+)\]\(([^)]+)\)|` + HASHTAG_TOKEN_SOURCE, "gu");
+const TOKEN_REGEX = new RegExp(MENTION_SOURCE + "|" + HASHTAG_TOKEN_SOURCE, "gu");
 
 const RichContentRenderer = ({ content, className = "" }: Props) => {
+  /*
+   * ROOT RULE (Owner 18 Nov 2026, src/lib/memberText.ts): a tag's NAME and LINK
+   * come from the member's profile — the one source — never from the text.
+   * Every tagged id in this block is resolved in ONE batched lookup. (Hook first:
+   * it must run on every render, empty text included.)
+   */
+  const names = useMemberNames(taggedMemberIds(content));
   if (!content) return null;
   const safeContent = sanitizeUserContent(content);
-
-  /*
-   * Every mentioned id in this block, resolved in ONE batched lookup before the
-   * parse loop runs. Collected with its own regex instance because the loop
-   * below advances lastIndex on the shared one.
-   */
-  const mentionIds: string[] = [];
-  {
-    const scan = new RegExp(TOKEN_REGEX.source, "gu");
-    let m: RegExpExecArray | null;
-    while ((m = scan.exec(content)) !== null) {
-      if (m[1] && m[2] && !isGroupMentionId(m[2])) mentionIds.push(m[2]);
-    }
-  }
-  const mentionHandles = useMemberHandles(mentionIds);
 
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -58,34 +51,30 @@ const RichContentRenderer = ({ content, className = "" }: Props) => {
 
     if (match[1] && match[2]) {
       /*
-       * @mention: @[Name](userId).
-       *
-       * F-95 — THE ONLY PLACE IN THE APP THAT HAS AN ID AND NOTHING ELSE. A
-       * mention is stored as a name and an id in the post's own text; there is
-       * no profile row alongside it to carry a handle, so the handle has to be
-       * looked up. useMemberHandles does that in ONE batched call for every
-       * mention in the block, not one per mention.
-       *
-       * Until it resolves — and for a mention of a member with no handle, or
-       * one the lookup could not find — the mention renders as TEXT. It still
-       * reads as "@Name" and still says who was mentioned; what it does not do
-       * is offer an id address.
+       * A tag: @[Name](id). The id says WHO; the profile says the name and the
+       * link (useMemberNames). The name copied in the text is used only until the
+       * profile arrives, or for a member who no longer exists — then as plain
+       * text, never a link. @all / @followers: a tag, not a member, never a link.
        */
-      // @all / @followers: a tag, not a member — shown as "@all", never a link.
       const group = isGroupMentionId(match[2]);
-      const mentionHref = group ? null : memberPath(mentionHandles.get(match[2]));
+      const who = group ? undefined : names.get(match[2]);
+      const label = group
+        ? `@${match[2]}`
+        : tagName(match[1], who);
+      const mentionHref = group ? null : memberPath(who?.full_name ? who.custom_url : null);
       parts.push(
         mentionHref ? (
           <Link
             key={`m-${match.index}`}
             to={mentionHref}
+            data-member-tag={match[2]}
             className="text-primary font-semibold hover:underline"
           >
-            {match[1]}
+            {label}
           </Link>
         ) : (
-          <span key={`m-${match.index}`} className="text-primary font-semibold">
-            {group ? `@${match[1].replace(/^@/, "")}` : match[1]}
+          <span key={`m-${match.index}`} data-member-tag={group ? undefined : match[2]} className="text-primary font-semibold">
+            {label}
           </span>
         )
       );

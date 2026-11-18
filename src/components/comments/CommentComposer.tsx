@@ -15,7 +15,8 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import MentionInput from "@/components/MentionInput";
-import type { ReplyTarget } from "@/components/comments/replyTarget";
+import { REPLY_PREVIEW_MAX, type ReplyTarget } from "@/components/comments/replyTarget";
+import MemberText from "@/components/MemberText";
 import { Avatar } from "@/components/comments/CommentThread";
 import { COMMENT_PLACEHOLDER } from "@/components/comments/CommentThread";
 
@@ -176,7 +177,7 @@ const CommentComposer = ({
         <div data-replying-to="" className="mb-1.5 flex min-w-0 items-center gap-1 ps-10 text-xs text-muted-foreground">
           <span className="shrink-0">Replying to</span>
           <span className="shrink-0 font-semibold text-foreground">{replyTo.name}</span>
-          {replyTo.preview && <span className="min-w-0 truncate">· {replyTo.preview}</span>}
+          {replyTo.preview && <span className="min-w-0 truncate">· <MemberText text={replyTo.preview} max={REPLY_PREVIEW_MAX} /></span>}
           <button
             type="button"
             onClick={cancelReply}
