@@ -80,6 +80,7 @@ const AdminCompetitionHealth = lazy(() => import("@/pages/admin/AdminCompetition
 const AdminTestAgent = lazy(() => import("@/pages/admin/AdminTestAgent"));
 /* A4: under review / deletion requests / admin delete (20261115_1310, 1330). */
 const AdminAccountReviews = lazy(() => import("@/pages/admin/AdminAccountReviews"));
+const AdminJobs = lazy(() => import("@/pages/admin/AdminJobs"));
 
 const AdminGallery = lazy(() => import("@/components/admin/AdminGallery"));
 const AdminOnPageImages = lazy(() => import("@/components/admin/AdminOnPageImages"));
@@ -104,7 +105,7 @@ const VALID_ROUTES = new Set([
   "new_photos", "competition_fullsize", "mention_groups", "mention_all_blocked",
   "page_management", "menu_builder", "redirects",
   "settings", "auth_pages", "email_templates", "database",
-  "health", "app_events", "activity_logs", "admin_notifications", "notifications_health", "notification_centre", "test_agent",
+  "health", "jobs", "app_events", "activity_logs", "admin_notifications", "notifications_health", "notification_centre", "test_agent",
   "support_tickets", "user_guide",
 ]);
 
@@ -120,6 +121,7 @@ const tabGroups = [
   { label: "Overview", items: [
     ["health", "Site Health", HeartPulse],
     ["app_events", "Error Log", Bug],
+    ["jobs", "Job Engine", Server],
     ["notifications_health", "Notification Drift", Bell],
     ["notification_centre", "Notification Centre", Bell],
     ["test_agent", "Test Agent", HeartPulse],
@@ -372,6 +374,7 @@ const AdminPanel = () => {
           </div>
         </LazyTab>
       )}
+      {currentRoute === "jobs" && <LazyTab><AdminJobs /></LazyTab>}
       {currentRoute === "notifications_health" && <LazyTab><AdminNotificationsHealth /></LazyTab>}
       {currentRoute === "notification_centre" && <LazyTab><AdminNotificationCentre /></LazyTab>}
       {currentRoute === "test_agent" && <LazyTab><AdminTestAgent /></LazyTab>}

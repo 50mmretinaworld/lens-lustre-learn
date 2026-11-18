@@ -492,4 +492,13 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessAdminPush?: boolean }).__harnessAdminPush = true;
     return screen(<AdminPanel />, "/admin/push_notification", "/admin/*");
   },
+  /**
+   * J5a · Admin → Job Engine, the REAL AdminPanel route with the jobs sample
+   * (adminJobsSample.ts) — shaped like production 18 Nov 2026, one failure shown.
+   */
+  "screen-admin-jobs": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    (globalThis as { __harnessAdminJobs?: boolean }).__harnessAdminJobs = true;
+    return screen(<AdminPanel />, "/admin/jobs", "/admin/*");
+  },
 };
