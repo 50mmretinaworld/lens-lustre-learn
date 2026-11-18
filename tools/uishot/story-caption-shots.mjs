@@ -69,6 +69,14 @@ try {
   if (await raw()) fail("a stored mention @[…](…) is on screen in the full text");
   await page.screenshot({ path: join(OUT, "story-NEW-more-REAL.png") });
   console.log("story-NEW-more: saved");
+
+  // Owner 18 Nov: "Show less" folds it back to the two lines
+  await page.getByTestId("story-caption-less").click();
+  await page.waitForTimeout(500);
+  if (await page.locator("[data-testid='story-caption-full']").count()) fail("'Show less' did not close the full text");
+  if (!(await page.locator("[data-testid='story-caption-more']").count())) fail("after 'Show less' the two-line caption with 'more' is not back");
+  await page.screenshot({ path: join(OUT, "story-NEW-less-REAL.png") });
+  console.log("story-NEW-less: saved");
   await browser.close();
 } catch (e) {
   console.error(e);

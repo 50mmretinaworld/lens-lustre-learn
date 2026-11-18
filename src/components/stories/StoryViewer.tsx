@@ -44,6 +44,7 @@ import StoryHighlightPicker from "./StoryHighlightPicker";
 import { CommentFloatList } from "@/components/comments/CommentThread";
 import RichContentRenderer from "@/components/RichContentRenderer";
 import StoryCaption from "@/components/stories/StoryCaption";
+import { useT } from "@/i18n/I18nContext";
 import { postPath } from "@/lib/posts/postPath";
 
 const FILE = "src/components/stories/StoryViewer.tsx";
@@ -267,9 +268,9 @@ export function StoryFrame(p: FrameProps) {
 }
 
 /** A panel over the story — Seen by / All comments (Owner 7 Nov). The story waits while it is open. */
-function StorySheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+function StorySheet({ title, onClose, children, tone = "bg-black/90" }: { title: string; onClose: () => void; children: ReactNode; tone?: string }) {
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[70%] flex-col rounded-t-2xl bg-black/90 text-white backdrop-blur"
+    <div className={`absolute inset-x-0 bottom-0 z-10 flex h-[70%] flex-col rounded-t-2xl ${tone} text-white backdrop-blur`}
       onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
         <p className="text-sm font-semibold" style={hf}>{title}</p>
@@ -389,6 +390,7 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [likedLocal, setLikedLocal] = useState<Record<string, boolean>>({});
   const [sheet, setSheet] = useState<null | "viewers" | "comments" | "caption">(null);
+  const t = useT();
   const olderDone = useRef(false);
   const olderBusy = useRef(false);
   const firstOpen = useRef(true);
@@ -689,10 +691,15 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
         </StorySheet>
       )}
       {sheet === "caption" && story?.caption && (
-        <StorySheet title={person.name} onClose={() => setSheet(null)}>
+        // Owner 18 Nov: 10% lighter than the other panels, and "Show less" folds it back to two lines
+        <StorySheet title={person.name} onClose={() => setSheet(null)} tone="bg-black/80">
           <p data-testid="story-caption-full" className="whitespace-pre-line break-words text-[15px] leading-relaxed">
             <RichContentRenderer content={story.caption} />
           </p>
+          <button type="button" onClick={() => setSheet(null)} data-testid="story-caption-less"
+            className="tap-44 mt-3 text-sm font-semibold text-white/85">
+            {t("story.less", "Show less")}
+          </button>
         </StorySheet>
       )}
     </StoryFrame>
