@@ -13,6 +13,19 @@ export const storySampleOn = () => ON;
  * Opt-in only: every approved story picture keeps its baseline.
  */
 const LONG = typeof location !== "undefined" && location.search.includes("storylong=1");
+/**
+ * `&tagrename=1` (with storylong): ROOT tag rule (Owner 18 Nov 2026). A comment
+ * tags a member by the name copied when it was written ("Sourav P.") and one
+ * who no longer exists; the member's profile now says "Sourav Pal". The screen
+ * must show the PROFILE's name for the first and the typed name, unlinked, for
+ * the second.
+ */
+const TAG_RENAME = typeof location !== "undefined" && location.search.includes("tagrename=1");
+export const tagRenameOn = () => TAG_RENAME;
+/** The profile rows behind the renamed tag (profiles_public_data). */
+export function sampleTagProfiles() {
+  return [{ id: "a4", full_name: "Sourav Pal", username: "sourav", custom_url: "sourav.pal", avatar_url: pic(177, 100, 100), last_active_at: at(3) }];
+}
 const LONG_CAPTION =
   "A New Photography Competition is Here! PEOPLE – A celebration of human stories, emotions and everyday life " +
   "through the photographer's lens. From candid moments to compelling portraits, from ordinary lives to " +
@@ -88,7 +101,7 @@ export function sampleComments() {
   if (LONG) {
     return [
       { id: "c1", user_id: "a2", full_name: "Rahul Das", avatar_url: pic(91, 100, 100), content: "@[@all](all) its the time to show your talent once again ❤️", created_at: at(20) },
-      { id: "c2", user_id: "a3", full_name: "Mitali Roy", avatar_url: pic(65, 100, 100), content: "@[Sourav Pal](a4) 🙏 nice topic", created_at: at(15) },
+      { id: "c2", user_id: "a3", full_name: "Mitali Roy", avatar_url: pic(65, 100, 100), content: TAG_RENAME ? "@[Sourav P.](a4) 🙏 nice topic, thanks @[Old Friend](gone-1)" : "@[Sourav Pal](a4) 🙏 nice topic", created_at: at(15) },
     ];
   }
   return [
