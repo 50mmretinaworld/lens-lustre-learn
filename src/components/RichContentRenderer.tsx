@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { memberPath } from "@/lib/urlHelpers";
 import { useMemberNames } from "@/hooks/profile/useMemberNames";
-import { tagName, taggedMemberIds } from "@/lib/memberText";
+import { MENTION_SOURCE, tagName, taggedMemberIds } from "@/lib/memberText";
 import { sanitizeUserContent } from "@/lib/htmlSanitizer";
 import { isGroupMentionId } from "@/lib/groupMentions";
 import { HASHTAG_TOKEN_SOURCE, MAX_TAGS_PER_POST, hashtagPath, sameTagKey } from "@/lib/hashtags/hashtagRule";
@@ -21,7 +21,7 @@ interface Props {
 // Matches @[Display Name](uuid) or #tag — the tag part is THE hashtag rule
 // (src/lib/hashtags/hashtagRule.ts, mirrored from the database), so a tag in
 // any language is a link, and a link is always a tag the hashtag page knows.
-const TOKEN_REGEX = new RegExp(String.raw`@\[([^\]]+)\]\(([^)]+)\)|` + HASHTAG_TOKEN_SOURCE, "gu");
+const TOKEN_REGEX = new RegExp(MENTION_SOURCE + "|" + HASHTAG_TOKEN_SOURCE, "gu");
 
 const RichContentRenderer = ({ content, className = "" }: Props) => {
   /*
@@ -60,8 +60,8 @@ const RichContentRenderer = ({ content, className = "" }: Props) => {
       const who = group ? undefined : names.get(match[2]);
       const label = group
         ? `@${match[2]}`
-        : tagName({ kind: "member", id: match[2], storedName: match[1] }, who);
-      const mentionHref = group ? null : memberPath(who?.handle);
+        : tagName(match[1], who);
+      const mentionHref = group ? null : memberPath(who?.full_name ? who.custom_url : null);
       parts.push(
         mentionHref ? (
           <Link

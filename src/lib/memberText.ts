@@ -24,11 +24,12 @@
  *   memberTextPlain() is for matching / search only (no profile lookup).
  */
 
+import { isGroupMentionId } from "@/lib/groupMentions";
+
 /** The stored tag. Group 1 = name copied at typing time (fallback only), group 2 = member id or all/followers. */
 export const MENTION_SOURCE = String.raw`@\[([^\]]+)\]\(([^)]+)\)`;
 const MENTION = new RegExp(MENTION_SOURCE, "g");
 
-export const GROUP_TAGS = new Set(["all", "followers"]);
 
 export type MemberTextPart =
   | { kind: "text"; text: string }
@@ -44,7 +45,7 @@ export function parseMemberText(content: string | null | undefined): MemberTextP
     const at = m.index ?? 0;
     if (at > last) parts.push({ kind: "text", text: content.slice(last, at) });
     const ref = m[2];
-    parts.push(GROUP_TAGS.has(ref) ? { kind: "group", group: ref } : { kind: "member", id: ref, storedName: m[1] });
+    parts.push(isGroupMentionId(ref) ? { kind: "group", group: ref } : { kind: "member", id: ref, storedName: m[1] });
     last = at + m[0].length;
   }
   if (last < content.length) parts.push({ kind: "text", text: content.slice(last) });
@@ -53,26 +54,26 @@ export function parseMemberText(content: string | null | undefined): MemberTextP
 
 /** Member ids tagged in a text (deduped). */
 export function taggedMemberIds(content: string | null | undefined): string[] {
-  return [...new Set(parseMemberText(content).flatMap((p) => (p.kind === "member" ? [p.id] : [])))];
+  const ids = new Set<string>();
+  for (const m of (content ?? "").matchAll(MENTION)) if (!isGroupMentionId(m[2])) ids.add(m[2]);
+  return [...ids];
 }
 
-/** A tagged member as the profile says right now. `null` name = no such profile (fall back to the stored name, no link). */
+/** A tagged member as the profile says right now (the profile row). No `full_name` = no such profile (fall back to the stored name, no link). */
 export interface MemberIdentity {
-  name: string | null;
-  handle: string | null;
+  full_name?: string | null;
+  custom_url?: string | null;
 }
 
 /** The name a tag shows: the profile's, else (member gone / not loaded yet) the copy in the text. */
-export function tagName(part: Extract<MemberTextPart, { kind: "member" }>, who: MemberIdentity | undefined): string {
-  const fromProfile = who?.name?.trim();
-  return fromProfile || part.storedName.replace(/^@+/, "");
+export function tagName(storedName: string, who: MemberIdentity | undefined): string {
+  return who?.full_name || storedName;
 }
 
 /** Plain text with tags as "@Name" (names from `names`, the profile source). */
 export function memberTextResolved(content: string | null | undefined, names: ReadonlyMap<string, MemberIdentity>): string {
-  return parseMemberText(content)
-    .map((p) => (p.kind === "text" ? p.text : p.kind === "group" ? `@${p.group}` : `@${tagName(p, names.get(p.id))}`))
-    .join("");
+  return (content ?? "").replace(MENTION, (_m, name: string, id: string) =>
+    `@${isGroupMentionId(id) ? id : tagName(name, names.get(id))}`);
 }
 
 /** Fold whitespace and cut to `max` characters with "…". */

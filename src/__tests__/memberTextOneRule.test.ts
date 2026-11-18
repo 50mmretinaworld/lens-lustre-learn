@@ -99,9 +99,9 @@ describe("memberText — the pure parts", () => {
     expect(taggedMemberIds(`@[A](${SRI}) @[B](${SRI}) @[@followers](followers)`)).toEqual([SRI]);
   });
   it("the profile name wins over the name copied in the text; a missing profile falls back to the copy", () => {
-    const names = new Map([[SRI, { name: "Sri V R Narayanaswamy", handle: "sri" }]]);
+    const names = new Map([[SRI, { full_name: "Sri V R Narayanaswamy", custom_url: "sri" }]]);
     expect(memberTextResolved(`@[Sri V R Narayanasw](${SRI}) 🙏`, names)).toBe("@Sri V R Narayanaswamy 🙏");
-    expect(memberTextResolved(`@[Old Name](${SRI}) 🙏`, new Map([[SRI, { name: null, handle: null }]]))).toBe("@Old Name 🙏");
+    expect(memberTextResolved(`@[Old Name](${SRI}) 🙏`, new Map([[SRI, { full_name: null, custom_url: null }]]))).toBe("@Old Name 🙏");
     expect(memberTextResolved("@[@all](all) its the time", names)).toBe("@all its the time");
   });
   it("matching-only plain text, and cutting", () => {
