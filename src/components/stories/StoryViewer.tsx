@@ -43,6 +43,8 @@ import { memberPath } from "@/lib/urlHelpers";
 import StoryHighlightPicker from "./StoryHighlightPicker";
 import { CommentFloatList } from "@/components/comments/CommentThread";
 import RichContentRenderer from "@/components/RichContentRenderer";
+import StoryCaption from "@/components/stories/StoryCaption";
+import { useT } from "@/i18n/I18nContext";
 import { postPath } from "@/lib/posts/postPath";
 
 const FILE = "src/components/stories/StoryViewer.tsx";
@@ -105,7 +107,7 @@ interface FrameProps {
   onNext: () => void;
   onHold: (held: boolean) => void;
   /** Owner 7 Nov: the owner taps 👁 / 💬 for the full lists */
-  onOpenSheet: (which: "viewers" | "comments") => void;
+  onOpenSheet: (which: "viewers" | "comments" | "caption") => void;
   /** the floating comments reached their top: load older ones */
   onOlder: () => void;
   /** a panel drawn over this story (Seen by / All comments) */
@@ -208,9 +210,11 @@ export function StoryFrame(p: FrameProps) {
         </div>
       </div>
 
+      {/* Owner 18 Nov: a dark fade under the text, so it reads on a bright photo too */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
       <div className="absolute inset-x-4 bottom-4 space-y-3 text-white">
         <CommentFloatList comments={p.comments} on={scrollOlder(p.onOlder)} />
-        {!own && story?.caption && <p className="text-[15px] font-medium drop-shadow"><RichContentRenderer content={story.caption} /></p>}
+        {!own && story?.caption && <StoryCaption caption={story.caption} onMore={() => p.onOpenSheet("caption")} />}
         {story?.post_id && (
           <button type="button" onClick={p.onViewPost}
             className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1.5 text-sm font-semibold backdrop-blur">
@@ -264,9 +268,9 @@ export function StoryFrame(p: FrameProps) {
 }
 
 /** A panel over the story — Seen by / All comments (Owner 7 Nov). The story waits while it is open. */
-function StorySheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+function StorySheet({ title, onClose, children, tone = "bg-black/90" }: { title: string; onClose: () => void; children: ReactNode; tone?: string }) {
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[70%] flex-col rounded-t-2xl bg-black/90 text-white backdrop-blur"
+    <div className={`absolute inset-x-0 bottom-0 z-10 flex h-[70%] flex-col rounded-t-2xl ${tone} text-white backdrop-blur`}
       onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
         <p className="text-sm font-semibold" style={hf}>{title}</p>
@@ -385,7 +389,8 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
   const [picker, setPicker] = useState(false);
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [likedLocal, setLikedLocal] = useState<Record<string, boolean>>({});
-  const [sheet, setSheet] = useState<null | "viewers" | "comments">(null);
+  const [sheet, setSheet] = useState<null | "viewers" | "comments" | "caption">(null);
+  const t = useT();
   const olderDone = useRef(false);
   const olderBusy = useRef(false);
   const firstOpen = useRef(true);
@@ -683,6 +688,18 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
           {comments.length > 0
             ? <CommentFloatList comments={comments} tall on={scrollOlder(() => void loadOlder())} />
             : <p className="text-sm text-white/70">No comments yet.</p>}
+        </StorySheet>
+      )}
+      {sheet === "caption" && story?.caption && (
+        // Owner 18 Nov: 10% lighter than the other panels, and "Show less" folds it back to two lines
+        <StorySheet title={person.name} onClose={() => setSheet(null)} tone="bg-black/80">
+          <p data-testid="story-caption-full" className="whitespace-pre-line break-words text-[15px] leading-relaxed">
+            <RichContentRenderer content={story.caption} />
+          </p>
+          <button type="button" onClick={() => setSheet(null)} data-testid="story-caption-less"
+            className="tap-44 mt-3 text-sm font-semibold text-white/85">
+            {t("story.less", "Show less")}
+          </button>
         </StorySheet>
       )}
     </StoryFrame>
