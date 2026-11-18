@@ -12,13 +12,13 @@
  * to `hideComposer`, this is what the caller renders instead, and the two are
  * expected to be visually identical.
  */
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import MentionInput from "@/components/MentionInput";
 import type { ReplyTarget } from "@/components/comments/replyTarget";
 import { Avatar } from "@/components/comments/CommentThread";
 import { COMMENT_PLACEHOLDER } from "@/components/comments/CommentThread";
-import { useCommentSuggestions } from "@/hooks/core/useCommentSuggestions";
+const CommentSuggestionChips = lazy(() => import("@/components/comments/CommentSuggestionChips"));
 
 /**
  * THE QUICK-REACTION ROW.
@@ -98,7 +98,6 @@ const CommentComposer = ({
 }: CommentComposerProps) => {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const suggestions = useCommentSuggestions();
 
   // Reply tapped: the box starts with the answered member's name (a real
   // mention, highlighted, deleted as one piece) and takes the keyboard.
@@ -132,43 +131,24 @@ const CommentComposer = ({
    * limit the input enforces; an emoji that would breach it is dropped rather
    * than silently truncating the member's sentence to make room for it.
    */
-  const appendEmoji = (char: string) => {
-    if (submitting) return;
-    setValue((current) => (current.length + char.length > maxLength ? current : current + char));
-  };
-
-  /** A suggested phrase: added after a space, same ceiling rule as an emoji. Never posts. */
-  const appendText = (phrase: string) => {
+  const appendEmoji = (char: string, spaced = false) => {
     if (submitting) return;
     setValue((current) => {
-      const next = current && !/\s$/.test(current) ? `${current} ${phrase}` : current + phrase;
-      return next.length > maxLength ? current : next;
+      // A suggested phrase (spaced) goes after a space, never glued to the last word.
+      const add = spaced && current && !/\s$/.test(current) ? ` ${char}` : char;
+      return current.length + add.length > maxLength ? current : current + add;
     });
   };
 
   return (
     <div className={className}>
-      {quickReactions && suggestions.length > 0 && (
+      {quickReactions && (
         /* Owner 18 Nov: photography phrases (src/lib/comments/photoSuggestions.ts) —
-           one row that scrolls sideways; a tap adds the words to the box. */
-        <div
-          className="-mx-1 mb-1.5 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="group"
-          aria-label="Add a suggestion to your comment"
-          data-testid="comment-suggestions"
-        >
-          {suggestions.map((phrase) => (
-            <button
-              key={phrase}
-              type="button"
-              onClick={() => appendText(phrase)}
-              disabled={submitting}
-              className="tap-44 h-8 shrink-0 whitespace-nowrap rounded-full border border-border bg-muted/40 px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-muted active:scale-95 disabled:opacity-50 motion-reduce:active:scale-100"
-            >
-              {phrase}
-            </button>
-          ))}
-        </div>
+           one row that scrolls sideways; a tap adds the words to the box.
+           Lazy: the phrases stay out of the entry bundle (P13). */
+        <Suspense fallback={null}>
+          <CommentSuggestionChips onPick={(phrase) => appendEmoji(phrase, true)} disabled={submitting} />
+        </Suspense>
       )}
       {quickReactions && (
         <div
