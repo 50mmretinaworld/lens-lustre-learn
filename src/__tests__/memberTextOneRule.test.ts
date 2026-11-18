@@ -86,6 +86,33 @@ describe("ROOT RULE — a tag's name comes from the profile, one source (Owner 1
   });
 });
 
+describe("no other door for the stored form (Owner 18 Nov: no @[...] anywhere, from the root)", () => {
+  const rels = () => tsxFiles(SRC).map((f) => relative(ROOT, f).replace(/\\/g, "/"));
+  const find = (re: RegExp, except: Record<string, string> = {}) =>
+    rels().filter((rel) => !except[rel]).flatMap((rel) =>
+      readFileSync(join(ROOT, rel), "utf8").split("\n").flatMap((l, i) => (re.test(l.replace(/"[^"]*"|'[^']*'/g, '""')) ? [`${rel}:${i + 1} — ${l.trim().slice(0, 100)}`] : [])));
+
+  it("no attribute / page title / share text is built from a raw .content / .caption", () => {
+    const ATTR = /\b(description|title|alt|aria-label|ogDescription)=\{[^}]*\b[\w$]+\??\.(content|caption)\b[^}]*\}/;
+    const off = find(ATTR, { "src/components/profile/PhotoAlbums.tsx": "an album photo's caption: typed in a plain box, no tag picker" });
+    expect(off, "A tag in a meta / alt / title would show @[Name](id). Build plain text with useMemberNames + memberTextResolved (see PostPageSEO).").toEqual([]);
+    expect(find(/\.(content|caption)\??\.slice\(/, { "src/pages/CourseEditor.tsx": "course lesson HTML written by admins — no member tags" }), "Cutting raw member text splits a tag; use cutText(memberTextResolved(…)).").toEqual([]);
+  });
+
+  it("an editor never opens the stored form: no set…(x.content) outside the mention box", () => {
+    const off = find(/\bset\w+\(\s*[\w$]+\??\.(content|caption)\b/, {
+      "src/components/comments/CommentThread.tsx": "the comment editor is MentionInput, which draws @Name from the markup",
+    });
+    expect(off, "Open stored text for editing with loadEditableText() (src/lib/editableMemberText.ts).").toEqual([]);
+  });
+
+  it("the translation box never sends or shows the stored form", () => {
+    const src = readFileSync(join(SRC, "components/post/TranslateBar.tsx"), "utf8");
+    expect(src).toContain("loadEditableText");
+    expect(src).not.toMatch(/translateText\(\s*text\b/);
+  });
+});
+
 describe("memberText — the pure parts", () => {
   const SRI = "83f6d083-e78e-4b74-8ac6-af3a9717e295";
   it("splits text into runs, member tags and group tags", () => {
