@@ -144,6 +144,8 @@ export function useAdminJobsOverview() {
       if (error) throw new Error(error.message ?? "Could not read the job engine");
       return parseJobsOverview(data);
     },
+    // P10: an admin-only page that shows live job counts; 60 s keeps the numbers current
+    // while the page is open (react-query stops polling when it unmounts).
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
@@ -157,6 +159,8 @@ export function useAdminJobsList(status: JobStatus | null, kind: string | null) 
       if (error) throw new Error(error.message ?? "Could not read the job list");
       return parseJobsList(data);
     },
+    // P10: an admin-only page that shows live job counts; 60 s keeps the numbers current
+    // while the page is open (react-query stops polling when it unmounts).
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
