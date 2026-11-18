@@ -30,7 +30,7 @@ import ReactionSummaryTooltip from "@/components/ReactionSummaryTooltip";
 import ShareSummaryTooltip from "@/components/ShareSummaryTooltip";
 import { useReactToPost, useUnreactToPost } from "@/hooks/feed/usePostReactionMutations";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import PageSEO from "@/components/PageSEO";
+import PostPageSEO from "@/components/post/PostPageSEO";
 import { avatarInitial } from "@/lib/displayName";
 import { memberPhotoSrc } from "@/lib/photoProtection";
 import { postPath } from "@/lib/posts/postPath";
@@ -403,15 +403,13 @@ const PostDetail = () => {
   };
   // Credit fix U1: a set photo's share image is its clean copy, never its own (credited) URL.
   const ogImage = memberPhotoSrc(allImages[0], 1080) || undefined;
-  const ogDescription = post.content?.slice(0, 160) || "A post on 50mm Retina World";
 
   return (
     <>
-      <PageSEO
+      <PostPageSEO
         title={post.author_name ? `Post by ${post.author_name}` : "Post"}
-        description={ogDescription}
+        content={post.content}
         ogImage={ogImage}
-        ogType="article"
       />
 
       <div className="py-3 md:py-14 max-w-2xl mx-auto px-2 md:px-0">

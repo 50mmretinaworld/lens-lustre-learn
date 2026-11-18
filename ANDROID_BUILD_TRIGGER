@@ -1,3 +1,10 @@
+Build 1.2.51 - 2026-11-18 - FROM MAIN AFTER STORY CAPTION, MEMBER TAGS ROOT, PHOTOGRAPHY SUGGESTIONS
+
+  Owner, 18 Nov ("all approved go ahead"; "build the App"): story caption shows two
+  lines + "more" and "Show less"; a tagged member's name and link always come from
+  the member's profile (never the stored @[Name](id)); photography phrases under
+  the comment box (admin-editable). 1.2.50 (run 155, vc1155) is on Play.
+
 Build 1.2.50 - 2026-11-17 - FROM MAIN AFTER THE PUSH CENTRE (APP PART, PN4)
 
   Owner, 17 Nov ("build now"; items 7-10 approved 16 Nov, card renders

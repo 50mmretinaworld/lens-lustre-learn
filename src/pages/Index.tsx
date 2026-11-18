@@ -36,6 +36,7 @@ import { isNativeIOSApp } from "@/lib/native/authDeepLink";
 import { photoSetMarker } from "@/lib/imageLadder";
 import { memberPhotoSrc } from "@/lib/photoProtection";
 import { displayName } from "@/lib/displayName";
+import MemberText from "@/components/MemberText";
 
 const FILE = "src/pages/Index.tsx";
 
@@ -871,7 +872,7 @@ const Index = () => {
                         </div>
                       </div>
                       {latestPost.content && (
-                        <p className="text-xs text-muted-foreground mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: "var(--font-body)" }}>{latestPost.content}</p>
+                        <p className="text-xs text-muted-foreground mb-2.5 leading-relaxed line-clamp-2" style={{ fontFamily: "var(--font-body)" }}><MemberText text={latestPost.content} /></p>
                       )}
                       {(() => {
                         // What a post shows is decided once, in subjectMedia.ts: its video, else its photographs.

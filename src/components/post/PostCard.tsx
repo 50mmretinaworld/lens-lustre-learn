@@ -47,6 +47,8 @@ import { photoSetMarker } from "@/lib/imageLadder";
 import { useOldPhotoCreditRead } from "@/lib/photoOldCredit";
 import { useFeedCopiesRead } from "@/lib/photoFeedCopies";
 import { usePhotoBlursRead } from "@/lib/photoBlur";
+import { editableText } from "@/lib/editableMemberTextLazy";
+import type { EditableText } from "@/lib/editableMemberText";
 
 const displayFont = { fontFamily: "var(--font-display)" };
 const headingFont = { fontFamily: "var(--font-heading)" };
@@ -114,8 +116,16 @@ const PostCard = ({
   }, [reportingOpen]);
   const [actionLoading, setActionLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editDraft, setEditDraft] = useState(post.content || "");
+  const [editDraft, setEditDraft] = useState(""); // filled by openCaptionEditor(): "@Name" text, never the stored form
   const editRef = useRef<HTMLTextAreaElement>(null);
+  // The caption opens as "@Name" (profile names), never as the stored @[Name](id);
+  // the picks turn untouched names back into tags on save (src/lib/editableMemberText.ts).
+  const editOpened = useRef<EditableText>({ text: "", picks: [] });
+  const openCaptionEditor = async () => {
+    editOpened.current = await (await editableText()).loadEditableText(post.content);
+    setEditDraft(editOpened.current.text);
+    setIsEditing(true);
+  };
   // Owner, 2026-08-16: hashtags are offered on inline edit too. Editing a
   // caption is where a tag is most often FIXED — "#strret" → "#street" — so
   // leaving the list out of the edit box would be leaving it out of the one
@@ -163,13 +173,15 @@ const PostCard = ({
 
   const handleSaveCaption = async () => {
     if (!currentUserId || savingEdit) return;
-    const trimmed = editDraft.trim();
-    if (trimmed === (post.content || "").trim()) {
+    const shown = editDraft.trim();
+    if (shown === editOpened.current.text.trim()) {
       setIsEditing(false);
       editHashtags.reset();
       return;
     }
     setSavingEdit(true);
+    // Visible "@Name" → stored tags again (only names that were not touched).
+    const trimmed = (await editableText()).storedFromEditable(shown, editOpened.current.picks);
     const { error } = await supabase
       .from("posts")
       .update({ content: trimmed })
@@ -523,7 +535,7 @@ const PostCard = ({
               {currentUserId === post.user_id ? (
                 <>
                   <DropdownMenuItem
-                    onClick={() => { setEditDraft(post.content || ""); setIsEditing(true); }}
+                    onClick={() => { void openCaptionEditor(); }}
                     className="py-2.5"
                   >
                     <Pencil className="h-4 w-4 mr-2.5" /> Edit caption
@@ -833,7 +845,7 @@ const PostCard = ({
           )}
           <div className="flex items-center justify-end gap-2">
             <button
-              onClick={() => { setIsEditing(false); setEditDraft(post.content || ""); editHashtags.reset(); }}
+              onClick={() => { setIsEditing(false); setEditDraft(""); editHashtags.reset(); }}
               disabled={savingEdit}
               /* min-h-11 = 44px, the thumb floor the capture sweep enforces.
                  Measured 2026-08-17 at 63x31 — small enough that a miss lands

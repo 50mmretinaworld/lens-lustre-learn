@@ -28,6 +28,7 @@ import { useGridPhotoSrc } from "@/hooks/core/useGridPhotoUrl";
 import type { NotificationGroup } from "@/lib/notificationText";
 import type { CommentPreview } from "@/hooks/notifications/useCommentPreviews";
 import type { FeedVideo } from "@/lib/video/postVideoRead";
+import MemberText from "@/components/MemberText";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -260,7 +261,7 @@ export default function CentreNotificationRow({
                 {commentPreview && (
                   <>
                     {" "}
-                    <span className="block line-clamp-2 text-muted-foreground">“{commentPreview.content}”</span>
+                    <span className="block line-clamp-2 text-muted-foreground">“<MemberText text={commentPreview.content} />”</span>
                   </>
                 )}
                 {group.type === "new_follower" && (mutualFollows ?? 0) > 0 && (

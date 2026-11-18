@@ -21,6 +21,7 @@ import {
   type ScheduledPost,
 } from "@/hooks/feed/useScheduledPosts";
 import { toast } from "@/hooks/core/use-toast";
+import { editableText } from "@/lib/editableMemberTextLazy";
 
 const MIN_MINUTES_AHEAD = 5;
 const MAX_DAYS_AHEAD = 90;
@@ -42,6 +43,8 @@ export default function EditScheduledPostDialog({
   const [content, setContent] = React.useState<string>("");
   const [when, setWhen] = React.useState<Date | null>(null);
   const captionRef = React.useRef<HTMLTextAreaElement>(null);
+  // Opens as "@Name" (profile names), never the stored @[Name](id); picks turn names back into tags on save.
+  const picksRef = React.useRef<{ display: string; id: string }[]>([]);
 
   // Owner, 2026-08-16: scheduled posts get the hashtag list too.
   //
@@ -61,7 +64,15 @@ export default function EditScheduledPostDialog({
 
   React.useEffect(() => {
     if (post && open) {
-      setContent(post.content ?? "");
+      const stored = post.content ?? "";
+      picksRef.current = [];
+      setContent(stored.includes("@[") ? "" : stored);
+      if (stored.includes("@[")) {
+        void editableText().then(({ loadEditableText }) => loadEditableText(stored)).then((e) => {
+          picksRef.current = e.picks;
+          setContent(e.text);
+        });
+      }
       setWhen(new Date(post.scheduled_for));
     }
   }, [post, open]);
@@ -87,7 +98,12 @@ export default function EditScheduledPostDialog({
       const patch =
         isTime && when
           ? { id: post.id, scheduled_for: when.toISOString() }
-          : { id: post.id, content: content.trim() };
+          : {
+              id: post.id,
+              content: picksRef.current.length
+                ? (await editableText()).storedFromEditable(content.trim(), picksRef.current)
+                : content.trim(),
+            };
       await update.mutateAsync(patch);
       toast({ title: isTime ? "Rescheduled" : "Caption updated" });
       captionHashtags.reset();

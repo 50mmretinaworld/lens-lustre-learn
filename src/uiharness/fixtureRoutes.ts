@@ -24,7 +24,7 @@ import { unreadSampleOn, sampleUnreadGroups } from "./storySample";
 
 /** A4 sample switch: ?review=1 (under-review banner + admin Account Review rows). */
 const reviewSampleOn = () => typeof location !== "undefined" && new URLSearchParams(location.search).get("review") === "1";
-import { storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleComments, sampleViewers, sampleOlderComments } from "./storySample";
+import { tagRenameOn, sampleTagProfiles, storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleComments, sampleViewers, sampleOlderComments } from "./storySample";
 import { sampleHashtagInfo, sampleHashtagPosts } from "./hashtagSample";
 import type { FakeRoute } from "./fakeBackend";
 import {
@@ -645,6 +645,8 @@ export const fixtureRoutes: FakeRoute[] = [
     const table = m[1];
     // ?stories=1 only: the profile's highlights row for the Stories renders.
     if (table === "highlights" && storySampleOn()) return countable(sampleHighlights(), method);
+    // ?tagrename=1: the renamed member's profile (storySample.ts) — the tag shows THIS name.
+    if (table === "profiles_public_data" && tagRenameOn()) return countable([...profilesPublicData, ...sampleTagProfiles()], method);
     // Admin → Users sample: the members' roles, badges and activity rows.
     if (adminUsersSampleOn()) {
       const sample: Record<string, () => unknown[]> = {

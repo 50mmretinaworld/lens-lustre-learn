@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
 import type { User } from "@supabase/supabase-js";
+import MemberText from "@/components/MemberText";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 
@@ -759,7 +760,7 @@ const AdminCommentReports = ({ user }: Props) => {
                         <span className="text-[9px] text-muted-foreground">· {new Date(f.created_at).toLocaleDateString()}</span>
                       </div>
                       <div className="mt-1.5 p-2 bg-muted/30 border border-border/50 rounded-sm">
-                        <p className="text-xs" style={{ fontFamily: "var(--font-body)" }}>{f.content}</p>
+                        <p className="text-xs" style={{ fontFamily: "var(--font-body)" }}><MemberText text={f.content} /></p>
                       </div>
                       <ContextLine title={f.context_title} link={f.context_link} />
                       {f.flag_reason && <p className="text-[9px] text-destructive">{f.flag_reason}</p>}

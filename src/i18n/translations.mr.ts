@@ -157,6 +157,8 @@ const mr: Dict = {
   "notif.title": "सूचना सेटिंग्ज",
   "notif.subtitle": "तुम्हाला कशाबद्दल सूचना हवी ते निवडा",
   "notif.alwaysOn": "नेहमी चालू",
+  "story.less": "कमी दाखवा",
+  "story.more": "आणखी पहा",
   "push.off.title": "सूचना बंद आहेत",
   "push.off.body": "टिप्पण्या, लाइक्स आणि स्पर्धांची माहिती मिळवण्यासाठी त्या चालू करा.",
   "push.off.button": "चालू करा",

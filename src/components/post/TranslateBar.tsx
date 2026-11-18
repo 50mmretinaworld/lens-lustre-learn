@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useI18n } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
 import { needsTranslation, translateText } from "@/lib/translate";
+import { editableText } from "@/lib/editableMemberTextLazy";
 
 interface Props {
   text: string;
@@ -35,7 +36,9 @@ const TranslateBar = ({ text, className = "" }: Props) => {
     }
     setLoading(true);
     try {
-      const result = await translateText(text, lang);
+      // The translator gets plain text ("@Name", profile names), never the stored @[Name](id).
+      const { loadEditableText } = await editableText();
+      const result = await translateText((await loadEditableText(text)).text, lang);
       setTranslated(result);
       setShowing(true);
     } catch {

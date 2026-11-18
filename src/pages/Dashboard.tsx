@@ -46,6 +46,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { useT } from "@/i18n/I18nContext";
 import { memberPhotoSrc } from "@/lib/photoProtection";
+import MemberText from "@/components/MemberText";
 /* ───── animation helpers ───── */
 /*
  * F-99 — STARTS VISIBLE, AND KEEPS ITS EXIT. A tab panel is page body: it is
@@ -509,7 +510,7 @@ const OverviewTab = ({ displayName, user, profile, myEntries, recentPosts, roles
         <div className="rounded-2xl border border-border/50 bg-card/30 divide-y divide-border/40 overflow-hidden">
           {recentPosts.slice(0, 4).map((post: RecentPost) => (
             <div key={post.id} className="p-3">
-              <p className="text-xs text-foreground line-clamp-2 mb-1" style={{ fontFamily: "var(--font-body)" }}>{post.content}</p>
+              <p className="text-xs text-foreground line-clamp-2 mb-1" style={{ fontFamily: "var(--font-body)" }}><MemberText text={post.content} /></p>
               <div className="flex items-center gap-3 text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                 {post.privacy === "public" ? <Globe className="h-2.5 w-2.5" /> : post.privacy === "friends" ? <Users className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
                 <TimeAgo date={post.created_at} />
@@ -1280,7 +1281,7 @@ const SocialTab = ({ friendRequests, recentPosts, user, profile, handleFriendAct
         <div className="rounded-2xl border border-border/50 bg-card/30 divide-y divide-border/40 overflow-hidden">
           {recentPosts.map((post: RecentPost) => (
             <div key={post.id} className="p-3">
-              <p className="text-xs text-foreground line-clamp-2 mb-1" style={{ fontFamily: "var(--font-body)" }}>{post.content}</p>
+              <p className="text-xs text-foreground line-clamp-2 mb-1" style={{ fontFamily: "var(--font-body)" }}><MemberText text={post.content} /></p>
               <div className="flex items-center gap-3 text-[9px] text-muted-foreground">
                 <TimeAgo date={post.created_at} />
                 {post.like_count > 0 && <span className="inline-flex items-center gap-0.5"><Heart className="h-2.5 w-2.5" />{post.like_count}</span>}

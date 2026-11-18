@@ -1143,7 +1143,10 @@ const WallPosts = ({ targetUserId, isOwnWall, composerOnly }: WallPostsProps) =>
   /** Load a draft back into the composer. Reading is not writing: no upload. */
   const resumeDraft = (d: PostDraft) => {
     setDraftId(d.id);
-    setNewContent(d.content ?? "");
+    // A tag in the draft is opened as "@Name" (profile name), never as @[Name](id).
+    const savedText = d.content ?? "";
+    setNewContent(savedText.includes("@[") ? "" : savedText);
+    if (savedText.includes("@[")) void captionMentions.load(savedText).then(setNewContent);
     setPostCategories(d.categories ?? []);
     setNewPrivacy((d.privacy as Privacy) ?? "public");
     setExcludeFromSearch(!!d.indexing_disabled);

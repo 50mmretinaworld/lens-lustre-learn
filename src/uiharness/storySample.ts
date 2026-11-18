@@ -6,6 +6,34 @@ import { HARNESS_USER_ID } from "./fakeBackend";
 // Read once at load: a real-screen scene rewrites the URL to /feed before its first fetch.
 const ON = typeof location !== "undefined" && location.search.includes("stories=1");
 export const storySampleOn = () => ON;
+/**
+ * `&storylong=1` (Owner 18 Nov 2026 screenshots): the story carries the long
+ * competition post text with its hashtags, and the comments carry an @all and a
+ * member mention — so the 2-line caption and "@Name" are photographed.
+ * Opt-in only: every approved story picture keeps its baseline.
+ */
+const LONG = typeof location !== "undefined" && location.search.includes("storylong=1");
+/**
+ * `&tagrename=1` (with storylong): ROOT tag rule (Owner 18 Nov 2026). A comment
+ * tags a member by the name copied when it was written ("Sourav P.") and one
+ * who no longer exists; the member's profile now says "Sourav Pal". The screen
+ * must show the PROFILE's name for the first and the typed name, unlinked, for
+ * the second.
+ */
+const TAG_RENAME = typeof location !== "undefined" && location.search.includes("tagrename=1");
+export const tagRenameOn = () => TAG_RENAME;
+/** The profile rows behind the renamed tag (profiles_public_data). */
+export function sampleTagProfiles() {
+  return [{ id: "a4", full_name: "Sourav Pal", username: "sourav", custom_url: "sourav.pal", avatar_url: pic(177, 100, 100), last_active_at: at(3) }];
+}
+const LONG_CAPTION =
+  "A New Photography Competition is Here! PEOPLE – A celebration of human stories, emotions and everyday life " +
+  "through the photographer's lens. From candid moments to compelling portraits, from ordinary lives to " +
+  "extraordinary stories — show us how you see people through your camera. 📸 Competition Category: PEOPLE " +
+  "🗓️ Submissions Open: 17 November 2026 ⏳ Last Date to Submit: 31 December 2026 🏆 RECOGNITION THAT REACHES " +
+  "YOUR HOME! The TOP 3 WINNERS will receive their awards delivered directly to their registered home addresses.\n" +
+  "#50mmRetinaWorld #PhotographyCompetition #PeoplePhotography #HumanStories #PortraitPhotography " +
+  "#StreetPhotography #DocumentaryPhotography #VisualStorytelling #PhotographyContest #PhotographersCommunity";
 
 const pic = (id: number, w = 1080, h = 1350) => `https://picsum.photos/id/${id}/${w}/${h}`;
 export const PEOPLE = [
@@ -63,13 +91,19 @@ export function sampleUserStories(userId: string) {
   if (!p) return [];
   return [{
     id: `s-${p.user_id}`, user_id: p.user_id, created_at: at(p.mins), expires_at: exp,
-    post_id: `post-${p.user_id}`, caption: "Golden hour at the river 🌅",
+    post_id: `post-${p.user_id}`, caption: LONG ? LONG_CAPTION : "Golden hour at the river 🌅",
     media: p.photos.map((id) => pic(id)), thumbs: [], is_video: false,
     like_count: 0, comment_count: 3, i_liked: false, view_count: null,
   }];
 }
 
 export function sampleComments() {
+  if (LONG) {
+    return [
+      { id: "c1", user_id: "a2", full_name: "Rahul Das", avatar_url: pic(91, 100, 100), content: "@[@all](all) its the time to show your talent once again ❤️", created_at: at(20) },
+      { id: "c2", user_id: "a3", full_name: "Mitali Roy", avatar_url: pic(65, 100, 100), content: TAG_RENAME ? "@[Sourav P.](a4) 🙏 nice topic, thanks @[Old Friend](gone-1)" : "@[Sourav Pal](a4) 🙏 nice topic", created_at: at(15) },
+    ];
+  }
   return [
     { id: "c1", user_id: "a2", full_name: "Rahul Das", avatar_url: pic(91, 100, 100), content: "Stunning light! Which lens?", created_at: at(20) },
     { id: "c2", user_id: "a3", full_name: "Mitali Roy", avatar_url: pic(65, 100, 100), content: "Wow 😍", created_at: at(15) },

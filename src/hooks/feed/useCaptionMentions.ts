@@ -31,6 +31,7 @@ import { logger } from "@/lib/logger";
 import { groupMentionOptions } from "@/lib/groupMentions";
 import { refreshGroupMentions } from "@/lib/groupMentionsLoad";
 import { displayName } from "@/lib/displayName";
+import { editableText } from "@/lib/editableMemberTextLazy";
 
 export interface MentionSuggestion {
   id: string;
@@ -210,5 +211,17 @@ export function useCaptionMentions({ textareaRef, value, setValue, maxAutoGrowPx
     setFocusIdx(0);
   }, []);
 
-  return { open, suggestions, focusIdx, setFocusIdx, refresh, pick, onKeyDown, convert, reset };
+  /**
+   * Stored text → what the box should show ("@Name", names from the profile);
+   * the picks to turn it back into tags are held for convert(). For a resumed
+   * draft: never the stored @[Name](id) form in the box (src/lib/editableMemberText.ts).
+   */
+  const load = useCallback(async (stored: string | null | undefined): Promise<string> => {
+    const { loadEditableText } = await editableText();
+    const editable = await loadEditableText(stored);
+    pickedRef.current = editable.picks;
+    return editable.text;
+  }, []);
+
+  return { open, suggestions, focusIdx, setFocusIdx, refresh, pick, onKeyDown, convert, reset, load };
 }
