@@ -12,7 +12,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { memberTextPlain, memberTextPreview } from "@/lib/memberText";
+import { cutText, memberTextPlain, memberTextResolved, parseMemberText, taggedMemberIds } from "@/lib/memberText";
 
 const ROOT = resolve(__dirname, "../..");
 const SRC = join(ROOT, "src");
@@ -55,19 +55,59 @@ describe("member text — one rule (no raw @[Name](id) on any screen)", () => {
   });
 });
 
-describe("memberTextPlain / memberTextPreview", () => {
-  it("shows a mention as @Name and a group tag as @all / @followers", () => {
-    expect(memberTextPlain("@[Sri V R Narayanasw](83f6d083-e78e-4b74-8ac6-af3a9717e295) 🙏")).toBe("@Sri V R Narayanasw 🙏");
-    expect(memberTextPlain("@[@all](all) its the time")).toBe("@all its the time");
-    expect(memberTextPlain("@[@followers](followers) hi")).toBe("@followers hi");
+describe("ROOT RULE — a tag's name comes from the profile, one source (Owner 18 Nov)", () => {
+  const ALLOWED_PARSER = new Set([
+    "src/lib/memberText.ts",                 // THE parser
+    "src/components/RichContentRenderer.tsx", // THE renderer (tags + hashtags in one pass)
+    "src/lib/commentSearch.ts",               // matching only, never shown
+    "src/lib/captionMentions.ts",             // WRITES the tag when a caption is posted
+    "src/components/comments/CommentComposer.tsx", // WRITES the reply tag
+    "src/components/MentionInput.tsx",        // the typing box (react-mentions markup)
+  ]);
+  const files = (dir: string): string[] =>
+    readdirSync(dir).flatMap((n) => {
+      const p = join(dir, n);
+      if (statSync(p).isDirectory()) return n === "__tests__" || n === "uiharness" ? [] : files(p);
+      return /\.(ts|tsx)$/.test(n) ? [p] : [];
+    });
+
+  it("no screen builds a tag's name from the text (memberTextPlain is matching-only)", () => {
+    const off = tsxFiles(SRC).map((f) => relative(ROOT, f).replace(/\\/g, "/"))
+      .filter((rel) => readFileSync(join(ROOT, rel), "utf8").includes("memberTextPlain("));
+    expect(off, "Show member text with <MemberText> or <RichContentRenderer> — they read names from the profile.").toEqual([]);
   });
-  it("leaves other text, hashtags and line breaks alone; empty in, empty out", () => {
-    expect(memberTextPlain("Nice #Birds\nsecond line")).toBe("Nice #Birds\nsecond line");
+
+  it("there is no second tag parser anywhere in src/", () => {
+    // the tag pattern as it is written in source: @\[([^\]  (or @\\[([^\\] inside a string)
+    const PARSER = /@\\{1,2}\[\(\[\^\\{1,2}\]/;
+    const off = files(SRC).map((f) => relative(ROOT, f).replace(/\\/g, "/"))
+      .filter((rel) => !ALLOWED_PARSER.has(rel) && PARSER.test(readFileSync(join(ROOT, rel), "utf8")));
+    expect(off, "Parse tags with parseMemberText() (src/lib/memberText.ts), not a new regex.").toEqual([]);
+  });
+});
+
+describe("memberText — the pure parts", () => {
+  const SRI = "83f6d083-e78e-4b74-8ac6-af3a9717e295";
+  it("splits text into runs, member tags and group tags", () => {
+    expect(parseMemberText(`Hi @[Sri V R](${SRI}) and @[@all](all)!`)).toEqual([
+      { kind: "text", text: "Hi " },
+      { kind: "member", id: SRI, storedName: "Sri V R" },
+      { kind: "text", text: " and " },
+      { kind: "group", group: "all" },
+      { kind: "text", text: "!" },
+    ]);
+    expect(taggedMemberIds(`@[A](${SRI}) @[B](${SRI}) @[@followers](followers)`)).toEqual([SRI]);
+  });
+  it("the profile name wins over the name copied in the text; a missing profile falls back to the copy", () => {
+    const names = new Map([[SRI, { name: "Sri V R Narayanaswamy", handle: "sri" }]]);
+    expect(memberTextResolved(`@[Sri V R Narayanasw](${SRI}) 🙏`, names)).toBe("@Sri V R Narayanaswamy 🙏");
+    expect(memberTextResolved(`@[Old Name](${SRI}) 🙏`, new Map([[SRI, { name: null, handle: null }]]))).toBe("@Old Name 🙏");
+    expect(memberTextResolved("@[@all](all) its the time", names)).toBe("@all its the time");
+  });
+  it("matching-only plain text, and cutting", () => {
+    expect(memberTextPlain(`@[Neil Basu](${SRI}) great`)).toBe("@Neil Basu great");
     expect(memberTextPlain(null)).toBe("");
-    expect(memberTextPlain(undefined)).toBe("");
-  });
-  it("preview folds whitespace and cuts with …", () => {
-    expect(memberTextPreview("@[Neil Basu](u1)   great\n\nshot", 40)).toBe("@Neil Basu great shot");
-    expect(memberTextPreview("abcdefghij", 6)).toBe("abcde…");
+    expect(cutText("@Neil Basu   great\n\nshot", 40)).toBe("@Neil Basu great shot");
+    expect(cutText("abcdefghij", 6)).toBe("abcde…");
   });
 });

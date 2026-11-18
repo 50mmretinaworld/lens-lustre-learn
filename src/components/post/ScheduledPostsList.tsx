@@ -55,7 +55,7 @@ import {
 import { toast } from "@/hooks/core/use-toast";
 import EditScheduledPostDialog from "@/components/post/EditScheduledPostDialog";
 import { postPath } from "@/lib/posts/postPath";
-import { memberTextPlain } from "@/lib/memberText";
+import MemberText from "@/components/MemberText";
 
 type TabKey = "upcoming" | "issues" | "published";
 
@@ -233,7 +233,7 @@ export default function ScheduledPostsList() {
                 </div>
                 {p.content && (
                   <p className="text-sm line-clamp-2 whitespace-pre-wrap break-words">
-                    {memberTextPlain(p.content)}
+                    <MemberText text={p.content} />
                   </p>
                 )}
                 {shifted && (
