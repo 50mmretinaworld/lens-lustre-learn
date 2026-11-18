@@ -46,6 +46,9 @@ AS $fn$
                   AND (m.status = 'sent' OR m.sender_id = (SELECT auth.uid()))));
 $fn$;
 
+REVOKE ALL ON FUNCTION public.message_photo_visible(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.message_photo_visible(text) TO authenticated, service_role;
+
 -- the two guards as they were in M1
 CREATE OR REPLACE FUNCTION public.message_log_append_only()
 RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $fn$

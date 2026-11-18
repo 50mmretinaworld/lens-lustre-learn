@@ -33,6 +33,7 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
+import { messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
   HARNESS_USER_ID, fixtureImage,
   adCreatives, categories, certificates, dashboardInit, dbAuditLogs, faqEntries, featuredArtists, follows, heroBanners,
@@ -332,6 +333,18 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   // J5a Job Engine page (screen-admin-jobs): read-only sample shaped like production 18 Nov.
   admin_jobs_overview: () => (adminJobsSampleOn() ? sampleJobsOverview() : { checked_at: null, switches: {}, kinds: [], alarms: [] }),
   admin_jobs_list: (b) => (adminJobsSampleOn() ? sampleJobsList(b) : []),
+  // Messages (screen-messages …). EVERY signed-in scene asks message_allowed_me / message_unread_counts (top bar), so they
+  // answer in every scene: "not allowed, nothing unread" unless the messages sample is on.
+  message_allowed_me: () => messagesSampleOn(),
+  message_unread_counts: () => (messagesSampleOn() ? sampleUnread() : { inbox: 0, requests: 0 }),
+  message_my_conversations: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
+  message_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),
+  message_mark_read: () => true,
+  message_accept_request: () => true,
+  message_decline_request: () => true,
+  message_set_muted: () => true,
+  message_send: () => ({ message_id: 999, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: false }),
+  message_send_photo: () => ({ message_id: 1000, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: false }),
   my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
   admin_list_account_reviews: () => (reviewSampleOn() ? [
     { user_id: profiles[1].id, full_name: profiles[1].full_name, state: "deletion_requested", reason: "member asked to delete the account", set_at: "2026-11-14T10:00:00.000Z", set_by_name: profiles[1].full_name, deletion_requested_at: "2026-11-14T10:00:00.000Z", auto_approve_at: "2027-05-13T10:00:00.000Z" },

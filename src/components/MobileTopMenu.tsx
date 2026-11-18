@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/core/useAuth";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
 import { useNotificationsQuery } from "@/hooks/notifications/useNotificationsQuery";
+import { useMessagingAllowed, useUnreadCounts } from "@/hooks/messages/useMessages";
 
 /** GlobalSearch listens for this and opens its sheet (its own icon is hidden on phones). */
 export const OPEN_SEARCH_EVENT = "app:open-search";
@@ -26,6 +27,9 @@ export default function MobileTopMenu() {
   // the same cached query the bell reads — no second request
   const { unreadTotal } = useNotificationsQuery(user?.id, isAdmin);
   const unread = Math.max(0, unreadTotal || 0);
+  const canMessage = useMessagingAllowed();
+  const mu = useUnreadCounts();
+  const msgUnread = mu.inbox + mu.requests;
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
@@ -48,6 +52,8 @@ export default function MobileTopMenu() {
             onClose={close}
             onNotifications={() => { close(); navigate("/notifications"); }}
             onSearch={() => { close(); window.setTimeout(() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT)), 0); }}
+            onMessages={canMessage ? () => { close(); navigate("/messages"); } : undefined}
+            messageUnread={msgUnread}
           />
         </Suspense>
       )}

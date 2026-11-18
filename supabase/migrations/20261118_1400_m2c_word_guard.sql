@@ -273,5 +273,8 @@ BEGIN
                             'status', _status, 'folder', _folder, 'new_chat', _new_conv, 'help', (_guard = 'help'));
 END
 $fn$;
+-- same callers as in M2: signed-in members and the service role, nobody else
+REVOKE ALL ON FUNCTION public.message_send(uuid, text, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.message_send(uuid, text, uuid) TO authenticated, service_role;
 
 COMMIT;

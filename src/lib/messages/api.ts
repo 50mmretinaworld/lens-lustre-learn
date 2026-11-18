@@ -9,6 +9,7 @@
  * A reply that does not have the expected shape is dropped, never half-shown.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { safeRandomUUID } from "@/lib/safeUuid";
 
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
 const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
@@ -23,6 +24,8 @@ export interface MessagePerson {
 }
 export interface ConversationSummary {
   conversationId: string;
+  kind: "direct" | "group";
+  title: string | null;
   folder: string;
   muted: boolean;
   lastMessageAt: string | null;
@@ -97,7 +100,8 @@ export function parseConversations(data: unknown): ConversationSummary[] {
           body: str(r.last.body) ?? "", createdAt: r.last.created_at as string }
       : null;
     out.push({
-      conversationId: r.conversation_id as string, folder: str(r.folder) ?? "inbox", muted: r.muted === true,
+      conversationId: r.conversation_id as string, kind: r.kind === "group" ? "group" : "direct", title: str(r.title),
+      folder: str(r.folder) ?? "inbox", muted: r.muted === true,
       lastMessageAt: str(r.last_message_at), other: person(r.other), last, unread: num(r.unread) ?? 0,
     });
   }
@@ -134,7 +138,7 @@ export function parseSendResult(data: unknown): SendResult | null {
 }
 
 /** One id per user action: a retry of the same action reuses it, so the server never stores it twice. */
-export const newClientMsgId = (): string => crypto.randomUUID();
+export const newClientMsgId = (): string => safeRandomUUID();
 
 export async function fetchConversations(folder: MessageFolder, limit = 30, before: string | null = null): Promise<ConversationSummary[]> {
   const { data, error } = await rpc("message_my_conversations", { _folder: folder, _limit: limit, _before: before });
@@ -190,8 +194,16 @@ export async function setConversationMuted(conversationId: string, muted: boolea
   if (error) throw new Error(error.message ?? "mute failed");
 }
 
+/** Name + picture of one member for a chat header (the public profile row; nothing private). */
+export async function fetchPerson(userId: string): Promise<MessagePerson | null> {
+  const { data, error } = await supabase.from("profiles").select("id, full_name, custom_url, avatar_url").eq("id", userId).maybeSingle();
+  if (error || !data) return null;
+  return { userId: data.id, fullName: data.full_name ?? null, username: data.custom_url ?? null, avatarUrl: data.avatar_url ?? null };
+}
+
 /** A 5-minute link for one photo; storage creates it only if the server's read rule passes. */
 export async function signedPhotoUrl(path: string): Promise<string | null> {
+  if (path.startsWith("data:image/")) return path; // never a real storage path: lets the screenshot harness show a swatch with no network
   const { data, error } = await supabase.storage.from("message-photos").createSignedUrl(path, 300);
   return error || !data ? null : data.signedUrl;
 }

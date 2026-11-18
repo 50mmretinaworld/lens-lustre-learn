@@ -303,4 +303,10 @@ BEGIN
 END
 $fn$;
 
+-- the two functions re-issued above keep their callers: signed-in members and the service role
+REVOKE ALL ON FUNCTION public.message_send(uuid, text, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.message_send(uuid, text, uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.message_thread(uuid, bigint, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.message_thread(uuid, bigint, integer) TO authenticated, service_role;
+
 COMMIT;

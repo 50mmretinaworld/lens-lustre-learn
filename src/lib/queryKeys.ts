@@ -48,6 +48,11 @@ export const queryKeys = {
   accountReviews: () => ["account-reviews"] as const,
   /** A4: one member's state log — rpc admin_account_state_history(_user_id). */
   accountStateHistory: (userId: string) => ["account-state-history", userId] as const,
+  /** Messages (M8): every key starts with "messages" so one invalidate refreshes them all. */
+  messageAllowed: (userId: string) => ["messages", "allowed", userId] as const,
+  messageUnread: (userId: string) => ["messages", "unread", userId] as const,
+  messageConversations: (userId: string, folder: string) => ["messages", "conversations", userId, folder] as const,
+  messageThread: (conversationId: string) => ["messages", "thread", conversationId] as const,
   /** J5a: admin Job Engine page — rpc admin_jobs_overview() (useAdminJobs). */
   adminJobsOverview: () => ["admin-jobs-overview"] as const,
   /** J5a: recent jobs — rpc admin_jobs_list(_status, _kind). */

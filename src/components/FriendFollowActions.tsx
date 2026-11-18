@@ -1,5 +1,6 @@
-import { UserPlus, UserMinus, UserCheck, Users, Heart, Clock } from "lucide-react";
+import { UserPlus, UserMinus, UserCheck, Users, Heart, Clock, MessageCircle } from "lucide-react";
 import PendingMark from "@/components/offline/PendingMark";
+import { useMessagingAllowed } from "@/hooks/messages/useMessages";
 import { useFriendFollow } from "@/hooks/social/useFriendFollow";
 import { useNavigate } from "react-router-dom";
 import { useConnections, type ConnectionKind } from "@/components/ConnectionsSheet";
@@ -128,6 +129,10 @@ export const FriendFollowButtons = ({ targetUserId }: Props) => {
     toggleFollow,
   } = useFriendFollow(targetUserId);
   const navigate = useNavigate();
+  // Messages: the button shows only when the server's switch lets THIS member message, and the two
+  // are linked (you follow them, or friends, or the target is the official account). The server
+  // refuses a send anyway; this only decides whether to show the button.
+  const canMessage = useMessagingAllowed();
 
   const requireLogin = () => {
     if (!isLoggedIn) {
@@ -274,6 +279,16 @@ export const FriendFollowButtons = ({ targetUserId }: Props) => {
         <Heart className={`h-3.5 w-3.5 ${isFollowing ? "fill-current" : ""}`} />
         {isFollowing ? "Following" : "Follow"}
       </button>
+      {canMessage && (isFollowing || friendStatus === "accepted" || isTargetAdmin) && (
+        <button
+          onClick={() => navigate(`/messages/with/${targetUserId}`)}
+          className={`${btnBase} bg-muted text-foreground hover:bg-muted/80`}
+          style={headingFont}
+        >
+          <MessageCircle className="h-3.5 w-3.5" />
+          Message
+        </button>
+      )}
       {/* S7b-5: a follow made with no network, kept on the phone until sent. */}
       <PendingMark subject={`follow:${targetUserId}`} />
     </div>

@@ -36,6 +36,7 @@ import GlobalSearch from "@/components/GlobalSearch";
 import { useTheme } from "@/hooks/core/useTheme";
 import UserMenu from "@/components/UserMenu";
 import NotificationBell from "@/components/NotificationBell";
+import MessagesNavButton from "@/components/messages/MessagesNavButton";
 import MobileTopMenu from "@/components/MobileTopMenu";
 import { useT } from "@/i18n/I18nContext";
 import { navKeyForLabel } from "@/i18n/translations";
@@ -414,6 +415,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <GlobalSearch />
+            {user && <MessagesNavButton />}
             {user && <NotificationBell />}
             {user ? (
               <UserMenu variant="desktop" />

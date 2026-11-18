@@ -68,6 +68,8 @@ const CompetitionLightbox = lazy(() => import("@/components/CompetitionLightbox"
 const Signup = lazy(() => import("@/pages/Signup"));
 const EditProfile = lazy(() => import("@/pages/EditProfile"));
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
+const Messages = lazy(() => import("@/pages/Messages"));
+const MessageThread = lazy(() => import("@/pages/MessageThread"));
 
 /**
  * The voting lightbox, open, on the first fixture photograph. The images are
@@ -500,6 +502,21 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
     (globalThis as { __harnessAdminJobs?: boolean }).__harnessAdminJobs = true;
     return screen(<AdminPanel />, "/admin/jobs", "/admin/*");
+  },
+  /** Messages inbox (Messages + Requests tabs), the REAL page with the synthetic sample (messagesSample.ts). */
+  "screen-messages": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<Messages />, "/messages", "/messages");
+  },
+  /** One chat: text, a photo, a held message of mine, composer. */
+  "screen-message-thread": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<MessageThread />, "/messages/aaaaaaaa-0000-4000-8000-000000000001", "/messages/:conversationId");
+  },
+  /** A chat in Requests: the Accept / Decline bar. */
+  "screen-message-request": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<MessageThread />, "/messages/aaaaaaaa-0000-4000-8000-000000000004", "/messages/:conversationId");
   },
   /** Admin → Comments: the "Suggestions under the comment box" editor (Owner 18 Nov 2026). */
   "screen-admin-comments": () => {

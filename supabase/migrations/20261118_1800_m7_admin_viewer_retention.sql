@@ -277,6 +277,8 @@ SELECT public.job_enqueue('message.maintenance', '{}'::jsonb,
          date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' + interval '1 day 3 hours 30 minutes');
 
 -- ── 8. rights ──────────────────────────────────────────────────────────────
+REVOKE ALL ON FUNCTION public.message_photo_visible(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.message_photo_visible(text) TO authenticated, service_role;
 REVOKE ALL ON FUNCTION public.admin_read_conversation(uuid, text, bigint, integer) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.admin_message_held_queue() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.admin_message_review(bigint, boolean, text) FROM PUBLIC, anon;
