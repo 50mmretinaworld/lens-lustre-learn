@@ -1,11 +1,14 @@
 /**
- * Messages · small shared pieces: avatar, refusal wording, helpline card, a bubble with its photos.
+ * Messages · shared pieces of the messenger: avatar, refusal wording, helpline card, bubbles with photos.
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
 import { useQuery } from "@tanstack/react-query";
-import { HeartHandshake } from "lucide-react";
+import { Clock, HeartHandshake } from "lucide-react";
+import { motion } from "framer-motion";
+import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson } from "@/lib/messages/api";
+import { clockText } from "@/lib/messages/format";
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
 
@@ -13,11 +16,15 @@ export function PersonAvatar({ person, size = 44 }: { person: MessagePerson | nu
   const name = person?.fullName?.trim() || "Member";
   const initial = name.charAt(0).toUpperCase();
   return person?.avatarUrl ? (
-    <span className="shrink-0 overflow-hidden rounded-full bg-muted" style={{ width: size, height: size }}>
+    <span className="shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border/60" style={{ width: size, height: size }}>
       <OptimizedImage src={person.avatarUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
     </span>
   ) : (
-    <span aria-hidden className="grid shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground" style={{ width: size, height: size }}>
+    <span
+      aria-hidden
+      className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/25 to-amber-400/25 font-semibold text-foreground/80 ring-1 ring-border/60"
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}
+    >
       {initial}
     </span>
   );
@@ -50,51 +57,83 @@ export function refusalText(r: SendRefusal): string {
 /** Shown after the word guard finds a self-harm phrase. The message itself was delivered. */
 export function HelplineCard({ onClose }: { onClose: () => void }) {
   return (
-    <div role="status" data-testid="helpline-card" className="mx-3 my-2 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-sm">
-      <div className="mb-1 flex items-center gap-2 font-semibold" style={headingFont}>
-        <HeartHandshake className="h-4 w-4 text-primary" /> You are not alone
+    <div role="status" data-testid="helpline-card" className="mx-4 my-3 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 to-amber-400/10 p-4 text-sm">
+      <div className="mb-1.5 flex items-center gap-2 font-semibold" style={headingFont}>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary"><HeartHandshake className="h-4 w-4" /></span>
+        You are not alone
       </div>
       <p className="text-muted-foreground">If you are going through a hard time, please talk to someone now.
         India: Tele-MANAS 14416 (free, 24 hours). United States: call or text 988.</p>
-      <button type="button" onClick={onClose} className="mt-2 text-xs font-medium text-primary underline-offset-2 hover:underline">Close</button>
+      <button type="button" onClick={onClose} className="mt-2.5 rounded-full bg-background/70 px-3 py-1 text-xs font-semibold text-primary hover:bg-background">Close</button>
     </div>
   );
 }
 
-function PhotoTile({ path, width, height }: { path: string; width: number | null; height: number | null }) {
+function PhotoTile({ path, width, height, single }: { path: string; width: number | null; height: number | null; single: boolean }) {
   // A 5-minute link, asked for only when the tile is on screen; the server's read rule decides.
   const { data: url } = useQuery({ queryKey: ["messages", "photo", path], queryFn: () => signedPhotoUrl(path), staleTime: 4 * 60_000 });
-  const ratio = width && height ? `${width} / ${height}` : "4 / 3";
-  return url ? (
-    <div className="w-full overflow-hidden rounded-xl" style={{ aspectRatio: ratio }}>
-      <OptimizedImage src={url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" />
+  const ratio = single && width && height ? `${width} / ${height}` : "1 / 1";
+  return (
+    <div className="w-full overflow-hidden bg-muted" style={{ aspectRatio: ratio }}>
+      {url ? <OptimizedImage src={url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" /> : <div aria-hidden className="h-full w-full animate-pulse" />}
     </div>
-  ) : (
-    <div aria-hidden className="w-full animate-pulse rounded-xl bg-muted" style={{ aspectRatio: ratio }} />
   );
 }
 
-export function MessageBubble({ m, mine }: { m: ThreadMessage; mine: boolean }) {
-  // a photo with no caption is the picture alone (no coloured frame around it)
+/**
+ * One bubble. `first` / `last` come from groupChat: a run of messages from the same person reads as one
+ * block (small corner where they join), and only the last one carries the time.
+ */
+export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine: boolean; first: boolean; last: boolean }) {
+  // 1–3 emoji and nothing else: shown large with no bubble, and they pop in
+  if (m.photos.length === 0 && m.status !== "held" && isEmojiOnly(m.body)) {
+    return (
+      <div className={`flex flex-col ${mine ? "items-end" : "items-start"} px-4 ${first ? "mt-3" : "mt-0.5"}`}>
+        <motion.span
+          data-testid="emoji-big"
+          initial={{ scale: 0.3, rotate: -12, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
+          whileHover={{ scale: 1.18, rotate: [0, -8, 8, -4, 0] }}
+          transition={{ type: "spring", stiffness: 420, damping: 14 }}
+          className="inline-block cursor-default select-none text-[52px] leading-none"
+        >
+          {m.body.trim()}
+        </motion.span>
+        {last && <span className="mt-1 px-1 text-[11px] text-muted-foreground">{clockText(m.createdAt)}</span>}
+      </div>
+    );
+  }
   const photoOnly = m.photos.length > 0 && !m.body && m.status !== "held";
+  const single = m.photos.length === 1;
+  // rounded 22px; the corner facing the other side tightens where bubbles join, and flattens on the tail side of the last one
+  const join = mine
+    ? `${first ? "rounded-tr-[22px]" : "rounded-tr-md"} ${last ? "rounded-br-md" : "rounded-br-md"}`
+    : `${first ? "rounded-tl-[22px]" : "rounded-tl-md"} ${last ? "rounded-bl-md" : "rounded-bl-md"}`;
+  const shape = `rounded-[22px] ${join}`;
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"} px-3`}>
+    <div className={`flex flex-col ${mine ? "items-end" : "items-start"} px-4 ${first ? "mt-3" : "mt-0.5"}`}>
       <div
         data-testid={mine ? "bubble-mine" : "bubble-theirs"}
-        className={`max-w-[78%] whitespace-pre-wrap break-words text-[15px] leading-snug ${
+        className={`max-w-[80%] overflow-hidden whitespace-pre-wrap break-words text-[15px] leading-[1.35] sm:max-w-[68%] ${shape} ${
           photoOnly
-            ? "w-[78%]"
-            : `rounded-2xl px-3.5 py-2 ${mine ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted text-foreground rounded-bl-md"}`
+            ? "w-[min(80%,280px)] shadow-sm ring-1 ring-border/50"
+            : mine
+              ? "bg-gradient-to-br from-primary to-primary/80 px-3.5 py-2 text-primary-foreground shadow-sm"
+              : "bg-foreground/10 px-3.5 py-2 text-foreground"
         }`}
       >
         {m.photos.length > 0 && (
-          <div className={`mb-1 grid gap-1 ${m.photos.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-            {m.photos.map((p) => <PhotoTile key={p.path} path={p.path} width={p.width} height={p.height} />)}
+          <div className={`grid gap-0.5 ${single ? "grid-cols-1" : "grid-cols-2"} ${m.body ? "-mx-3.5 -mt-2 mb-2" : ""}`}>
+            {m.photos.map((p) => <PhotoTile key={p.path} path={p.path} width={p.width} height={p.height} single={single} />)}
           </div>
         )}
         {m.body && <span>{m.body}</span>}
-        {m.status === "held" && <span className="mt-1 block text-[11px] opacity-70">Waiting for review</span>}
       </div>
+      {(last || m.status === "held") && (
+        <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground">
+          {m.status === "held" ? <><Clock className="h-3 w-3" /> Waiting for review</> : clockText(m.createdAt)}
+        </span>
+      )}
     </div>
   );
 }

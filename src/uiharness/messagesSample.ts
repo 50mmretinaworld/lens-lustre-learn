@@ -61,5 +61,6 @@ export function sampleThread(body: Record<string, unknown>): unknown[] {
     m(103, HARNESS_USER_ID, "Thank you! Shot at golden hour, mostly natural light.", 31),
     m(102, them, "Hey! Saw your latest post. Are you free this weekend for a photo walk?", 60),
     m(101, HARNESS_USER_ID, "Waiting for review", 62, { status: "held", body: "Which party are you voting for in the election?" }),
+    m(100, HARNESS_USER_ID, "😍🔥", 95),
   ];
 }

@@ -55,6 +55,16 @@ const SHOTS = [
     await p.getByTestId("helpline-card").waitFor({ timeout: 30000 });
     await p.waitForTimeout(600);
   }],
+  ["chat-emoji-phone", "screen-message-thread", PHONE, "smart-replies", async (p) => {
+    await p.getByRole("button", { name: "Emoji" }).click();
+    await p.getByTestId("emoji-picker").waitFor({ timeout: 30000 });
+    await p.waitForTimeout(700);
+  }],
+  ["chat-emoji-desktop", "screen-message-thread", DESKTOP, "smart-replies", async (p) => {
+    await p.getByRole("button", { name: "Emoji" }).click();
+    await p.getByTestId("emoji-picker").waitFor({ timeout: 30000 });
+    await p.waitForTimeout(700);
+  }],
   ["chat-reading-only-phone", "screen-message-thread&sendoff=1", PHONE, "send-off-note", null],
   ["inbox-desktop", "screen-messages", DESKTOP, "conversation-row", null],
   ["inbox-phone", "screen-messages", PHONE, "conversation-row", null],
