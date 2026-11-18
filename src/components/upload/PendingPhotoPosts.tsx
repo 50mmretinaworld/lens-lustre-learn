@@ -10,6 +10,7 @@ import { onlineManager } from "@tanstack/react-query";
 import { Clock, ImageIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/core/useAuth";
 import { photoJobsFor, subscribePhotoJobs, type PhotoJob } from "@/lib/upload/photoJobs";
+import { memberTextPlain } from "@/lib/memberText";
 
 /** What the job is really doing now: it also waits here while online, uploading or between tries. */
 function statusWords(online: boolean, attempts: number): string {
@@ -45,7 +46,7 @@ export default function PendingPhotoPosts() {
     <div className="space-y-2 mb-3" data-testid="pending-photo-posts">
       {jobs.map((j) => (
         <div key={j.id} className="border border-dashed border-border rounded-xl p-3 text-sm">
-          {j.post.content && <p className="text-foreground line-clamp-2">{j.post.content}</p>}
+          {j.post.content && <p className="text-foreground line-clamp-2">{memberTextPlain(j.post.content)}</p>}
           <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
             {j.slots.length === 1 ? "1 photo" : `${j.slots.length} photos`}
