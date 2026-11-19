@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-19T13:56:33.158Z",
+  "at": "2026-11-19T22:04:37.077Z",
   "window": 12,
   "lanes": {
     "live": {
@@ -7,13 +7,13 @@
         "home": {
           "ok": true,
           "status": 200,
-          "ttfb": 280,
+          "ttfb": 377,
           "p95": 1696
         },
         "site_settings": {
           "ok": true,
           "status": 200,
-          "ttfb": 912,
+          "ttfb": 1523,
           "p95": 2397
         },
         "feed_rest": {
@@ -25,11 +25,11 @@
         "cdn_image": {
           "ok": true,
           "status": 200,
-          "ttfb": 406,
+          "ttfb": 666,
           "p95": 929
         }
       },
-      "est_egress_per_1k_feed_views_mb": 699,
+      "est_egress_per_1k_feed_views_mb": 850,
       "feed_page_images": 10
     },
     "staging": {
@@ -37,25 +37,25 @@
         "home": {
           "ok": true,
           "status": 200,
-          "ttfb": 544,
+          "ttfb": 360,
           "p95": 1529
         },
         "site_settings": {
           "ok": true,
           "status": 200,
-          "ttfb": 922,
+          "ttfb": 1099,
           "p95": 1387
         },
         "feed_rest": {
           "ok": true,
           "status": 200,
-          "ttfb": 733,
+          "ttfb": 782,
           "p95": 1011
         },
         "cdn_image": {
           "ok": true,
           "status": 200,
-          "ttfb": 674,
+          "ttfb": 472,
           "p95": 674
         }
       },
