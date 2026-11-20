@@ -683,6 +683,8 @@ export const fixtureRoutes: FakeRoute[] = [
     }
     // ?tagrename=1: the renamed member's profile (storySample.ts) — the tag shows THIS name.
     if (table === "profiles_public_data" && tagRenameOn()) return countable([...profilesPublicData, ...sampleTagProfiles()], method);
+    // Admin → Messages sample: AdminPanel's own header counters (nothing open, nothing unread).
+    if (adminMessagesSampleOn() && (table === "support_tickets" || table === "admin_notifications")) return countable([], method);
     // Admin → Users sample: the members' roles, badges and activity rows.
     if (adminUsersSampleOn()) {
       const sample: Record<string, () => unknown[]> = {

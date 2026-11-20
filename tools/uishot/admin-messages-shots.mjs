@@ -46,8 +46,7 @@ const reason = async (p, text) => {
 };
 /** pick the first search result of a member picker */
 const pick = async (p, label, q) => {
-  await p.getByLabel(label, { exact: false }).first().click().catch(() => {});
-  const box = p.getByPlaceholder(/search/i).first();
+  const box = p.getByPlaceholder("Search by name or email…").first();
   await box.fill(q);
   await p.waitForTimeout(900);
   await p.locator("button, li").filter({ hasText: /Somnath Roy/ }).first().click();
