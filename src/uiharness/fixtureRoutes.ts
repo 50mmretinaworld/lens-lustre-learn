@@ -33,6 +33,7 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
+import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleHeld, sampleMemberChats, sampleReadConversation, sampleProfileSearch } from "./adminMessagesSample";
 import { messagesFlag, messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
   HARNESS_USER_ID, fixtureImage,
@@ -333,6 +334,22 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   // J5a Job Engine page (screen-admin-jobs): read-only sample shaped like production 18 Nov.
   admin_jobs_overview: () => (adminJobsSampleOn() ? sampleJobsOverview() : { checked_at: null, switches: {}, kinds: [], alarms: [] }),
   admin_jobs_list: (b) => (adminJobsSampleOn() ? sampleJobsList(b) : []),
+  // M8b Messages admin page (screen-admin-messages*). Reads answer from the sample; writes answer as the SQL would.
+  message_admin_state: () => (adminMessagesSampleOn() ? sampleMessageAdminState() : { mode: "allowed_selected", groups_enabled: false, updated_at: null, members: [], rules: [], log: [] }),
+  admin_message_word_rules: () => (adminMessagesSampleOn() ? sampleWordRules() : []),
+  admin_message_held_queue: () => (adminMessagesSampleOn() ? sampleHeld() : []),
+  admin_message_member_chats: () => (adminMessagesSampleOn() ? sampleMemberChats() : []),
+  admin_read_conversation: () => (adminMessagesSampleOn() ? sampleReadConversation() : null),
+  admin_message_review: (b) => (b._approve === true ? "sent" : "rejected"),
+  message_admin_set_mode: (b) => b._mode,
+  message_admin_set_groups: (b) => b._on === true,
+  message_admin_list_add: () => true,
+  message_admin_list_remove: () => true,
+  message_admin_set_member_rule: () => true,
+  message_admin_clear_member_rule: () => true,
+  message_admin_word_add: () => 99,
+  message_admin_word_set_active: (b) => b._active === true,
+  search_profiles_admin: () => (adminMessagesSampleOn() ? sampleProfileSearch() : []),
   // Messages (screen-messages …). EVERY signed-in scene asks message_allowed_me / message_unread_counts (top bar), so they
   // answer in every scene: "not allowed, nothing unread" unless the messages sample is on.
   message_allowed_me: () => messagesSampleOn() && !messagesFlag("sendoff"),

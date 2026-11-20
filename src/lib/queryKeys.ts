@@ -54,6 +54,10 @@ export const queryKeys = {
   adminJobsOverview: () => ["admin-jobs-overview"] as const,
   /** J5a: recent jobs — rpc admin_jobs_list(_status, _kind). */
   adminJobsList: (status: string, kind: string) => ["admin-jobs-list", status, kind] as const,
+  /** M8b: Admin → Messages — switch state, word list, held queue (useAdminMessages). */
+  adminMessagesState: () => ["admin-messages-state"] as const,
+  adminMessagesWords: () => ["admin-messages-words"] as const,
+  adminMessagesHeld: () => ["admin-messages-held"] as const,
   /** Admin → Users table — rpc admin_search_users_v4 + admin_user_facets (useAdminMembers). */
   adminMembers: () => ["admin-members"] as const,
   adminPush: () => ["admin-push"] as const,
