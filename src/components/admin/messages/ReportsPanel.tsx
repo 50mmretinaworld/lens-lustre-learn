@@ -13,6 +13,7 @@ import AdminDataTable, { type DTColumn } from "@/components/admin/AdminDataTable
 import AdminSidePanel, { PanelField } from "@/components/admin/AdminSidePanel";
 import { cmpDate, cmpNum, cmpText, downloadCsv, useClientTable } from "@/components/admin/useClientTable";
 import { MemberAvatar } from "@/components/admin/users/memberUi";
+import AutoBadge from "@/components/AutoBadge";
 import ChatPane from "@/components/messages/ChatPane";
 import { ViewAsProvider } from "@/components/messages/viewAs";
 import {
@@ -75,8 +76,8 @@ export default function ReportsPanel() {
 
   const reportColumns = useMemo<DTColumn<ReportRow>[]>(() => [
     { key: "reason", header: "Reason", sortKey: "reason", cell: (r) => <Badge variant={r.reason === "threat" || r.reason === "nudity" ? "destructive" : "secondary"}>{REASON_TEXT[r.reason]}</Badge> },
-    { key: "reported", header: "Reported", sortKey: "reported", cell: (r) => <span className="font-medium">{who(r.reported_name, r.reported_id)}</span> },
-    { key: "reporter", header: "Reported by", sortKey: "reporter", cell: (r) => <span className="text-sm">{who(r.reporter_name, r.reporter_id)}</span> },
+    { key: "reported", header: "Reported", sortKey: "reported", cell: (r) => <span className="inline-flex items-center gap-1 font-medium">{who(r.reported_name, r.reported_id)}{r.reported_id && <AutoBadge userId={r.reported_id} only="verified" />}</span> },
+    { key: "reporter", header: "Reported by", sortKey: "reporter", cell: (r) => <span className="inline-flex items-center gap-1 text-sm">{who(r.reporter_name, r.reporter_id)}<AutoBadge userId={r.reporter_id} only="verified" /></span> },
     { key: "count", header: "Reports (30 d)", sortKey: "count", cell: (r) => (r.reports_30d > 1 ? <Badge variant="outline">{r.reports_30d}</Badge> : <span className="text-muted-foreground">{r.reports_30d}</span>) },
     { key: "date", header: "When", sortKey: "date", className: "whitespace-nowrap", cell: (r) => <span className="text-sm text-muted-foreground">{when(r.created_at)}</span> },
     { key: "act", header: "", className: "w-32 text-right", cell: (r) => (r.status === "open"
@@ -89,7 +90,7 @@ export default function ReportsPanel() {
     { key: "member", header: "Member", sortKey: "member", cell: (w) => (
       <div className="flex items-center gap-3">
         <MemberAvatar m={{ avatar_url: w.avatar_url, full_name: w.full_name, email: null }} size={32} />
-        <div className="min-w-0"><p className="truncate font-medium">{w.full_name || (w.username ? `@${w.username}` : w.user_id.slice(0, 8))}</p>{w.username && <p className="truncate text-xs text-muted-foreground">@{w.username}</p>}</div>
+        <div className="min-w-0"><p className="flex items-center gap-1 font-medium"><span className="truncate">{w.full_name || (w.username ? `@${w.username}` : w.user_id.slice(0, 8))}</span><AutoBadge userId={w.user_id} only="verified" /></p>{w.username && <p className="truncate text-xs text-muted-foreground">@{w.username}</p>}</div>
       </div>) },
     { key: "reports", header: "Reports (30 d)", sortKey: "reports", cell: (w) => <Badge variant={w.open_reports > 0 ? "destructive" : "outline"}>{w.reports_30d}</Badge> },
     { key: "open", header: "Open now", sortKey: "open", cell: (w) => <span className={w.open_reports > 0 ? "font-medium" : "text-muted-foreground"}>{w.open_reports}</span> },

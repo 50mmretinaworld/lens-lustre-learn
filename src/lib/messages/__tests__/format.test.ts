@@ -2,6 +2,22 @@ import { describe, expect, it } from "vitest";
 import { dayLabel, groupChat } from "../format";
 import type { ThreadMessage } from "../api";
 
+import { activeAgoText } from "../format";
+describe("activeAgoText", () => {
+  const now = new Date("2026-11-21T12:00:00Z");
+  const ago = (ms: number) => new Date(now.getTime() - ms).toISOString();
+  it("reads like Meta: minutes, hours, yesterday, days, then nothing", () => {
+    expect(activeAgoText(ago(20_000), now)).toBe("Active just now");
+    expect(activeAgoText(ago(12 * 60_000), now)).toBe("Active 12 m ago");
+    expect(activeAgoText(ago(3 * 3_600_000), now)).toBe("Active 3 h ago");
+    expect(activeAgoText(ago(30 * 3_600_000), now)).toBe("Active yesterday");
+    expect(activeAgoText(ago(4 * 86_400_000), now)).toBe("Active 4 d ago");
+    expect(activeAgoText(ago(9 * 86_400_000), now)).toBeNull();
+    expect(activeAgoText(null, now)).toBeNull();
+    expect(activeAgoText("nonsense", now)).toBeNull();
+  });
+});
+
 const m = (id: number, sender: string, iso: string): ThreadMessage => ({ id, senderId: sender, kind: "text", body: "x", createdAt: iso, status: "sent", tick: null, reply: null, photos: [] });
 
 describe("messages display rules", () => {

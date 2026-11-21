@@ -14,6 +14,7 @@ import {
 import { toast } from "@/hooks/core/use-toast";
 import AdminDataTable, { type DTColumn } from "@/components/admin/AdminDataTable";
 import { MemberAvatar } from "@/components/admin/users/memberUi";
+import AutoBadge from "@/components/AutoBadge";
 import { adminMessageCall } from "@/hooks/admin/useAdminMessages";
 import {
   useBroadcastReport, useBroadcastRecipients, useRefreshBroadcasts,
@@ -77,7 +78,7 @@ export default function BroadcastDetail({ id, onBack }: { id: number; onBack: ()
   const peopleCols = useMemo<DTColumn<BcRecipient>[]>(() => [
     { key: "member", header: "Member", className: "max-w-[320px]", cell: (m) => (
       <div className="flex items-center gap-3"><MemberAvatar m={{ avatar_url: m.avatar_url, full_name: m.full_name, email: null }} />
-        <div className="min-w-0"><p className="truncate font-medium">{m.full_name || (m.username ? `@${m.username}` : m.user_id.slice(0, 8))}</p>
+        <div className="min-w-0"><p className="flex items-center gap-1 font-medium"><span className="truncate">{m.full_name || (m.username ? `@${m.username}` : m.user_id.slice(0, 8))}</span><AutoBadge userId={m.user_id} only="verified" /></p>
           {m.username && <p className="truncate text-xs text-muted-foreground">@{m.username}</p>}</div></div>) },
     { key: "state", header: "Status", cell: (m) => {
       const s = m.status === "delivered" && m.read ? "read" : m.status;
