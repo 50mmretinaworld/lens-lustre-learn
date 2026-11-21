@@ -67,7 +67,7 @@ export interface SendResult {
 export type SendRefusal =
   | "sign_in" | "under_review" | "bad_recipient" | "bad_message" | "not_available" | "recipient_unavailable"
   | "paused" | "text_off" | "photos_off" | "friends_only" | "blocked" | "no_link"
-  | "too_fast" | "daily_limit" | "chat_limit" | "photo_limit" | "word_guard" | "new_link" | "bad_photo" | "unknown";
+  | "too_fast" | "daily_limit" | "chat_limit" | "photo_limit" | "word_guard" | "new_link" | "bad_photo" | "upload_failed" | "unknown";
 
 const REFUSALS: Record<string, SendRefusal> = {
   "MSG-001": "sign_in", ACCOUNT_UNDER_REVIEW: "under_review", "MSG-002": "bad_recipient", "MSG-003": "bad_message",
@@ -225,6 +225,13 @@ export async function reportConversation(conversationId: string, reason: ReportR
 export async function setConversationMuted(conversationId: string, muted: boolean): Promise<void> {
   const { error } = await rpc("message_set_muted", { _conversation: conversationId, _muted: muted });
   if (error) throw new Error(error.message ?? "mute failed");
+}
+
+/** When a chat partner was last active (null: unknown, hidden by them, or no shared chat). Only asked while they are not online. */
+export async function fetchPeerLastActive(userId: string): Promise<string | null> {
+  const { data, error } = await rpc("message_peer_status", { _user: userId });
+  if (error || typeof data !== "string") return null;
+  return Number.isFinite(Date.parse(data)) ? data : null;
 }
 
 /** Name + picture of one member for a chat header (the public profile row; nothing private). */

@@ -8,6 +8,7 @@ import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
 import { relativeAge } from "@/lib/notifications/describe";
 import { useConversations, useUnreadCounts } from "@/hooks/messages/useMessages";
+import AutoBadge from "@/components/AutoBadge";
 import { PersonAvatar, Ticks, headingFont } from "@/components/messages/MessageParts";
 import { useViewAs } from "@/components/messages/viewAs";
 import type { ConversationSummary, MessageFolder } from "@/lib/messages/api";
@@ -25,10 +26,10 @@ function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: bool
         onClick={onOpen}
         className={`flex w-full items-center gap-3.5 rounded-2xl px-3 py-2.5 text-left transition-colors ${active ? "bg-primary/10" : "hover:bg-muted/60"}`}
       >
-        <PersonAvatar person={c.other} size={54} />
+        <PersonAvatar person={c.other} size={54} showOnline />
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-2">
-            <span className={`truncate text-[15px] ${c.unread > 0 ? "font-bold" : "font-semibold"}`} style={headingFont}>{name}</span>
+            <span className="flex min-w-0 items-center gap-1"><span className={`truncate text-[15px] ${c.unread > 0 ? "font-bold" : "font-semibold"}`} style={headingFont}>{name}</span>{c.kind === "direct" && <AutoBadge userId={c.other?.userId} only="verified" />}</span>
             {c.lastMessageAt && <span className={`shrink-0 text-xs ${c.unread > 0 ? "font-semibold text-primary" : "text-muted-foreground"}`}>{relativeAge(c.lastMessageAt)}</span>}
           </span>
           <span className="mt-0.5 flex items-center gap-2">

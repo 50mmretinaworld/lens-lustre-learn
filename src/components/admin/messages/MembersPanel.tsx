@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AdminDataTable, { type DTColumn, type DTSort } from "@/components/admin/AdminDataTable";
 import { MemberAvatar } from "@/components/admin/users/memberUi";
+import AutoBadge from "@/components/AutoBadge";
 import ConversationList from "@/components/messages/ConversationList";
 import ChatPane from "@/components/messages/ChatPane";
 import { ViewAsProvider } from "@/components/messages/viewAs";
@@ -95,7 +96,7 @@ export default function MembersPanel() {
       <div className="flex items-center gap-3">
         <MemberAvatar m={m} />
         <div className="min-w-0">
-          <p className="truncate font-medium">{nameOf(m)}</p>
+          <p className="flex items-center gap-1 truncate font-medium"><span className="truncate">{nameOf(m)}</span><AutoBadge userId={m.user_id} only="verified" /></p>
           <p className="truncate text-xs text-muted-foreground">{m.email ?? "—"}{m.username ? ` · @${m.username}` : ""}</p>
         </div>
       </div>) },
