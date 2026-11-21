@@ -229,6 +229,11 @@ export async function setConversationMuted(conversationId: string, muted: boolea
   const { error } = await rpc("message_set_muted", { _conversation: conversationId, _muted: muted });
   if (error) throw new Error(error.message ?? "mute failed");
 }
+/** "Delete chat for me" (SQL 3300): clears the chat from this member's side only; the other member keeps everything. */
+export async function clearConversation(conversationId: string): Promise<void> {
+  const { error } = await rpc("message_clear_chat", { _conversation: conversationId });
+  if (error) throw new Error(error.message ?? "clear failed");
+}
 
 /** When a chat partner was last active (null: unknown, hidden by them, or no shared chat). Only asked while they are not online. */
 export async function fetchPeerLastActive(userId: string): Promise<string | null> {
