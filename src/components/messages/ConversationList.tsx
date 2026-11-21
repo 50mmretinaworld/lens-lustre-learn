@@ -8,7 +8,7 @@ import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
 import { relativeAge } from "@/lib/notifications/describe";
 import { useConversations, useUnreadCounts } from "@/hooks/messages/useMessages";
-import { PersonAvatar, headingFont } from "@/components/messages/MessageParts";
+import { PersonAvatar, Ticks, headingFont } from "@/components/messages/MessageParts";
 import { useViewAs } from "@/components/messages/viewAs";
 import type { ConversationSummary, MessageFolder } from "@/lib/messages/api";
 
@@ -33,6 +33,7 @@ function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: bool
           </span>
           <span className="mt-0.5 flex items-center gap-2">
             <span className={`flex min-w-0 flex-1 items-center gap-1 truncate text-sm ${c.unread > 0 ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+              {mine && <Ticks tick={c.last?.tick} className="mr-0.5" />}
               {mine && <span className="shrink-0">You:</span>}
               {photo && <Camera className="h-3.5 w-3.5 shrink-0" />}
               <span className="truncate">{photo ? "Photo" : c.last?.body}</span>

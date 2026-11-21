@@ -366,6 +366,7 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   // Messages (screen-messages …). EVERY signed-in scene asks message_allowed_me / message_unread_counts (top bar), so they
   // answer in every scene: "not allowed, nothing unread" unless the messages sample is on.
   message_allowed_me: () => messagesSampleOn() && !messagesFlag("sendoff"),
+  message_mark_delivered: () => 0,
   message_unread_counts: () => (messagesSampleOn() ? sampleUnread() : { inbox: 0, requests: 0 }),
   message_my_conversations: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
   message_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),

@@ -31,7 +31,7 @@ const inbox = () => [
   { conversation_id: CONV.ranjana, kind: "direct", title: null, folder: "inbox", muted: false, last_message_at: ago(12), other: person(1),
     last: { id: 106, sender_id: profiles[1].id, kind: "text", body: "Loved the frame from Sunday — which lens was that?", created_at: ago(12) }, unread: 2 },
   { conversation_id: CONV.liwei, kind: "direct", title: null, folder: "inbox", muted: false, last_message_at: ago(190), other: person(2),
-    last: { id: 91, sender_id: HARNESS_USER_ID, kind: "text", body: "Sure, see you at the walk on Saturday", created_at: ago(190) }, unread: 0 },
+    last: { id: 91, sender_id: HARNESS_USER_ID, kind: "text", body: "Sure, see you at the walk on Saturday", created_at: ago(190), tick: "read" }, unread: 0 },
   { conversation_id: CONV.official, kind: "direct", title: null, folder: "inbox", muted: false, last_message_at: ago(1500),
     other: { user_id: "00000000-0000-4000-8000-0000000000aa", full_name: "50mm Retina World", username: "50mm", avatar_url: null },
     last: { id: 70, sender_id: "00000000-0000-4000-8000-0000000000aa", kind: "text", body: "Welcome to private messages. Be kind, keep it respectful.", created_at: ago(1500) }, unread: 0 },
@@ -54,10 +54,16 @@ export function sampleThread(body: Record<string, unknown>): unknown[] {
   if (id === CONV.stranger) {
     return [m(120, them, "Hi! Big fan of your portraits — can I ask about your editing?", 45)];
   }
+  // ?ticks=sent|delivered → my own newest message, to photograph each tick (the default thread ends with their message, so smart replies show)
+  const tickDemo = typeof location !== "undefined" ? new URLSearchParams(location.search).get("ticks") : null;
+  const mine = tickDemo === "sent" || tickDemo === "delivered"
+    ? [m(107, HARNESS_USER_ID, "It was the 50mm f/1.4 — I'll send the settings tonight", 1, { tick: tickDemo })]
+    : [];
   return [
+    ...mine,
     m(106, them, "Loved the frame from Sunday — which lens was that?", 12),
     m(105, them, "The light on her face is unreal", 13),
-    m(104, HARNESS_USER_ID, "", 30, { kind: "photo", photos: [{ path: fixtureImage(11, "50mm f/1.4"), width: 900, height: 600 }] }),
+    m(104, HARNESS_USER_ID, "", 30, { kind: "photo", tick: "read", photos: [{ path: fixtureImage(11, "50mm f/1.4"), width: 900, height: 600 }] }),
     m(103, HARNESS_USER_ID, "Thank you! Shot at golden hour, mostly natural light.", 31),
     m(102, them, "Hey! Saw your latest post. Are you free this weekend for a photo walk?", 60),
     m(101, HARNESS_USER_ID, "Are you joining the photo walk on Saturday?", 62),
