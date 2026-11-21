@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/core/useAuth";
 import { useEffect } from "react";
 import ConversationList from "@/components/messages/ConversationList";
 import ChatPane from "@/components/messages/ChatPane";
+import GroupChatPane from "@/components/messages/GroupChatPane";
+import { useConversations } from "@/hooks/messages/useMessages";
 import { headingFont } from "@/components/messages/MessageParts";
 
 export default function MessagesRoutes() {
@@ -22,6 +24,8 @@ export default function MessagesRoutes() {
   const withUser = matchPath("/messages/with/:userId", pathname)?.params.userId ?? null;
   const chatId = withUser ? null : (matchPath("/messages/:conversationId", pathname)?.params.conversationId ?? null);
   const hasChat = !!(withUser || chatId);
+  const inbox = useConversations("inbox");
+  const isGroup = !!chatId && (inbox.data ?? []).some((c) => c.conversationId === chatId && c.kind === "group");
 
   return (
     <div className="mx-auto h-[calc(100dvh-7.5rem)] w-full max-w-[1180px] lg:h-[calc(100dvh-6.5rem)] lg:px-4 lg:py-3">
@@ -31,7 +35,9 @@ export default function MessagesRoutes() {
         </section>
         <section className={`${hasChat ? "block" : "hidden lg:block"} h-full min-w-0 flex-1`}>
           {hasChat ? (
-            <ChatPane key={chatId ?? withUser} conversationId={chatId} userId={withUser} onBack={() => navigate("/messages")} />
+            isGroup && chatId
+              ? <GroupChatPane key={chatId} conversationId={chatId} onBack={() => navigate("/messages")} />
+              : <ChatPane key={chatId ?? withUser} conversationId={chatId} userId={withUser} onBack={() => navigate("/messages")} />
           ) : (
             <div className="grid h-full place-items-center bg-gradient-to-b from-background to-muted/30 px-8 text-center">
               <div>
