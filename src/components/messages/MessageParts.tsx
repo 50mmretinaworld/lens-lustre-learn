@@ -2,15 +2,19 @@
  * Messages · shared pieces of the messenger: avatar, refusal wording, helpline card, bubbles with photos.
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
+import { lazy, Suspense, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, CheckCheck, Clock, HeartHandshake, ImageOff, Reply } from "lucide-react";
+import { Check, CheckCheck, Clock, Copy, HeartHandshake, ImageOff, Reply } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
+import AutoBadge from "@/components/AutoBadge";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
 import { clockText } from "@/lib/messages/format";
 import { keepPhotoOnDevice, readLocalPhoto } from "@/lib/messages/photoCache";
 import { useOnline } from "@/lib/presence/online";
+
+const PhotoViewer = lazy(() => import("@/components/messages/PhotoViewer"));
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
 
@@ -119,6 +123,7 @@ export function HelplineCard({ onClose }: { onClose: () => void }) {
 }
 
 function PhotoTile({ path, width, height, single, expired }: { path: string; width: number | null; height: number | null; single: boolean; expired?: boolean }) {
+  const [open, setOpen] = useState(false);
   // 1) this device's own copy (kept the first time the photo was shown); 2) a 5-minute link, asked for only when the tile is
   // on screen — the server's read rule decides — and a copy is kept on this device; 3) the server deleted it after 30 days
   // and this device has no copy: "Photo no longer available".
@@ -145,7 +150,12 @@ function PhotoTile({ path, width, height, single, expired }: { path: string; wid
   }
   return (
     <div className="w-full overflow-hidden bg-muted" style={{ aspectRatio: ratio }}>
-      {data?.url ? <OptimizedImage src={data.url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" /> : <div aria-hidden className="h-full w-full animate-pulse" />}
+      {data?.url ? (
+        <button type="button" data-testid="photo-open" aria-label="Open photo" onClick={() => setOpen(true)} className="block h-full w-full cursor-zoom-in">
+          <OptimizedImage src={data.url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" />
+        </button>
+      ) : <div aria-hidden className="h-full w-full animate-pulse" />}
+      {open && data?.url && <Suspense fallback={null}><PhotoViewer url={data.url} onClose={() => setOpen(false)} /></Suspense>}
     </div>
   );
 }
@@ -234,7 +244,7 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
             onClick={() => onJump?.(m.reply!.id)}
             className={`mb-1.5 block w-full rounded-xl border-l-4 px-2.5 py-1.5 text-left text-[13px] leading-snug ${mine ? "border-white/70 bg-white/15" : "border-primary bg-foreground/10"}`}
           >
-            <span className="block text-[12px] font-bold opacity-90">{nameOf ? nameOf(m.reply.senderId) : "Message"}</span>
+            <span className="flex items-center gap-1 text-[12px] font-bold opacity-90"><span className="truncate">{nameOf ? nameOf(m.reply.senderId) : "Message"}</span><AutoBadge userId={m.reply.senderId} only="verified" /></span>
             <span className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">{m.reply.body || (m.reply.photo ? "📷 Photo" : "")}</span>
           </button>
         )}
@@ -254,6 +264,17 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
           className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
         >
           <Reply className="h-4 w-4" />
+        </button>
+      )}
+      {m.body && m.status === "sent" && (
+        <button
+          type="button"
+          aria-label="Copy message"
+          data-testid="copy-button"
+          onClick={() => { void navigator.clipboard?.writeText(m.body).catch(() => undefined); }}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
+        >
+          <Copy className="h-4 w-4" />
         </button>
       )}
       </div>
