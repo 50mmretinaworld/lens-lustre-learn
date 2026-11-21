@@ -22,6 +22,8 @@ import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { useChatLive } from "@/hooks/messages/useChatLive";
 import { HelplineCard, MessageBubble, PersonAvatar, TypingDots, headingFont, refusalText } from "@/components/messages/MessageParts";
 import ReportChat from "@/components/messages/ReportChat";
+import AutoBadge from "@/components/AutoBadge";
+import { usePeerStatus } from "@/hooks/messages/usePeerStatus";
 import { useViewAs } from "@/components/messages/viewAs";
 
 const MAX_PHOTOS = 10;
@@ -88,12 +90,12 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const newestId = oldestFirst.length ? oldestFirst[oldestFirst.length - 1].id : null;
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [newestId, help, convId]);
   useEffect(() => {
-    if (!viewAs && convId && newestId !== null && lastMarked.current !== newestId) {
+    if (!viewAs && !inRequests && convId && newestId !== null && lastMarked.current !== newestId) {
       lastMarked.current = newestId;
       markRead.mutate(convId, { onSuccess: () => live.ping() });   // the sender's ticks turn blue at once
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- markRead is a stable mutation object per render; the guard above is the dedupe
-  }, [convId, newestId]);
+  }, [convId, newestId, inRequests]);
   // the box grows with the text, up to about five lines
   useEffect(() => {
     const el = areaRef.current;
@@ -153,7 +155,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       if (r.help) setHelp(true);
       if (!convId) navigate(`/messages/${r.conversationId}`, { replace: true });
     } catch (e) {
-      setError(refusalText(e instanceof MessageSendError ? e.refusal : "bad_photo"));
+      setError(refusalText(e instanceof MessageSendError ? e.refusal : e instanceof Error && e.message === "upload-failed" ? "upload_failed" : "bad_photo"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -161,6 +163,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   };
 
   const name = person?.fullName || t("messages.chat", "Chat");
+  const peer = usePeerStatus(otherId, !viewAs);   // "Active now" / "Active 12 m ago" (Owner 21 Nov, Meta style)
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-gradient-to-b from-background to-muted/30">
@@ -172,10 +175,10 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         {(() => {
           const head = (
             <>
-              <PersonAvatar person={person} size={42} />
+              <PersonAvatar person={person} size={42} showOnline />
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-base font-bold leading-tight" style={headingFont}>{name}</h2>
-                {person?.username && <p className="truncate text-xs text-muted-foreground">@{person.username}</p>}
+                <h2 className="flex min-w-0 items-center gap-1 text-base font-bold leading-tight" style={headingFont}><span className="truncate">{name}</span>{otherId && <AutoBadge userId={otherId} only="verified" />}</h2>
+                {(peer.text || person?.username) && <p className="truncate text-xs text-muted-foreground" data-testid="peer-status">{peer.text && <span className={peer.online ? "font-medium text-green-500" : ""}>{peer.text}</span>}{peer.text && person?.username ? " · " : ""}{person?.username ? `@${person.username}` : ""}</p>}
               </div>
             </>
           );

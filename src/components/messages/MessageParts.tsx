@@ -9,6 +9,7 @@ import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
 import { clockText } from "@/lib/messages/format";
+import { useOnline } from "@/lib/presence/online";
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
 
@@ -43,7 +44,21 @@ export function Ticks({ tick, className = "" }: { tick: MessageTick | null | und
   );
 }
 
-export function PersonAvatar({ person, size = 44 }: { person: MessagePerson | null; size?: number }) {
+/** The small green "online now" dot (the site's one presence channel; nothing when the member hid their status). */
+function OnlineDot({ userId, size }: { userId: string; size: number }) {
+  const online = useOnline(userId);
+  if (!online) return null;
+  const d = Math.max(9, Math.round(size * 0.26));
+  return <span aria-label="Online" data-testid="online-dot" className="absolute bottom-0 right-0 rounded-full bg-green-500 ring-2 ring-background" style={{ width: d, height: d }} />;
+}
+
+export function PersonAvatar({ person, size = 44, showOnline = false }: { person: MessagePerson | null; size?: number; showOnline?: boolean }) {
+  const face = <PersonFace person={person} size={size} />;
+  if (!showOnline || !person?.userId) return face;
+  return <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>{face}<OnlineDot userId={person.userId} size={size} /></span>;
+}
+
+function PersonFace({ person, size }: { person: MessagePerson | null; size: number }) {
   const name = person?.fullName?.trim() || "Member";
   const initial = name.charAt(0).toUpperCase();
   return person?.avatarUrl ? (
@@ -80,6 +95,7 @@ export function refusalText(r: SendRefusal): string {
     case "friends_only": return "Your account can message friends only.";
     case "recipient_unavailable": return "This member can't receive messages right now.";
     case "bad_photo": return "That photo couldn't be sent. Try another one.";
+    case "upload_failed": return "The photo could not be uploaded just now. Please try again in a moment.";
     case "bad_message": return "Write 1 to 4000 characters.";
     case "sign_in": return "Please sign in to send a message.";
     default: return "Message not sent. Please try again.";
