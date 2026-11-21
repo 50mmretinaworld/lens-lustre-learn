@@ -22,6 +22,25 @@ export function dayLabel(iso: string, now: Date = new Date(), locale?: string): 
   return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short", ...(d.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}) });
 }
 
+/**
+ * Meta-style last-seen line for a person who is not online right now:
+ * "Active 5 m ago" · "Active 3 h ago" · "Active yesterday" · "Active 4 d ago"; nothing after a week (or when unknown).
+ */
+export function activeAgoText(iso: string | null | undefined, now: Date = new Date()): string | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  const min = Math.floor((now.getTime() - t) / 60000);
+  if (min < 1) return "Active just now";
+  if (min < 60) return `Active ${min} m ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Active ${h} h ago`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return "Active yesterday";
+  if (d <= 7) return `Active ${d} d ago`;
+  return null;
+}
+
 export type ChatItem =
   | { type: "day"; key: string; label: string }
   | { type: "msg"; key: string; m: ThreadMessage; first: boolean; last: boolean };
