@@ -58,14 +58,14 @@ export interface SendResult {
 export type SendRefusal =
   | "sign_in" | "under_review" | "bad_recipient" | "bad_message" | "not_available" | "recipient_unavailable"
   | "paused" | "text_off" | "photos_off" | "friends_only" | "blocked" | "no_link"
-  | "too_fast" | "daily_limit" | "chat_limit" | "photo_limit" | "word_guard" | "bad_photo" | "unknown";
+  | "too_fast" | "daily_limit" | "chat_limit" | "photo_limit" | "word_guard" | "new_link" | "bad_photo" | "unknown";
 
 const REFUSALS: Record<string, SendRefusal> = {
   "MSG-001": "sign_in", ACCOUNT_UNDER_REVIEW: "under_review", "MSG-002": "bad_recipient", "MSG-003": "bad_message",
   "MSG-010": "not_available", "MSG-011": "recipient_unavailable", "MSG-020": "paused", "MSG-021": "text_off",
   "MSG-022": "friends_only", "MSG-023": "photos_off", "MSG-024": "bad_photo", "MSG-025": "bad_photo",
   "MSG-030": "blocked", "MSG-040": "no_link", "MSG-050": "too_fast", "MSG-051": "daily_limit",
-  "MSG-052": "chat_limit", "MSG-053": "photo_limit", "MSG-060": "word_guard",
+  "MSG-052": "chat_limit", "MSG-053": "photo_limit", "MSG-060": "word_guard", "MSG-061": "new_link",
 };
 
 export class MessageSendError extends Error {
@@ -181,6 +181,12 @@ export async function acceptRequest(conversationId: string): Promise<void> {
 export async function declineRequest(conversationId: string): Promise<void> {
   const { error } = await rpc("message_decline_request", { _conversation: conversationId });
   if (error) throw new Error(error.message ?? "decline failed");
+}
+export type ReportReason = "spam" | "abuse" | "threat" | "nudity" | "other";
+/** A member reports a chat they are in (M10). The server keeps one open report per member per chat. */
+export async function reportConversation(conversationId: string, reason: ReportReason, note: string): Promise<void> {
+  const { error } = await rpc("message_report", { _conversation: conversationId, _reason: reason, _note: note.trim() || null });
+  if (error) throw new Error(error.message ?? "report failed");
 }
 export async function setConversationMuted(conversationId: string, muted: boolean): Promise<void> {
   const { error } = await rpc("message_set_muted", { _conversation: conversationId, _muted: muted });

@@ -20,6 +20,7 @@ import { groupChat } from "@/lib/messages/format";
 import { suggestReplies } from "@/lib/messages/suggest";
 import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { HelplineCard, MessageBubble, PersonAvatar, headingFont, refusalText } from "@/components/messages/MessageParts";
+import ReportChat from "@/components/messages/ReportChat";
 
 const MAX_PHOTOS = 10;
 
@@ -152,6 +153,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           <h2 className="truncate text-base font-bold leading-tight" style={headingFont}>{name}</h2>
           {person?.username && <p className="truncate text-xs text-muted-foreground">@{person.username}</p>}
         </div>
+        {convId && <ReportChat conversationId={convId} />}
         {otherId && (
           <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
             <UserRound className="h-5 w-5" />

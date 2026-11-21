@@ -33,7 +33,7 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
-import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleHeld, sampleMemberChats, sampleReadConversation, sampleProfileSearch } from "./adminMessagesSample";
+import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberChats, sampleReadConversation, sampleProfileSearch } from "./adminMessagesSample";
 import { messagesFlag, messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
   HARNESS_USER_ID, fixtureImage,
@@ -337,10 +337,12 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   // M8b Messages admin page (screen-admin-messages*). Reads answer from the sample; writes answer as the SQL would.
   message_admin_state: () => (adminMessagesSampleOn() ? sampleMessageAdminState() : { mode: "allowed_selected", groups_enabled: false, updated_at: null, members: [], rules: [], log: [] }),
   admin_message_word_rules: () => (adminMessagesSampleOn() ? sampleWordRules() : []),
-  admin_message_held_queue: () => (adminMessagesSampleOn() ? sampleHeld() : []),
+  admin_message_reports: (b) => (adminMessagesSampleOn() && b._status !== "done" ? sampleReports() : []),
+  admin_message_watchlist: () => (adminMessagesSampleOn() ? sampleWatchlist() : []),
+  admin_message_report_done: () => true,
+  message_report: () => true,
   admin_message_member_chats: () => (adminMessagesSampleOn() ? sampleMemberChats() : []),
   admin_read_conversation: () => (adminMessagesSampleOn() ? sampleReadConversation() : null),
-  admin_message_review: (b) => (b._approve === true ? "sent" : "rejected"),
   message_admin_set_mode: (b) => b._mode,
   message_admin_set_groups: (b) => b._on === true,
   message_admin_list_add: () => true,
