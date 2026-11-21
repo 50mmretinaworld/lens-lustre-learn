@@ -15,6 +15,7 @@ import { cmpDate, cmpNum, cmpText, downloadCsv, useClientTable } from "@/compone
 import { MemberAvatar } from "@/components/admin/users/memberUi";
 import AutoBadge from "@/components/AutoBadge";
 import ChatPane from "@/components/messages/ChatPane";
+import ExportChatButton from "./ExportChatButton";
 import { ViewAsProvider } from "@/components/messages/viewAs";
 import {
   adminMessageCall, useMessageReports, useMessageWatchlist, useRefreshAdminMessages, type ReportReasonKey, type ReportRow, type WatchRow,
@@ -203,6 +204,7 @@ export default function ReportsPanel() {
             </div>
             {picked.note && <PanelField label="What they wrote">“{picked.note}”</PanelField>}
             {picked.status === "done" && <PanelField label="Closed">{when(picked.handled_at)}</PanelField>}
+            <div className="flex justify-end"><ExportChatButton userId={picked.reporter_id} conversationId={picked.conversation_id} /></div>
             <PanelField label="The chat, as the reporter sees it (read only)">
               <ViewAsProvider value={{ userId: picked.reporter_id, name: who(picked.reporter_name, picked.reporter_id) }}>
                 <div className="mt-1.5 h-[min(60vh,520px)] overflow-hidden rounded-2xl border border-border bg-background">
