@@ -12,6 +12,7 @@ import { MemberAvatar } from "@/components/admin/users/memberUi";
 import AutoBadge from "@/components/AutoBadge";
 import ConversationList from "@/components/messages/ConversationList";
 import ChatPane from "@/components/messages/ChatPane";
+import ExportChatButton from "./ExportChatButton";
 import { ViewAsProvider } from "@/components/messages/viewAs";
 import {
   useMessageMembers, type MemberFilter, type MemberSortKey, type MsgMember,
@@ -59,6 +60,7 @@ function BoxViewer({ member, onBack }: { member: MsgMember; onBack: () => void }
           <p className="truncate text-sm font-semibold">{name}</p>
           <p className="truncate text-xs text-muted-foreground">{member.email ?? ""}{member.username ? ` · @${member.username}` : ""}</p>
         </div>
+        {chatId && <ExportChatButton userId={member.user_id} conversationId={chatId} />}
         <Badge variant="secondary"><Eye className="mr-1 h-3 w-3" aria-hidden="true" />Viewing their message box · read only</Badge>
       </div>
       <ViewAsProvider value={{ userId: member.user_id, name }}>
