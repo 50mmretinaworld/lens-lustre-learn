@@ -121,6 +121,7 @@ const EditProfile = () => {
   // SOW §5.2 — Privacy gate: hide profile from search engines
   const [indexingDisabled, setIndexingDisabled] = useState(false);
   const [hideActiveStatus, setHideActiveStatus] = useState(false);
+  const [hideReadReceipts, setHideReadReceipts] = useState(false);
 
   const setFieldPrivacy = (field: string, value: PrivacyLevel) => {
     setPrivacySettings((prev) => ({ ...prev, [field]: value }));
@@ -368,6 +369,8 @@ const EditProfile = () => {
           if (ps.dob_day_month) setDobDayMonthPrivacy(ps.dob_day_month);
           if (ps.dob_year) setDobYearPrivacy(ps.dob_year);
           setHideActiveStatus(ps.active_status === "off");
+          setHideReadReceipts(ps.read_receipts === "off");
+          setHideReadReceipts(ps.read_receipts === "off");
         }
       }
       setLoading(false);
@@ -608,7 +611,7 @@ const EditProfile = () => {
         phone: phone.trim() || null,
         whatsapp: whatsapp.trim() || null,
         
-        privacy_settings: { ...privacySettings, dob_day_month: dobDayMonthPrivacy, dob_year: dobYearPrivacy, active_status: hideActiveStatus ? "off" : "on" },
+        privacy_settings: { ...privacySettings, dob_day_month: dobDayMonthPrivacy, dob_year: dobYearPrivacy, active_status: hideActiveStatus ? "off" : "on", read_receipts: hideReadReceipts ? "off" : "on" },
         pronouns: pronouns.trim() || null,
         current_city: currentCity.trim() || null,
         workplace: workplace.trim() || null,
@@ -629,7 +632,7 @@ const EditProfile = () => {
       setSaveStatus("error");
     }
     setSaving(false);
-  }, [user, fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, privacySettings, customUrl, customUrlAvailable, pronouns, currentCity, workplace, education, dateOfBirth, dobError, dobDayMonthPrivacy, dobYearPrivacy, indexingDisabled, hideActiveStatus]);
+  }, [user, fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, privacySettings, customUrl, customUrlAvailable, pronouns, currentCity, workplace, education, dateOfBirth, dobError, dobDayMonthPrivacy, dobYearPrivacy, indexingDisabled, hideActiveStatus, hideReadReceipts]);
 
   // Debounced auto-save: triggers 1.5s after any field change
   const triggerAutoSave = useCallback(() => {
@@ -647,7 +650,7 @@ const EditProfile = () => {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, privacySettings, customUrl, pronouns, currentCity, workplace, education, indexingDisabled, hideActiveStatus]);
+  }, [fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, privacySettings, customUrl, pronouns, currentCity, workplace, education, indexingDisabled, hideActiveStatus, hideReadReceipts]);
 
   // Mark initial load as done after profile is fetched
   useEffect(() => {
@@ -939,6 +942,23 @@ const EditProfile = () => {
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>
                     When enabled, other members won't see a green "online" dot on your avatar. Your active status stays private across the feed, comments, and profiles.
+                  </div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 py-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={hideReadReceipts}
+                  onChange={(e) => setHideReadReceipts(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-primary cursor-pointer"
+                  data-testid="hide-read-receipts"
+                />
+                <div className="flex-1">
+                  <div className="text-sm text-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                    Hide read receipts in private messages
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>
+                    When enabled, people who message you will not see the blue "read" tick when you open their message. They still see that it was delivered.
                   </div>
                 </div>
               </label>

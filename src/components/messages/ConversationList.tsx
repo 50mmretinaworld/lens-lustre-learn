@@ -2,8 +2,8 @@
  * Messages · the conversation pane: title, search, Chats | Requests, and the rows.
  * Reading is always allowed (even when sending is off or the account is under review).
  */
-import { useMemo, useState } from "react";
-import { Camera, MessageCircle, Search } from "lucide-react";
+import { lazy, Suspense, useMemo, useState } from "react";
+import { Camera, MessageCircle, Search, Users, UsersRound } from "lucide-react";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
 import { relativeAge } from "@/lib/notifications/describe";
@@ -11,6 +11,9 @@ import { useConversations, useUnreadCounts } from "@/hooks/messages/useMessages"
 import AutoBadge from "@/components/AutoBadge";
 import { PersonAvatar, Ticks, headingFont } from "@/components/messages/MessageParts";
 import { useViewAs } from "@/components/messages/viewAs";
+import { useGroupsAllowed } from "@/hooks/messages/useGroups";
+
+const NewGroupDialog = lazy(() => import("@/components/messages/NewGroupDialog"));
 import type { ConversationSummary, MessageFolder } from "@/lib/messages/api";
 
 function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: boolean; meId: string | undefined; onOpen: () => void }) {
@@ -26,7 +29,9 @@ function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: bool
         onClick={onOpen}
         className={`flex w-full items-center gap-3.5 rounded-2xl px-3 py-2.5 text-left transition-colors ${active ? "bg-primary/10" : "hover:bg-muted/60"}`}
       >
-        <PersonAvatar person={c.other} size={54} showOnline />
+        {c.kind === "group"
+          ? <span aria-hidden className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/20 to-amber-400/20 text-primary" style={{ width: 54, height: 54 }}><Users className="h-6 w-6" /></span>
+          : <PersonAvatar person={c.other} size={54} showOnline />}
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-2">
             <span className="flex min-w-0 items-center gap-1"><span className={`truncate text-[15px] ${c.unread > 0 ? "font-bold" : "font-semibold"}`} style={headingFont}>{name}</span>{c.kind === "direct" && <AutoBadge userId={c.other?.userId} only="verified" />}</span>
@@ -57,6 +62,8 @@ export default function ConversationList({ activeId, onOpen }: { activeId: strin
   const viewAs = useViewAs();   // admin viewing a member's box: that member is "me", no unread badges of the admin
   const [folder, setFolder] = useState<MessageFolder>("inbox");
   const [q, setQ] = useState("");
+  const groupsAllowed = useGroupsAllowed();
+  const [newGroup, setNewGroup] = useState(false);
   const ownUnread = useUnreadCounts();
   const unread = viewAs ? { inbox: 0, requests: 0 } : ownUnread;
   const { data, isLoading, isError } = useConversations(folder);
@@ -83,7 +90,15 @@ export default function ConversationList({ activeId, onOpen }: { activeId: strin
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="px-4 pb-3 pt-4">
-        <h1 className="text-[26px] font-bold leading-tight tracking-tight" style={headingFont}>{t("messages.title", "Messages")}</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight" style={headingFont}>{t("messages.title", "Messages")}</h1>
+          {groupsAllowed && !viewAs && (
+            <button type="button" onClick={() => setNewGroup(true)} data-testid="new-group-open" aria-label={t("messages.group.new", "New group")}
+              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-foreground/[0.07] px-3.5 text-sm font-semibold hover:bg-foreground/10">
+              <UsersRound className="h-4 w-4" aria-hidden="true" />{t("messages.group.new", "New group")}
+            </button>
+          )}
+        </div>
         <label className="mt-3 flex items-center gap-2 rounded-full bg-foreground/[0.07] px-3.5 py-3 text-muted-foreground focus-within:ring-2 focus-within:ring-primary">
           <Search className="h-4 w-4 shrink-0" />
           <input
@@ -120,6 +135,7 @@ export default function ConversationList({ activeId, onOpen }: { activeId: strin
           {rows.map((c) => <Row key={c.conversationId} c={c} active={c.conversationId === activeId} meId={viewAs?.userId ?? user?.id} onOpen={() => onOpen(c.conversationId)} />)}
         </ul>
       </div>
+      {newGroup &&<Suspense fallback={null}><NewGroupDialog open={newGroup} onOpenChange={setNewGroup} onCreated={onOpen} /></Suspense>}
     </div>
   );
 }
