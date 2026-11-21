@@ -71,6 +71,7 @@ const SHOTS = [
   ["requests-phone", "screen-messages", PHONE, "conversation-row", async (p) => { await p.getByRole("tab", { name: /Requests/ }).click(); await p.waitForTimeout(800); }],
   ["chat-ticks-sent-phone", "screen-message-thread&ticks=sent", PHONE, "tick-sent", null],
   ["chat-ticks-delivered-phone", "screen-message-thread&ticks=delivered", PHONE, "tick-delivered", null],
+  ["chat-typing-phone", "screen-message-thread&typing=1", PHONE, "typing-dots", null],
   ["chat-desktop", "screen-message-thread", DESKTOP, "bubble-mine", null],
   ["chat-phone", "screen-message-thread", PHONE, "bubble-mine", null],
   ["request-phone", "screen-message-request", PHONE, "request-bar", null],

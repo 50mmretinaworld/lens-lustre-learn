@@ -4,13 +4,32 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { Check, CheckCheck, Clock, HeartHandshake } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
 import { clockText } from "@/lib/messages/format";
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
+
+/** "They are typing": a small bubble on their side with three bouncing dots (still dots when the device asks for less motion). */
+export function TypingDots({ name }: { name?: string | null }) {
+  const reduce = useReducedMotion();
+  return (
+    <div className="flex items-start px-4 mt-3" data-testid="typing-dots" role="status" aria-label={`${name || "They"} is typing`}>
+      <span className="inline-flex items-center gap-1.5 rounded-[22px] rounded-tl-md bg-foreground/10 px-4 py-3.5">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="block h-2 w-2 rounded-full bg-muted-foreground/70"
+            animate={reduce ? undefined : { y: [0, -5, 0], opacity: [0.45, 1, 0.45] }}
+            transition={reduce ? undefined : { duration: 0.9, repeat: Infinity, delay: i * 0.16, ease: "easeInOut" }}
+          />
+        ))}
+      </span>
+    </div>
+  );
+}
 
 /** One grey tick = sent · two grey = delivered to their app · two blue = read. Shown only on the viewer's own messages. */
 export function Ticks({ tick, className = "" }: { tick: MessageTick | null | undefined; className?: string }) {
