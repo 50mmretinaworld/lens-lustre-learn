@@ -50,6 +50,7 @@ export const queryKeys = {
   accountStateHistory: (userId: string) => ["account-state-history", userId] as const,
   /** Messages (M8): every key starts with "messages" so one invalidate refreshes them all. */
   messageAllowed: (userId: string) => ["messages", "allowed", userId] as const,
+  messageCanReach: (me: string, other: string) => ["messages", "can-reach", me, other] as const,
   /** J5a: admin Job Engine page — rpc admin_jobs_overview() (useAdminJobs). */
   adminJobsOverview: () => ["admin-jobs-overview"] as const,
   /** J5a: recent jobs — rpc admin_jobs_list(_status, _kind). */
