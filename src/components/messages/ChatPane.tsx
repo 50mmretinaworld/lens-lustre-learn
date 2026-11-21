@@ -21,6 +21,7 @@ import { suggestReplies } from "@/lib/messages/suggest";
 import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { HelplineCard, MessageBubble, PersonAvatar, headingFont, refusalText } from "@/components/messages/MessageParts";
 import ReportChat from "@/components/messages/ReportChat";
+import { useViewAs } from "@/components/messages/viewAs";
 
 const MAX_PHOTOS = 10;
 
@@ -28,6 +29,8 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const t = useT();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const viewAs = useViewAs();                     // admin viewing a member's box: read-only, that member is "me"
+  const meId = viewAs?.userId ?? user?.id;
   const allowed = useMessagingAllowed();
   const inbox = useConversations("inbox");
   const requests = useConversations("requests");
@@ -45,7 +48,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const thread = useThread(convId);
   const oldestFirst = useMemo(() => [...(thread.data ?? [])].reverse(), [thread.data]);
   const items = useMemo(() => groupChat(oldestFirst), [oldestFirst]);
-  const otherId = entry?.other?.userId ?? userId ?? oldestFirst.find((m) => m.senderId !== user?.id)?.senderId ?? null;
+  const otherId = entry?.other?.userId ?? userId ?? oldestFirst.find((m) => m.senderId !== meId)?.senderId ?? null;
   const { data: fetched } = useQuery<MessagePerson | null>({
     queryKey: ["messages", "person", otherId],
     queryFn: () => fetchPerson(otherId as string),
@@ -72,7 +75,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const newestId = oldestFirst.length ? oldestFirst[oldestFirst.length - 1].id : null;
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [newestId, help, convId]);
   useEffect(() => {
-    if (convId && newestId !== null && lastMarked.current !== newestId) {
+    if (!viewAs && convId && newestId !== null && lastMarked.current !== newestId) {
       lastMarked.current = newestId;
       markRead.mutate(convId);
     }
@@ -110,7 +113,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
 
   // smart replies: shown only when the last message in this chat is the other person's, and sending is allowed
   const lastMsg = oldestFirst.length ? oldestFirst[oldestFirst.length - 1] : null;
-  const chips = allowed && lastMsg && lastMsg.senderId !== user?.id && !inRequests ? suggestReplies(lastMsg) : [];
+  const chips = allowed && !viewAs && lastMsg && lastMsg.senderId !== meId && !inRequests ? suggestReplies(lastMsg) : [];
 
   const addEmoji = (e: string) => {
     const el = areaRef.current;
@@ -153,7 +156,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           <h2 className="truncate text-base font-bold leading-tight" style={headingFont}>{name}</h2>
           {person?.username && <p className="truncate text-xs text-muted-foreground">@{person.username}</p>}
         </div>
-        {convId && <ReportChat conversationId={convId} />}
+        {convId && !viewAs && <ReportChat conversationId={convId} />}
         {otherId && (
           <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
             <UserRound className="h-5 w-5" />
@@ -161,7 +164,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         )}
       </header>
 
-      {inRequests && convId && (
+      {inRequests && convId && !viewAs && (
         <div data-testid="request-bar" className="mx-3 mt-3 rounded-3xl border border-border bg-background p-4 shadow-sm">
           <p className="text-sm font-semibold" style={headingFont}>{t("messages.request.title", "Message request")}</p>
           <p className="mt-0.5 text-sm text-muted-foreground">{t("messages.request.note", "You don't follow this person. Accept to move this chat to your Chats.")}</p>
@@ -187,14 +190,18 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
               <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-muted-foreground">{it.label}</span>
             </div>
           ) : (
-            <MessageBubble key={it.key} m={it.m} mine={it.m.senderId === user?.id} first={it.first} last={it.last} />
+            <MessageBubble key={it.key} m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last} />
           ),
         )}
         {help && <HelplineCard onClose={() => setHelp(false)} />}
         <div ref={endRef} />
       </div>
 
-      {!allowed ? (
+      {viewAs ? (
+        <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="view-as-note">
+          Read-only view of {viewAs.name}'s chat. Nothing you do here is sent or marked as read.
+        </p>
+      ) : !allowed ? (
         <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="send-off-note">
           {t("messages.sendOff", "Sending messages isn't available for your account. You can still read your chats.")}
         </p>

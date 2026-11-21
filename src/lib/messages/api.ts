@@ -150,6 +150,17 @@ export async function fetchThread(conversationId: string, beforeId: number | nul
   if (error) throw new Error(error.message ?? "message_thread failed");
   return parseThread(data);
 }
+/** Admin "open a member's message box" (20261118_2200): the SAME answers the member's own screen gets, read-only, nothing written. */
+export async function fetchViewInbox(userId: string, folder: MessageFolder, limit = 30, before: string | null = null): Promise<ConversationSummary[]> {
+  const { data, error } = await rpc("admin_view_inbox", { _user: userId, _folder: folder, _limit: limit, _before: before });
+  if (error) throw new Error(error.message ?? "admin_view_inbox failed");
+  return parseConversations(data);
+}
+export async function fetchViewThread(userId: string, conversationId: string, beforeId: number | null = null, limit = 50): Promise<ThreadMessage[]> {
+  const { data, error } = await rpc("admin_view_thread", { _user: userId, _conversation: conversationId, _before_id: beforeId, _limit: limit });
+  if (error) throw new Error(error.message ?? "admin_view_thread failed");
+  return parseThread(data);
+}
 // fetchUnread / fetchMessagingAllowed live in ./nav (the top bar needs them in the first download)
 export { fetchMessagingAllowed } from "./nav";
 export { fetchUnread } from "./unread";

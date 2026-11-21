@@ -506,6 +506,7 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
   "screen-admin-messages": () => {
     (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
     (globalThis as { __harnessAdminMessages?: boolean }).__harnessAdminMessages = true;
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;   // the member boxes the admin opens
     return screen(<AdminPanel />, "/admin/messages", "/admin/*");
   },
   /** Another member's wall for a signed-in member who may message: the Message button beside Follow. */

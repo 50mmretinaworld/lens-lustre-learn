@@ -9,8 +9,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/core/useAuth";
 import { messageKeys } from "@/lib/messages/keys";
+import { useViewAs } from "@/components/messages/viewAs";
 import {
-  acceptRequest, declineRequest, fetchConversations, fetchThread,
+  acceptRequest, declineRequest, fetchConversations, fetchThread, fetchViewInbox, fetchViewThread,
   markConversationRead, newClientMsgId, sendMessage, sendPhotos, setConversationMuted,
   type MessageFolder, type SendResult,
 } from "@/lib/messages/api";
@@ -21,9 +22,10 @@ export { useUnreadCounts } from "./useUnreadCounts";
 
 export function useConversations(folder: MessageFolder) {
   const { user, loading } = useAuth();
+  const viewAs = useViewAs();   // admin "open a member's message box": the member's list, read-only
   return useQuery({
-    queryKey: messageKeys.conversations(user?.id ?? "", folder),
-    queryFn: () => fetchConversations(folder),
+    queryKey: viewAs ? (["messages", "view-as", viewAs.userId, "conversations", folder] as const) : messageKeys.conversations(user?.id ?? "", folder),
+    queryFn: () => (viewAs ? fetchViewInbox(viewAs.userId, folder) : fetchConversations(folder)),
     enabled: !!user && !loading,
     staleTime: 10_000,
     // P10: 30 s while the inbox is open: a new chat from someone else appears without a reload.
@@ -33,9 +35,10 @@ export function useConversations(folder: MessageFolder) {
 
 export function useThread(conversationId: string | null) {
   const { user, loading } = useAuth();
+  const viewAs = useViewAs();
   return useQuery({
-    queryKey: messageKeys.thread(conversationId ?? ""),
-    queryFn: () => fetchThread(conversationId as string),
+    queryKey: viewAs ? (["messages", "view-as", viewAs.userId, "thread", conversationId ?? ""] as const) : messageKeys.thread(conversationId ?? ""),
+    queryFn: () => (viewAs ? fetchViewThread(viewAs.userId, conversationId as string) : fetchThread(conversationId as string)),
     enabled: !!user && !loading && !!conversationId,
     staleTime: 5_000,
     // P10: 30 s (the project floor) and only while one chat is open on screen, so a reply shows up while you

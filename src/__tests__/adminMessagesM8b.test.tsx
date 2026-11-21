@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberChats, sampleReadConversation,
+  sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberSearch,
 } from "@/uiharness/adminMessagesSample";
 
 const calls: { fn: string; args?: Record<string, unknown> }[] = [];
@@ -25,8 +25,8 @@ vi.mock("@/integrations/supabase/client", () => ({
         admin_message_reports: sampleReports(),
         admin_message_watchlist: sampleWatchlist(),
         admin_message_report_done: true,
-        admin_message_member_chats: sampleMemberChats(),
-        admin_read_conversation: sampleReadConversation(),
+        admin_message_member_search: sampleMemberSearch(args ?? {}),
+        admin_view_inbox: [],
         message_admin_set_mode: args?._mode,
       };
       return fn in answers ? Promise.resolve({ data: answers[fn], error: null }) : Promise.resolve({ data: null, error: { message: "unexpected rpc " + fn } });
@@ -37,7 +37,7 @@ vi.mock("@/hooks/core/useAuth", () => ({ useAuth: () => ({ user: { id: "11111111
 
 import AdminMessages from "@/pages/admin/AdminMessages";
 import {
-  parseMessageAdminState, parseWordRules, parseReports, parseWatchlist, parseMemberChats, parseViewedChat,
+  parseMessageAdminState, parseWordRules, parseReports, parseWatchlist, parseMemberSearch,
 } from "@/hooks/admin/useAdminMessages";
 
 const renderPage = () => {
@@ -56,12 +56,12 @@ describe("M8b parsers", () => {
     expect(parseWordRules([{ id: 2, category: "abuse", pattern: "x", action: "hold" }])).toEqual([]);   // hold no longer exists
     expect(parseReports([{ id: "7", conversation_id: "c", reporter_id: "s", created_at: "2026-11-21T00:00:00Z", reason: "weird" }])[0].reason).toBe("other");
     expect(parseWatchlist([{ nope: 1 }])).toEqual([]);
-    expect(parseMemberChats([{ conversation_id: "c", messages: "3", others: [{ nope: 1 }] }])[0].messages).toBe(3);
-    expect(parseViewedChat({ nope: 1 })).toBeNull();
+    expect(parseMemberSearch(null)).toEqual({ total: 0, counts: { all: 0, active: 0, reported: 0, paused: 0, listed: 0 }, rows: [] });
+    expect(parseMemberSearch({ rows: [{ nope: 1 }, { user_id: "u", chats: "3" }] }).rows).toHaveLength(1);
   });
 
-  it("the chat list carries no message text", () => {
-    const rows = parseMemberChats(sampleMemberChats());
+  it("the member table rows carry no message text", () => {
+    const rows = parseMemberSearch(sampleMemberSearch({})).rows;
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) expect(Object.keys(r)).not.toContain("body");
   });
@@ -95,6 +95,24 @@ describe("M8b page", () => {
     expect(screen.queryByTestId("messages-reason")).toBeNull();
     fireEvent.click(screen.getAllByRole("button", { name: /Mark done/ })[0]);
     await waitFor(() => expect(calls.find((c) => c.fn === "admin_message_report_done")?.args).toMatchObject({ _id: 12 }));
+  });
+
+  it("Message boxes: a searchable, sortable member table; opening one reads THAT member's box, with no reason box", async () => {
+    renderPage();
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /Message boxes/ }), { button: 0 });
+    expect((await screen.findAllByTestId("table-row")).length).toBe(12);
+    expect(screen.getByTestId("tab-reported").textContent).toContain("3");
+    // search is sent to the server (debounced), sort flips on a second click
+    fireEvent.change(screen.getByLabelText("Search name, e-mail or @handle"), { target: { value: "framo" } });
+    await waitFor(() => expect(calls.some((c) => c.fn === "admin_message_member_search" && c.args?._q === "framo")).toBe(true));
+    fireEvent.click(screen.getByRole("button", { name: /^Chatting with/ }));
+    await waitFor(() => expect(calls.some((c) => c.fn === "admin_message_member_search" && c.args?._sort === "chats")).toBe(true));
+    // open a box: the member's inbox is read through the admin function, as that member, and nothing asks for a reason
+    fireEvent.click((await screen.findAllByTestId("open-box"))[0]);
+    await waitFor(() => expect(calls.find((c) => c.fn === "admin_view_inbox")?.args).toMatchObject({ _folder: "inbox" }));
+    expect(screen.getByTestId("messages-box-viewer").textContent).toContain("read only");
+    expect(screen.queryByTestId("messages-reason")).toBeNull();
+    expect(calls.some((c) => c.fn === "message_my_conversations")).toBe(false);      // never the admin's own inbox
   });
 
   it("the word list has no Hold: only Block and Help can be added", async () => {

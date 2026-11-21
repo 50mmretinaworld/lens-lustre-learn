@@ -64,25 +64,54 @@ export function sampleWatchlist() {
   ];
 }
 
-export function sampleMemberChats() {
-  return [
-    { conversation_id: CONV_HELD, kind: "direct", title: null, last_message_at: t(42), messages: 14, others: [{ user_id: FRAMO, full_name: "Framo Grapher", username: "framo" }] },
-    { conversation_id: CONV_2, kind: "direct", title: null, last_message_at: t(1500), messages: 6, others: [{ user_id: SOMNATH, full_name: "Somnath Roy", username: "somnath" }] },
-  ];
-}
+type SampleMember = {
+  user_id: string; full_name: string; username: string; avatar_url: null; email: string; joined_at: string;
+  chats: number; last_message_at: string | null; reports_30d: number; listed: boolean; paused: boolean; has_rules: boolean; is_admin: boolean;
+};
+const mem = (n: number, full_name: string, username: string, o: Partial<SampleMember> = {}): SampleMember => ({
+  user_id: `44444444-4444-4444-8444-${String(n).padStart(12, "0")}`, full_name, username, avatar_url: null,
+  email: `${username}@example.test`, joined_at: t(60 * 24 * (20 + n * 9)), chats: 0, last_message_at: null, reports_30d: 0,
+  listed: false, paused: false, has_rules: false, is_admin: false, ...o,
+});
+const MEMBERS: SampleMember[] = [
+  mem(1, "Neil Basu", "neilbasu", { user_id: OWNER, chats: 6, last_message_at: t(42), listed: true, is_admin: true }),
+  mem(2, "Somnath Roy", "somnath", { user_id: SOMNATH, chats: 4, last_message_at: t(95), reports_30d: 1, paused: true, has_rules: true }),
+  mem(3, "Framo Grapher", "framo", { user_id: FRAMO, chats: 9, last_message_at: t(20), reports_30d: 3 }),
+  mem(4, "Ananya Sen", "ananya.sen", { chats: 12, last_message_at: t(8) }),
+  mem(5, "Rakesh Dutta", "rakeshd", { chats: 3, last_message_at: t(1500) }),
+  mem(6, "Priya Nair", "priyanair", { chats: 7, last_message_at: t(300), reports_30d: 1 }),
+  mem(7, "Imran Qureshi", "imranq", { chats: 1, last_message_at: t(4300) }),
+  mem(8, "Sandeep Kale", "sandeepk", { chats: 5, last_message_at: t(180), has_rules: true }),
+  mem(9, "Meera Iyer", "meera.iyer", { chats: 0 }),
+  mem(10, "Tanmay Ghosh", "tanmayg", { chats: 2, last_message_at: t(9000) }),
+  mem(11, "Lakshmi Rao", "lakshmirao", { chats: 0 }),
+  mem(12, "Arjun Mehta", "arjunm", { chats: 8, last_message_at: t(60), listed: true }),
+];
 
-export function sampleReadConversation() {
+/** The latest chats of a member, as the SQL returns them: the OTHER person of each (up to 3). */
+const withOf = (m: SampleMember) => MEMBERS.filter((o) => o.user_id !== m.user_id).slice(m.chats % 5, (m.chats % 5) + Math.min(3, m.chats))
+  .map((o) => ({ kind: "direct", user_id: o.user_id, name: o.full_name, avatar_url: null }));
+
+/** What admin_message_member_search answers: search, filter, sort and paging done here as the SQL does them. */
+export function sampleMemberSearch(b: Record<string, unknown>) {
+  const needle = String(b._q ?? "").trim().toLowerCase();
+  const filter = String(b._filter ?? "all");
+  const sort = String(b._sort ?? "name");
+  const desc = String(b._dir ?? "asc") === "desc";
+  const lim = Number(b._limit ?? 25);
+  const off = Number(b._offset ?? 0);
+  const base = MEMBERS.filter((m) => !needle || `${m.full_name} ${m.username} ${m.email}`.toLowerCase().includes(needle));
+  const shown = base.filter((m) => (filter === "active" ? m.chats > 0 : filter === "reported" ? m.reports_30d > 0 : filter === "paused" ? m.paused : filter === "listed" ? m.listed : true));
+  const key = (m: SampleMember): string | number => (sort === "chats" ? m.chats : sort === "reports" ? m.reports_30d : sort === "joined" ? Date.parse(m.joined_at)
+    : sort === "last" ? (m.last_message_at ? Date.parse(m.last_message_at) : -1) : m.full_name.toLowerCase());
+  const sorted = [...shown].sort((a, c) => (key(a) < key(c) ? -1 : key(a) > key(c) ? 1 : 0) * (desc ? -1 : 1));
   return {
-    conversation_id: CONV_HELD,
-    members: [
-      { user_id: OWNER, full_name: "Neil Basu", username: "neilbasu", folder: "inbox" },
-      { user_id: FRAMO, full_name: "Framo Grapher", username: "framo", folder: "inbox" },
-    ],
-    messages: [
-      { id: 501, sender_id: FRAMO, kind: "text", body: "Did you see the election results? Tell me what you think about the BJP win.", status: "sent", created_at: t(42), photos: [] },
-      { id: 500, sender_id: OWNER, kind: "text", body: "Thanks for the sunset frames. The second one is my favourite.", status: "sent", created_at: t(95), photos: [] },
-      { id: 499, sender_id: FRAMO, kind: "text", body: "Shot them at Digha on Sunday, 50mm at f/1.8.", status: "sent", created_at: t(130), photos: [] },
-    ],
+    total: shown.length,
+    counts: {
+      all: base.length, active: base.filter((m) => m.chats > 0).length, reported: base.filter((m) => m.reports_30d > 0).length,
+      paused: base.filter((m) => m.paused).length, listed: base.filter((m) => m.listed).length,
+    },
+    rows: sorted.slice(off, off + lim).map((m) => ({ ...m, chatting_with: withOf(m) })),
   };
 }
 

@@ -59,6 +59,7 @@ export const queryKeys = {
   adminMessagesWords: () => ["admin-messages-words"] as const,
   adminMessagesReports: (status: string) => ["admin-messages-reports", status] as const,
   adminMessagesWatch: () => ["admin-messages-watch"] as const,
+  adminMessagesMembers: (q: string, filter: string, sort: string, dir: string, page: number, size: number) => ["admin-messages-members", q, filter, sort, dir, page, size] as const,
   /** Admin → Users table — rpc admin_search_users_v4 + admin_user_facets (useAdminMembers). */
   adminMembers: () => ["admin-members"] as const,
   adminPush: () => ["admin-push"] as const,
