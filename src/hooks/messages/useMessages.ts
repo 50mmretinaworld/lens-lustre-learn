@@ -12,7 +12,7 @@ import { messageKeys } from "@/lib/messages/keys";
 import { useViewAs } from "@/components/messages/viewAs";
 import {
   acceptRequest, declineRequest, fetchConversations, fetchThread, fetchViewInbox, fetchViewThread,
-  markConversationRead, newClientMsgId, sendMessage, sendPhotos, setConversationMuted,
+  clearConversation, markConversationRead, newClientMsgId, sendMessage, sendPhotos, setConversationMuted,
   type MessageFolder, type SendResult,
 } from "@/lib/messages/api";
 
@@ -78,7 +78,8 @@ export function useConversationActions() {
   const decline = useMutation({ mutationFn: declineRequest, onSuccess: invalidate });
   const mute = useMutation({ mutationFn: ({ id, muted }: { id: string; muted: boolean }) => setConversationMuted(id, muted), onSuccess: invalidate });
   const markRead = useMutation({ mutationFn: markConversationRead, onSuccess: invalidate });
-  return { accept, decline, mute, markRead };
+  const clear = useMutation({ mutationFn: clearConversation, onSuccess: invalidate });
+  return { accept, decline, mute, markRead, clear };
 }
 
 export { newClientMsgId };
