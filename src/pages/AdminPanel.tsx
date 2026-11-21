@@ -81,6 +81,8 @@ const AdminTestAgent = lazy(() => import("@/pages/admin/AdminTestAgent"));
 /* A4: under review / deletion requests / admin delete (20261115_1310, 1330). */
 const AdminAccountReviews = lazy(() => import("@/pages/admin/AdminAccountReviews"));
 const AdminJobs = lazy(() => import("@/pages/admin/AdminJobs"));
+/* M8b: private messages — switch, member rules, word list, held, logged chat viewer. */
+const AdminMessages = lazy(() => import("@/pages/admin/AdminMessages"));
 
 const AdminGallery = lazy(() => import("@/components/admin/AdminGallery"));
 const AdminOnPageImages = lazy(() => import("@/components/admin/AdminOnPageImages"));
@@ -97,7 +99,7 @@ const VALID_ROUTES = new Set([
   "banners", "potd", "on_page_images", "portfolio", "featured_artist",
   "journal", "courses", "certificates", "excellence",
   "competitions", "competition_health", "entries", "judging_tags", "tag_semantics", "judge_monitoring", "vote_audit", "judge_activity", "vote_rewards",
-  "users", "account_reviews", "applications", "referrals", "engagement", "employee",
+  "users", "account_reviews", "messages", "applications", "referrals", "engagement", "employee",
   "comments", "keyword_blocklist", "reports", "post_reports",
   "wallet", "gifts", "transactions", "orders",
   "seo", "advertisements", "features", "push_notification", "performance", "announcements", "newsletter_faq", "analytics",
@@ -156,6 +158,7 @@ const tabGroups = [
   { label: "Users & Community", items: [
     ["users", "Users", UserCog],
     ["account_reviews", "Account Review", Shield],
+    ["messages", "Messages", MessageSquare],
     ["applications", "Role Applications", Briefcase],
     ["referrals", "Referrals", UserPlus],
     ["engagement", "Engagement", Heart],
@@ -309,6 +312,7 @@ const AdminPanel = () => {
       {/* Users — modularized */}
       {currentRoute === "users" && <LazyTab><UsersModule user={user} /></LazyTab>}
       {currentRoute === "account_reviews" && <LazyTab><AdminAccountReviews /></LazyTab>}
+      {currentRoute === "messages" && <LazyTab><AdminMessages /></LazyTab>}
       {currentRoute === "applications" && <LazyTab><RoleApplicationsModule userId={user?.id || ""} /></LazyTab>}
 
       {/* Employment */}

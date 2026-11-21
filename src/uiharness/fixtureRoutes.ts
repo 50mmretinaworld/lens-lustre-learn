@@ -24,7 +24,7 @@ import { unreadSampleOn, sampleUnreadGroups } from "./storySample";
 
 /** A4 sample switch: ?review=1 (under-review banner + admin Account Review rows). */
 const reviewSampleOn = () => typeof location !== "undefined" && new URLSearchParams(location.search).get("review") === "1";
-import { tagRenameOn, sampleTagProfiles, storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleComments, sampleViewers, sampleOlderComments } from "./storySample";
+import { tagRenameOn, sampleTagProfiles, sampleStoryProfiles, storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleComments, sampleViewers, sampleOlderComments } from "./storySample";
 import { sampleHashtagInfo, sampleHashtagPosts } from "./hashtagSample";
 import type { FakeRoute } from "./fakeBackend";
 import {
@@ -33,6 +33,9 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
+import { sampleMessageBroadcasts, sampleBroadcastReport, sampleBroadcastRecipients, sampleBroadcastAudience } from "./adminBroadcastsSample";
+import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberSearch, sampleProfileSearch } from "./adminMessagesSample";
+import { messagesFlag, messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
   HARNESS_USER_ID, fixtureImage,
   adCreatives, categories, certificates, dashboardInit, dbAuditLogs, faqEntries, featuredArtists, follows, heroBanners,
@@ -332,6 +335,47 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   // J5a Job Engine page (screen-admin-jobs): read-only sample shaped like production 18 Nov.
   admin_jobs_overview: () => (adminJobsSampleOn() ? sampleJobsOverview() : { checked_at: null, switches: {}, kinds: [], alarms: [] }),
   admin_jobs_list: (b) => (adminJobsSampleOn() ? sampleJobsList(b) : []),
+  // M8b Messages admin page (screen-admin-messages*). Reads answer from the sample; writes answer as the SQL would.
+  message_admin_state: () => (adminMessagesSampleOn() ? sampleMessageAdminState() : { mode: "allowed_selected", groups_enabled: false, updated_at: null, members: [], rules: [], log: [] }),
+  admin_message_word_rules: () => (adminMessagesSampleOn() ? sampleWordRules() : []),
+  admin_message_reports: (b) => (adminMessagesSampleOn() && b._status !== "done" ? sampleReports() : []),
+  admin_message_watchlist: () => (adminMessagesSampleOn() ? sampleWatchlist() : []),
+  admin_message_report_done: () => true,
+  message_report: () => true,
+  admin_message_member_search: (b) => (adminMessagesSampleOn() ? sampleMemberSearch(b) : { total: 0, counts: { all: 0, active: 0, reported: 0, paused: 0, listed: 0 }, rows: [] }),
+  // M12 Broadcast (screen-admin-messages ?tab=broadcast). Reads answer from the sample; writes answer as the SQL would.
+  admin_message_broadcasts: (b) => (adminMessagesSampleOn() ? sampleMessageBroadcasts(b) : { total: 0, counts: {}, rows: [] }),
+  admin_message_broadcast_report: (b) => (adminMessagesSampleOn() ? sampleBroadcastReport(b) : null),
+  admin_message_broadcast_recipients: (b) => (adminMessagesSampleOn() ? sampleBroadcastRecipients(b) : { total: 0, counts: {}, rows: [] }),
+  admin_message_broadcast_audience: (b) => (adminMessagesSampleOn() ? sampleBroadcastAudience(b) : { matched: 0, will_receive: 0, left_out: 0 }),
+  admin_message_broadcast_save: () => 9,
+  admin_message_broadcast_send: () => ({ broadcast_id: 9, recipients: 5000, batches: 10, engine_on: true }),
+  admin_message_broadcast_control: (b) => (b._action === "pause" ? "paused" : b._action === "cancel" ? "cancelled" : "sending"),
+  admin_message_broadcast_withdraw: () => "withdrawn",
+  admin_view_inbox: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
+  admin_view_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),
+  message_admin_set_mode: (b) => b._mode,
+  message_admin_set_groups: (b) => b._on === true,
+  message_admin_list_add: () => true,
+  message_admin_list_remove: () => true,
+  message_admin_set_member_rule: () => true,
+  message_admin_clear_member_rule: () => true,
+  message_admin_word_add: () => 99,
+  message_admin_word_set_active: (b) => b._active === true,
+  search_profiles_admin: () => (adminMessagesSampleOn() ? sampleProfileSearch() : []),
+  // Messages (screen-messages …). EVERY signed-in scene asks message_allowed_me / message_unread_counts (top bar), so they
+  // answer in every scene: "not allowed, nothing unread" unless the messages sample is on.
+  message_allowed_me: () => messagesSampleOn() && !messagesFlag("sendoff"),
+  message_mark_delivered: () => 0,
+  message_unread_counts: () => (messagesSampleOn() ? sampleUnread() : { inbox: 0, requests: 0 }),
+  message_my_conversations: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
+  message_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),
+  message_mark_read: () => true,
+  message_accept_request: () => true,
+  message_decline_request: () => true,
+  message_set_muted: () => true,
+  message_send: () => ({ message_id: 999, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: messagesFlag("help") }),
+  message_send_photo: () => ({ message_id: 1000, conversation_id: "aaaaaaaa-0000-4000-8000-000000000001", duplicate: false, status: "sent", folder: "inbox", new_chat: false, help: false }),
   my_account_state: () => (reviewSampleOn() ? "under_review" : "active"),
   admin_list_account_reviews: () => (reviewSampleOn() ? [
     { user_id: profiles[1].id, full_name: profiles[1].full_name, state: "deletion_requested", reason: "member asked to delete the account", set_at: "2026-11-14T10:00:00.000Z", set_by_name: profiles[1].full_name, deletion_requested_at: "2026-11-14T10:00:00.000Z", auto_approve_at: "2027-05-13T10:00:00.000Z" },
@@ -645,8 +689,21 @@ export const fixtureRoutes: FakeRoute[] = [
     const table = m[1];
     // ?stories=1 only: the profile's highlights row for the Stories renders.
     if (table === "highlights" && storySampleOn()) return countable(sampleHighlights(), method);
+    // Messages sample: the harness member follows the second member, so the Message button shows on that wall.
+    if (table === "follows" && messagesSampleOn()) {
+      const rows = [...((TABLES.follows as unknown[] | undefined) ?? []), { id: "f-msg-1", follower_id: HARNESS_USER_ID, following_id: profiles[1].id, created_at: "2026-11-01T10:00:00.000Z" }];
+      const matched = applyFilters(rows, params);
+      return countable(narrow(matched, params) as unknown[], method, matched.length);
+    }
     // ?tagrename=1: the renamed member's profile (storySample.ts) — the tag shows THIS name.
     if (table === "profiles_public_data" && tagRenameOn()) return countable([...profilesPublicData, ...sampleTagProfiles()], method);
+    // ?stories=1: the story authors have profiles with a handle, so tapping a name in the viewer has somewhere to go.
+    if (table === "profiles_public_data" && storySampleOn()) return countable([...profilesPublicData, ...sampleStoryProfiles()], method);
+    // Admin → Messages sample: AdminPanel's own header counters (nothing open, nothing unread).
+    if (adminMessagesSampleOn() && (table === "support_tickets" || table === "admin_notifications")) return countable([], method);
+    // the Broadcast composer names roles in its audience list (the same role / badge definitions Admin → Users uses)
+    if (adminMessagesSampleOn() && table === "role_display_config") return countable(sampleRoleDefinitions as unknown[], method);
+    if (adminMessagesSampleOn() && table === "badge_definitions") return countable(sampleBadgeDefinitions as unknown[], method);
     // Admin → Users sample: the members' roles, badges and activity rows.
     if (adminUsersSampleOn()) {
       const sample: Record<string, () => unknown[]> = {

@@ -48,10 +48,23 @@ export const queryKeys = {
   accountReviews: () => ["account-reviews"] as const,
   /** A4: one member's state log — rpc admin_account_state_history(_user_id). */
   accountStateHistory: (userId: string) => ["account-state-history", userId] as const,
+  /** Messages (M8): every key starts with "messages" so one invalidate refreshes them all. */
+  messageAllowed: (userId: string) => ["messages", "allowed", userId] as const,
   /** J5a: admin Job Engine page — rpc admin_jobs_overview() (useAdminJobs). */
   adminJobsOverview: () => ["admin-jobs-overview"] as const,
   /** J5a: recent jobs — rpc admin_jobs_list(_status, _kind). */
   adminJobsList: (status: string, kind: string) => ["admin-jobs-list", status, kind] as const,
+  /** M8b: Admin → Messages — switch state, word list, held queue (useAdminMessages). */
+  adminMessagesState: () => ["admin-messages-state"] as const,
+  adminMessagesWords: () => ["admin-messages-words"] as const,
+  adminMessagesReports: (status: string) => ["admin-messages-reports", status] as const,
+  adminMessagesWatch: () => ["admin-messages-watch"] as const,
+  adminMessagesMembers: (q: string, filter: string, sort: string, dir: string, page: number, size: number) => ["admin-messages-members", q, filter, sort, dir, page, size] as const,
+  /** M12: Admin → Messages → Broadcast. Every key starts with "admin-broadcast" so one invalidate refreshes them all. */
+  adminBroadcasts: (status: string, page: number, size: number) => ["admin-broadcasts", status, page, size] as const,
+  adminBroadcastReport: (id: number) => ["admin-broadcast-report", id] as const,
+  adminBroadcastRecipients: (id: number, filter: string, q: string, page: number, size: number) => ["admin-broadcast-recipients", id, filter, q, page, size] as const,
+  adminBroadcastAudience: (audience: string) => ["admin-broadcast-audience", audience] as const,
   /** Admin → Users table — rpc admin_search_users_v4 + admin_user_facets (useAdminMembers). */
   adminMembers: () => ["admin-members"] as const,
   adminPush: () => ["admin-push"] as const,

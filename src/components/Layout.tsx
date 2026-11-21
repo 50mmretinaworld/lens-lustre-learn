@@ -49,7 +49,7 @@ const AccountStateBanner = lazy(() => import("@/components/AccountStateBanner"))
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
 
 /** Routes where sidebars should NOT be shown (even for logged-in users) */
-const hideSidebarRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin", "/courses", "/journal", "/judge", "/featured-artist"];
+const hideSidebarRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin", "/courses", "/journal", "/judge", "/featured-artist", "/messages"];
 
 /** Home page gets a transparent overlay navbar */
 const Layout = () => {
@@ -441,7 +441,7 @@ const LayoutInner = () => {
           the home page only; every other page stays clean, Instagram-style. On
           the WEB it is unchanged (shows on every page as before). The bottom
           tab bar below is separate — it is primary navigation and always shows. */}
-      {!hideNav && (isHome || !isNativeCapacitorApp()) && <SiteFooter />}
+      {!hideNav && !(pathname === "/messages" || pathname.startsWith("/messages/")) && (isHome || !isNativeCapacitorApp()) && <SiteFooter />}
 
       {/* Mobile bottom navigation — primary nav, untouched. */}
       <MobileBottomNav />

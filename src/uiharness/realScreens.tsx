@@ -68,6 +68,7 @@ const CompetitionLightbox = lazy(() => import("@/components/CompetitionLightbox"
 const Signup = lazy(() => import("@/pages/Signup"));
 const EditProfile = lazy(() => import("@/pages/EditProfile"));
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
+const MessagesRoutes = lazy(() => import("@/pages/MessagesRoutes"));
 
 /**
  * The voting lightbox, open, on the first fixture photograph. The images are
@@ -309,8 +310,11 @@ export const REAL_SCREENS: Record<string, () => JSX.Element> = {
    * plus a header plus a footer — and it is the one screen where being cut off
    * at the bottom means a member cannot LOG OUT.
    */
-  "screen-account-sheet": () =>
-    screen(<MobileProfileSheet open onOpenChange={() => {}} />, "/feed", "/feed"),
+  "screen-account-sheet": () => {
+    // &chat=1 → this member's message box is switched on: the Chat tile takes the My Wall tile's place
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = new URLSearchParams(location.search).get("chat") === "1";
+    return screen(<MobileProfileSheet open onOpenChange={() => {}} />, "/feed", "/feed");
+  },
 
   /**
    * THE CREATE BUTTON, PRESSED FROM THE WALL — the owner's exact complaint.
@@ -500,6 +504,35 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
     (globalThis as { __harnessAdminJobs?: boolean }).__harnessAdminJobs = true;
     return screen(<AdminPanel />, "/admin/jobs", "/admin/*");
+  },
+  /** M8b · Admin → Messages, the REAL AdminPanel route with the messages sample (adminMessagesSample.ts). &tab=words|held|chats|history opens that tab. */
+  "screen-admin-messages": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    (globalThis as { __harnessAdminMessages?: boolean }).__harnessAdminMessages = true;
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;   // the member boxes the admin opens
+    return screen(<AdminPanel />, "/admin/messages", "/admin/*");
+  },
+  /** Another member's wall for a signed-in member who may message: the Message button beside Follow. */
+  "screen-wall-messages": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<PublicProfile />, "/profile/22222222-2222-4222-8222-222222222222", "/profile/:userId");
+  },
+  /** Messages inbox (Messages + Requests tabs), the REAL page with the synthetic sample (messagesSample.ts). */
+  "screen-messages": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<MessagesRoutes />, "/messages", "/messages/*");
+  },
+  /** One chat: text, a photo, a held message of mine, composer. */
+  "screen-message-thread": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    // &typing=1 → the other person's typing dots are on (the live channel itself needs a real server)
+    (globalThis as { __harnessTyping?: boolean }).__harnessTyping = new URLSearchParams(location.search).get("typing") === "1";
+    return screen(<MessagesRoutes />, "/messages/aaaaaaaa-0000-4000-8000-000000000001", "/messages/*");
+  },
+  /** A chat in Requests: the Accept / Decline bar. */
+  "screen-message-request": () => {
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    return screen(<MessagesRoutes />, "/messages/aaaaaaaa-0000-4000-8000-000000000004", "/messages/*");
   },
   /** Admin → Comments: the "Suggestions under the comment box" editor (Owner 18 Nov 2026). */
   "screen-admin-comments": () => {
