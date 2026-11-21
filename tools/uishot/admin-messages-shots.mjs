@@ -3,7 +3,7 @@
  * ADMIN → MESSAGES (M8b) — `node tools/uishot/admin-messages-shots.mjs <out-dir>`
  *
  * Photographs the REAL AdminPanel at /admin/messages (scene screen-admin-messages,
- * sample = launch state: "Only people on my list", the Owner alone, one held message)
+ * sample = launch state: "Only people on my list", the Owner alone, three open reports)
  * in Chromium at desktop 1280 and phone 390. Fails if any request had no fixture.
  */
 import { spawn } from "node:child_process";
@@ -63,7 +63,7 @@ const SHOTS = [
     await reason(p, "Open to everyone except people I name");
   }, false],
   ["words", "words", DESKTOP, null, true],
-  ["held", "held", DESKTOP, null, false],
+  ["reports", "reports", DESKTOP, null, true],
   ["chats", "chats", DESKTOP, async (p) => {
     await pick(p, "Member", "Som");
     await p.waitForSelector("[data-testid='messages-reason']");
@@ -72,18 +72,10 @@ const SHOTS = [
     await p.waitForSelector("[data-testid='messages-chat-row']");
     await p.waitForTimeout(400);
   }, false],
-  ["held-reader", "held", DESKTOP, async (p) => {
-    await p.getByRole("button", { name: /Read and decide/ }).first().click();
-    await p.waitForSelector("[data-testid='messages-reason']");
-    await reason(p, "Held by the word guard: reviewing");
-    await p.getByRole("button", { name: "Open and log" }).click();
-    await p.waitForSelector("[data-testid='messages-chat-reader']");
-    await p.waitForTimeout(500);
-  }, false],
   ["history", "history", DESKTOP, null, true],
   ["who-phone", "who", PHONE, null, true],
   ["words-phone", "words", PHONE, null, false],
-  ["held-phone", "held", PHONE, null, false],
+  ["reports-phone", "reports", PHONE, null, true],
 ];
 
 let failed = false;

@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  sampleMessageAdminState, sampleWordRules, sampleHeld, sampleMemberChats, sampleReadConversation,
+  sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberChats, sampleReadConversation,
 } from "@/uiharness/adminMessagesSample";
 
 const calls: { fn: string; args?: Record<string, unknown> }[] = [];
@@ -22,7 +22,9 @@ vi.mock("@/integrations/supabase/client", () => ({
       const answers: Record<string, unknown> = {
         message_admin_state: sampleMessageAdminState(),
         admin_message_word_rules: sampleWordRules(),
-        admin_message_held_queue: sampleHeld(),
+        admin_message_reports: sampleReports(),
+        admin_message_watchlist: sampleWatchlist(),
+        admin_message_report_done: true,
         admin_message_member_chats: sampleMemberChats(),
         admin_read_conversation: sampleReadConversation(),
         message_admin_set_mode: args?._mode,
@@ -35,7 +37,7 @@ vi.mock("@/hooks/core/useAuth", () => ({ useAuth: () => ({ user: { id: "11111111
 
 import AdminMessages from "@/pages/admin/AdminMessages";
 import {
-  parseMessageAdminState, parseWordRules, parseHeld, parseMemberChats, parseViewedChat,
+  parseMessageAdminState, parseWordRules, parseReports, parseWatchlist, parseMemberChats, parseViewedChat,
 } from "@/hooks/admin/useAdminMessages";
 
 const renderPage = () => {
@@ -51,7 +53,9 @@ describe("M8b parsers", () => {
     expect(parseMessageAdminState({ mode: "weird", members: [{ nope: 1 }] }).members).toEqual([]);
     expect(parseWordRules("x")).toEqual([]);
     expect(parseWordRules([{ id: 1, category: "abuse", pattern: "x", action: "weird" }])).toEqual([]);
-    expect(parseHeld([{ message_id: "7", conversation_id: "c", sender_id: "s", created_at: "2026-11-21T00:00:00Z" }])).toHaveLength(1);
+    expect(parseWordRules([{ id: 2, category: "abuse", pattern: "x", action: "hold" }])).toEqual([]);   // hold no longer exists
+    expect(parseReports([{ id: "7", conversation_id: "c", reporter_id: "s", created_at: "2026-11-21T00:00:00Z", reason: "weird" }])[0].reason).toBe("other");
+    expect(parseWatchlist([{ nope: 1 }])).toEqual([]);
     expect(parseMemberChats([{ conversation_id: "c", messages: "3", others: [{ nope: 1 }] }])[0].messages).toBe(3);
     expect(parseViewedChat({ nope: 1 })).toBeNull();
   });
@@ -64,10 +68,10 @@ describe("M8b parsers", () => {
 });
 
 describe("M8b page", () => {
-  it("shows the launch state: only people on my list, the Owner on it, one held message", async () => {
+  it("shows the launch state: only people on my list, the Owner on it, three open reports", async () => {
     renderPage();
     expect((await screen.findByTestId("messages-status")).textContent).toContain("Only people on my list");
-    expect(screen.getByTestId("messages-status").textContent).toContain("1 held");
+    expect(screen.getByTestId("messages-status").textContent).toContain("3 open reports");
     expect(screen.getAllByTestId("messages-list-row")).toHaveLength(1);
     expect(screen.getByTestId("messages-rules").textContent).toContain("Somnath Roy");
   });
@@ -83,16 +87,21 @@ describe("M8b page", () => {
     await waitFor(() => expect(calls.find((c) => c.fn === "message_admin_set_mode")?.args).toEqual({ _mode: "blocked_selected", _reason: "Open it up" }));
   });
 
-  it("reading a chat asks for a reason, then calls the logged viewer", async () => {
+  it("Reports tab lists what members reported + the watch list; closing one needs no reason box", async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole("tab", { name: /Held/ }));
-    fireEvent.mouseDown(screen.getByRole("tab", { name: /Held/ }));
-    fireEvent.click(await screen.findByRole("button", { name: /Read and decide/ }));
-    expect(calls.some((c) => c.fn === "admin_read_conversation")).toBe(false);        // nothing read before the reason
-    fireEvent.change(await screen.findByTestId("messages-reason"), { target: { value: "Held by the guard" } });
-    fireEvent.click(screen.getByRole("button", { name: "Open and log" }));
-    await waitFor(() => expect(calls.find((c) => c.fn === "admin_read_conversation")?.args).toMatchObject({ _reason: "Held by the guard" }));
-    expect((await screen.findAllByTestId("messages-reader-row")).length).toBe(3);
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /Reports/ }), { button: 0 });
+    expect((await screen.findAllByTestId("messages-report-row")).length).toBe(3);
+    expect((await screen.findAllByTestId("messages-watch-row")).length).toBe(2);
+    expect(screen.queryByTestId("messages-reason")).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: /Mark done/ })[0]);
+    await waitFor(() => expect(calls.find((c) => c.fn === "admin_message_report_done")?.args).toMatchObject({ _id: 12 }));
+  });
+
+  it("the word list has no Hold: only Block and Help can be added", async () => {
+    renderPage();
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /Word guard/ }), { button: 0 });
+    const what = (await screen.findByLabelText("What happens")) as HTMLSelectElement;
+    expect([...what.options].map((o) => o.value)).toEqual(["block", "help"]);
   });
 
   it("is registered once in AdminPanel, for super admins only", () => {

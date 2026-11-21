@@ -1,20 +1,17 @@
 /**
  * M8b · the logged chat viewer. Opening a chat asks for a reason FIRST; the server
  * writes the log row (who, when, why) before it returns one message — no reason,
- * no read. Held messages can be approved (delivered) or rejected (never delivered),
- * each with its own reason. Photos open through a 10-minute window the logged read
+ * no read. Photos open through a 10-minute window the logged read
  * creates (message_photo_visible); after that the links stop working.
  */
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OptimizedImage from "@/components/OptimizedImage";
 import { signedPhotoUrl } from "@/lib/messages/api";
 import ReasonDialog, { type ReasonRequest } from "./ReasonDialog";
-import { adminMessageCall, parseViewedChat, useRefreshAdminMessages, type ViewedChat, type ViewedMessage } from "@/hooks/admin/useAdminMessages";
+import { adminMessageCall, parseViewedChat, type ViewedChat } from "@/hooks/admin/useAdminMessages";
 
 const when = (iso: string) => {
   const d = new Date(iso);
@@ -33,10 +30,8 @@ function AdminPhoto({ path, width, height }: { path: string; width: number | nul
 }
 
 export default function ChatReader({ conversationId, onClose }: { conversationId: string; onClose: () => void }) {
-  const refresh = useRefreshAdminMessages();
   const [chat, setChat] = useState<ViewedChat | null>(null);
   const [request, setRequest] = useState<ReasonRequest | null>(null);
-  const [review, setReview] = useState<ReasonRequest | null>(null);
   const got = useRef(false);
 
   const readChat = async (reason: string) => {
@@ -66,19 +61,6 @@ export default function ChatReader({ conversationId, onClose }: { conversationId
     return m?.full_name || (m?.username ? `@${m.username}` : id.slice(0, 8));
   };
 
-  const askReview = (m: ViewedMessage, approve: boolean) => setReview({
-    title: approve ? "Deliver this message?" : "Reject this message?",
-    body: approve ? "It is sent to the other member now." : "It is never delivered. The sender is not told.",
-    button: approve ? "Deliver" : "Reject",
-    destructive: !approve,
-    doneText: approve ? "Message delivered" : "Message rejected",
-    run: async (reason) => {
-      await adminMessageCall("admin_message_review", { _message_id: m.id, _approve: approve, _reason: reason });
-      setChat((c) => (c ? { ...c, messages: c.messages.map((x) => (x.id === m.id ? { ...x, status: approve ? "sent" : "rejected" } : x)) } : c));
-      await refresh();
-    },
-  });
-
   return (
     <>
       <ReasonDialog request={request} onClose={() => { setRequest(null); if (!got.current) onClose(); }} />
@@ -99,18 +81,11 @@ export default function ChatReader({ conversationId, onClose }: { conversationId
                 </div>
                 {m.body && <p className="mt-1 whitespace-pre-wrap break-words">{m.body}</p>}
                 {m.photos.map((p) => <AdminPhoto key={p.path} {...p} />)}
-                {m.status === "held" && (
-                  <div className="mt-2 flex gap-2">
-                    <Button size="sm" onClick={() => askReview(m, true)}><Check className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Deliver</Button>
-                    <Button size="sm" variant="outline" onClick={() => askReview(m, false)}><X className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Reject</Button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         </DialogContent>
       </Dialog>
-      <ReasonDialog request={review} onClose={() => setReview(null)} />
     </>
   );
 }

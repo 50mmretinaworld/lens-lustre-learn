@@ -1,7 +1,7 @@
 /**
  * M8b · ADMIN → Users & Community → Messages. Routed at /admin/messages (via AdminPanel).
  * One page for the private-messages controls the Owner approved (15–18 Nov 2026):
- *   Who can message · Word guard · Held · Chats (logged viewer) · History.
+ *   Who can message · Word guard · Reports · Chats · History.
  * The database does the checking (admin only, reason on every change, log rows);
  * this page only shows the state and collects the reasons.
  */
@@ -12,11 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/core/useAuth";
 import SwitchPanel, { MODE_TEXT } from "@/components/admin/messages/SwitchPanel";
-import { WordsPanel, HeldPanel } from "@/components/admin/messages/SafetyPanel";
+import { WordsPanel } from "@/components/admin/messages/SafetyPanel";
+import ReportsPanel from "@/components/admin/messages/ReportsPanel";
 import ChatsPanel from "@/components/admin/messages/ChatsPanel";
-import { useMessageAdminState, useMessageHeldQueue, type ControlLogRow } from "@/hooks/admin/useAdminMessages";
+import { useMessageAdminState, useMessageReports, type ControlLogRow } from "@/hooks/admin/useAdminMessages";
 
-const TABS = ["who", "words", "held", "chats", "history"];
+const TABS = ["who", "words", "reports", "chats", "history"];
 const AREA_TEXT: Record<string, string> = {
   mode: "Who can message", groups: "Groups", list: "Member list", member_rule: "Member rules",
   word_rule: "Word list", review: "Held message", lookup: "Chat list looked up",
@@ -48,7 +49,7 @@ function History({ log, me, names }: { log: ControlLogRow[]; me: string | null; 
 
 const AdminMessages = () => {
   const state = useMessageAdminState();
-  const held = useMessageHeldQueue();
+  const reports = useMessageReports("open");
   const { user } = useAuth();
   const [tab, setTab] = useState(() => {
     // /admin/messages?tab=words opens that tab (also used by the screenshot harness)
@@ -56,7 +57,7 @@ const AdminMessages = () => {
     return t && TABS.includes(t) ? t : "who";
   });
   const s = state.data;
-  const heldCount = held.data?.length ?? 0;
+  const openReports = reports.data?.length ?? 0;
   // names of people shown in the history come with the state (list + rules); anyone else shows a short id
   const names = new Map<string, string>();
   for (const m of s?.members ?? []) if (m.full_name) names.set(m.user_id, m.full_name);
@@ -71,7 +72,7 @@ const AdminMessages = () => {
             Private messages between members. Every change here asks for a reason and is kept in the history for a year.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { void state.refetch(); void held.refetch(); }}>
+        <Button variant="outline" size="sm" onClick={() => { void state.refetch(); void reports.refetch(); }}>
           <RefreshCw className="mr-1 h-4 w-4" aria-hidden="true" />Refresh
         </Button>
       </header>
@@ -85,19 +86,19 @@ const AdminMessages = () => {
             <Badge variant={s.mode === "blocked_all" ? "destructive" : "secondary"}>Now: {MODE_TEXT[s.mode].title}</Badge>
             <Badge variant="outline">Groups: {s.groups_enabled ? "On" : "Off"}</Badge>
             <Badge variant="outline">List: {s.members.length}</Badge>
-            {heldCount > 0 && <Badge variant="destructive">{heldCount} held</Badge>}
+            {openReports > 0 && <Badge variant="destructive">{openReports} open report{openReports === 1 ? "" : "s"}</Badge>}
           </div>
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="h-auto flex-wrap justify-start">
               <TabsTrigger value="who">Who can message</TabsTrigger>
               <TabsTrigger value="words">Word guard</TabsTrigger>
-              <TabsTrigger value="held">Held{heldCount > 0 ? ` (${heldCount})` : ""}</TabsTrigger>
+              <TabsTrigger value="reports">Reports{openReports > 0 ? ` (${openReports})` : ""}</TabsTrigger>
               <TabsTrigger value="chats">Chats</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
             <TabsContent value="who" className="pt-3"><SwitchPanel state={s} /></TabsContent>
             <TabsContent value="words" className="pt-3"><WordsPanel /></TabsContent>
-            <TabsContent value="held" className="pt-3"><HeldPanel /></TabsContent>
+            <TabsContent value="reports" className="pt-3"><ReportsPanel /></TabsContent>
             <TabsContent value="chats" className="pt-3"><ChatsPanel /></TabsContent>
             <TabsContent value="history" className="pt-3"><History log={s.log} me={user?.id ?? null} names={names} /></TabsContent>
           </Tabs>
