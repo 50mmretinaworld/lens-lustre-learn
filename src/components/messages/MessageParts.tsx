@@ -85,6 +85,24 @@ function PhotoTile({ path, width, height, single }: { path: string; width: numbe
  * One bubble. `first` / `last` come from groupChat: a run of messages from the same person reads as one
  * block (small corner where they join), and only the last one carries the time.
  */
+/** Message text with web links made tappable. Plain React text (never HTML); only http(s) links open, in a new tab, without referrer. */
+const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g;
+export function LinkedText({ text }: { text: string }) {
+  const parts = text.split(URL_RE);
+  return (
+    <span>
+      {parts.map((part, i) => {
+        if (i % 2 === 1) {
+          let ok = false;
+          try { const u = new URL(part); ok = u.protocol === "http:" || u.protocol === "https:"; } catch { ok = false; }
+          if (ok) return <a key={i} href={part} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2 break-all" onClick={(e) => e.stopPropagation()}>{part}</a>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </span>
+  );
+}
+
 export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine: boolean; first: boolean; last: boolean }) {
   // 1–3 emoji and nothing else: shown large with no bubble, and they pop in
   if (m.photos.length === 0 && m.status !== "held" && isEmojiOnly(m.body)) {
@@ -128,7 +146,7 @@ export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine
             {m.photos.map((p) => <PhotoTile key={p.path} path={p.path} width={p.width} height={p.height} single={single} />)}
           </div>
         )}
-        {m.body && <span>{m.body}</span>}
+        {m.body && <LinkedText text={m.body} />}
       </div>
       {(last || m.status === "held") && (
         <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground">

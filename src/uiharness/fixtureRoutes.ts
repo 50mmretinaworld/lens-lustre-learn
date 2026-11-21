@@ -33,6 +33,7 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
+import { sampleMessageBroadcasts, sampleBroadcastReport, sampleBroadcastRecipients, sampleBroadcastAudience } from "./adminBroadcastsSample";
 import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberSearch, sampleProfileSearch } from "./adminMessagesSample";
 import { messagesFlag, messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
@@ -342,6 +343,15 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_message_report_done: () => true,
   message_report: () => true,
   admin_message_member_search: (b) => (adminMessagesSampleOn() ? sampleMemberSearch(b) : { total: 0, counts: { all: 0, active: 0, reported: 0, paused: 0, listed: 0 }, rows: [] }),
+  // M12 Broadcast (screen-admin-messages ?tab=broadcast). Reads answer from the sample; writes answer as the SQL would.
+  admin_message_broadcasts: (b) => (adminMessagesSampleOn() ? sampleMessageBroadcasts(b) : { total: 0, counts: {}, rows: [] }),
+  admin_message_broadcast_report: (b) => (adminMessagesSampleOn() ? sampleBroadcastReport(b) : null),
+  admin_message_broadcast_recipients: (b) => (adminMessagesSampleOn() ? sampleBroadcastRecipients(b) : { total: 0, counts: {}, rows: [] }),
+  admin_message_broadcast_audience: (b) => (adminMessagesSampleOn() ? sampleBroadcastAudience(b) : { matched: 0, will_receive: 0, left_out: 0 }),
+  admin_message_broadcast_save: () => 9,
+  admin_message_broadcast_send: () => ({ broadcast_id: 9, recipients: 5000, batches: 10, engine_on: true }),
+  admin_message_broadcast_control: (b) => (b._action === "pause" ? "paused" : b._action === "cancel" ? "cancelled" : "sending"),
+  admin_message_broadcast_withdraw: () => "withdrawn",
   admin_view_inbox: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
   admin_view_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),
   message_admin_set_mode: (b) => b._mode,
@@ -688,6 +698,9 @@ export const fixtureRoutes: FakeRoute[] = [
     if (table === "profiles_public_data" && tagRenameOn()) return countable([...profilesPublicData, ...sampleTagProfiles()], method);
     // Admin → Messages sample: AdminPanel's own header counters (nothing open, nothing unread).
     if (adminMessagesSampleOn() && (table === "support_tickets" || table === "admin_notifications")) return countable([], method);
+    // the Broadcast composer names roles in its audience list (the same role / badge definitions Admin → Users uses)
+    if (adminMessagesSampleOn() && table === "role_display_config") return countable(sampleRoleDefinitions as unknown[], method);
+    if (adminMessagesSampleOn() && table === "badge_definitions") return countable(sampleBadgeDefinitions as unknown[], method);
     // Admin → Users sample: the members' roles, badges and activity rows.
     if (adminUsersSampleOn()) {
       const sample: Record<string, () => unknown[]> = {

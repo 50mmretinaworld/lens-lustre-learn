@@ -70,11 +70,34 @@ const SHOTS = [
     await p.getByTestId("conversation-row").first().click();
     await p.waitForTimeout(900);
   }, false],
+  ["broadcast", "broadcast", DESKTOP, null, true],
+  ["broadcast-detail", "broadcast", DESKTOP, async (p) => {
+    await p.getByText("Welcome to private messages").first().click();
+    await p.waitForSelector("[data-testid='bc-detail']");
+    await p.waitForSelector("[data-testid='bc-person-state']");
+    await p.waitForTimeout(700);
+  }, true],
+  ["broadcast-composer", "broadcast", DESKTOP, async (p) => {
+    await p.getByTestId("bc-new").click();
+    await p.getByTestId("bc-title").fill("Welcome to private messages");
+    await p.getByTestId("bc-body").fill("Hello! Private messages are now open. Say hi to a photographer you follow 📷 https://50mmretina.com/messages");
+    await p.waitForTimeout(1000);
+  }, true],
+  ["broadcast-confirm", "broadcast", DESKTOP, async (p) => {
+    await p.getByTestId("bc-new").click();
+    await p.getByTestId("bc-title").fill("Welcome to private messages");
+    await p.getByTestId("bc-body").fill("Hello! Private messages are now open 📷 https://50mmretina.com/messages");
+    await p.waitForTimeout(1000);
+    await p.getByTestId("bc-review").click();
+    await p.waitForSelector("[role='alertdialog']");
+    await p.waitForTimeout(400);
+  }, false],
   ["history", "history", DESKTOP, null, true],
   ["who-phone", "who", PHONE, null, true],
   ["words-phone", "words", PHONE, null, false],
   ["reports-phone", "reports", PHONE, null, true],
   ["boxes-phone", "boxes", PHONE, null, true],
+  ["broadcast-phone", "broadcast", PHONE, null, true],
 ];
 
 let failed = false;
