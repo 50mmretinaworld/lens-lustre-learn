@@ -119,7 +119,7 @@ export default function BroadcastDetail({ id, onBack }: { id: number; onBack: ()
           {canRetry && <Button size="sm" variant="outline" onClick={() => setAsk("retry_failed")}><RotateCw className="mr-1 h-4 w-4" aria-hidden="true" />Retry failed</Button>}
           {canCancel && <Button size="sm" variant="outline" onClick={() => setAsk("cancel")}><XCircle className="mr-1 h-4 w-4" aria-hidden="true" />Cancel</Button>}
           {canWithdraw && <Button size="sm" variant="outline" className="text-destructive" onClick={() => setAsk("withdraw")}><Undo2 className="mr-1 h-4 w-4" aria-hidden="true" />Withdraw</Button>}
-          {b.status !== "draft" && (
+          {b && b.status !== "draft" && (
             <Button size="sm" variant="outline" data-testid="bc-allow-replies" onClick={async () => {
               try {
                 const n = Number(await adminMessageCall("admin_message_broadcast_unlock", { _id: id }));
