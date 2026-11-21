@@ -988,11 +988,8 @@ jobs:
           # Owner-approved changes: the story caption (2 lines + more / Show less, #1111), member tags read from the
           # member's profile everywhere (#1110/#1114), and photography suggestions under the comment box (#1115).
           # Owner 18 Nov: "all approved go ahead", "build the App". No switch changed.
-          # 2026-11-21: bumped 1.2.51 -> 1.2.52. 1.2.51 (run 156, vc1156) is built and handed over. 1.2.52 carries the private
-          # messages screens approved by the Owner 21 Nov ("App approved", "go"): the Chat icon replaces Wall in the footer for
-          # members whose message box is on, the messenger (ticks, typing dots, replies), story/chat name taps open the profile.
           sed -i 's/versionName "1.0"/versionName "1.2.52"/' android/app/build.gradle
-          echo "versionCode=${VC} versionName=1.2.52 (1.2.51 run 156 vc1156 is spent - handed to the Owner)"
+          echo "versionCode=${VC} versionName=1.2.52 (1.2.51 run 156 vc1156 is spent)"
           grep -E "versionCode|versionName" android/app/build.gradle
           cat android/variables.gradle
           # S11: prove both edits landed — exactly one versionCode, the derived
