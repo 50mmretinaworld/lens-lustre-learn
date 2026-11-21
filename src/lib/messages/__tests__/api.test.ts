@@ -45,7 +45,13 @@ describe("messages data layer", () => {
   it("keeps the body as plain text and only the sender's own held status", () => {
     const [m] = parseThread([{ id: 1, sender_id: "u", created_at: "t", body: "x", kind: "photo", status: "held", photos: [{ path: "u/a.webp", width: 4, height: 3 }, { nope: 1 }] }]);
     expect(m.status).toBe("held");
-    expect(m.photos).toEqual([{ path: "u/a.webp", width: 4, height: 3 }]);
+    expect(m.photos).toEqual([{ path: "u/a.webp", width: 4, height: 3, expired: false }]);
+  });
+
+  it("reads which photos the server deleted after 30 days", () => {
+    const [m] = parseThread([{ id: 2, sender_id: "u", created_at: "t", body: "", kind: "photo", status: "sent", photos: [
+      { path: "u/old.webp", width: 4, height: 3, expired: true }, { path: "u/new.webp", width: 4, height: 3, expired: false }, { path: "u/odd.webp", expired: "yes" }] }]);
+    expect(m.photos.map((p) => p.expired)).toEqual([true, false, false]);
   });
 
   it("reads counts and send results defensively", () => {

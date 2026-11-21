@@ -119,6 +119,10 @@ export function getNotifLink(notif: NotifLinkInput): string {
     // public.first_post_reminders_tick()): one tap opens the normal post flow.
     case "first_post_reminder":
       return "/feed?compose=1";
+    // Private messages (SQL 1500): the push carries data.type = 'new_message' and reference_id = the chat id.
+    // One tap opens that chat; without an id, the message list. Before this it fell to /dashboard.
+    case "new_message":
+      return notif.reference_id ? `/messages/${notif.reference_id}` : "/messages";
     default:
       return "/dashboard";
   }

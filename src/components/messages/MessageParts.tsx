@@ -3,12 +3,13 @@
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
 import { useQuery } from "@tanstack/react-query";
-import { Check, CheckCheck, Clock, HeartHandshake, Reply } from "lucide-react";
+import { Check, CheckCheck, Clock, HeartHandshake, ImageOff, Reply } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
 import { clockText } from "@/lib/messages/format";
+import { keepPhotoOnDevice, readLocalPhoto } from "@/lib/messages/photoCache";
 import { useOnline } from "@/lib/presence/online";
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
@@ -117,13 +118,34 @@ export function HelplineCard({ onClose }: { onClose: () => void }) {
   );
 }
 
-function PhotoTile({ path, width, height, single }: { path: string; width: number | null; height: number | null; single: boolean }) {
-  // A 5-minute link, asked for only when the tile is on screen; the server's read rule decides.
-  const { data: url } = useQuery({ queryKey: ["messages", "photo", path], queryFn: () => signedPhotoUrl(path), staleTime: 4 * 60_000 });
+function PhotoTile({ path, width, height, single, expired }: { path: string; width: number | null; height: number | null; single: boolean; expired?: boolean }) {
+  // 1) this device's own copy (kept the first time the photo was shown); 2) a 5-minute link, asked for only when the tile is
+  // on screen — the server's read rule decides — and a copy is kept on this device; 3) the server deleted it after 30 days
+  // and this device has no copy: "Photo no longer available".
+  const { data } = useQuery({
+    queryKey: ["messages", "photo", path, !!expired],
+    queryFn: async (): Promise<{ url: string | null; gone: boolean }> => {
+      const local = await readLocalPhoto(path);
+      if (local) return { url: local, gone: false };
+      if (expired) return { url: null, gone: true };
+      const url = await signedPhotoUrl(path);
+      if (url) void keepPhotoOnDevice(path, url);
+      return { url, gone: false };
+    },
+    staleTime: 4 * 60_000,
+  });
   const ratio = single && width && height ? `${width} / ${height}` : "1 / 1";
+  if (data?.gone) {
+    return (
+      <div className="flex w-full flex-col items-center justify-center gap-1 overflow-hidden bg-muted px-3 text-center text-muted-foreground" style={{ aspectRatio: ratio, minHeight: 96 }}>
+        <ImageOff aria-hidden className="h-6 w-6" />
+        <span className="text-xs">Photo no longer available</span>
+      </div>
+    );
+  }
   return (
     <div className="w-full overflow-hidden bg-muted" style={{ aspectRatio: ratio }}>
-      {url ? <OptimizedImage src={url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" /> : <div aria-hidden className="h-full w-full animate-pulse" />}
+      {data?.url ? <OptimizedImage src={data.url} alt="Photo in this chat" loading="lazy" className="h-full w-full object-cover" /> : <div aria-hidden className="h-full w-full animate-pulse" />}
     </div>
   );
 }
@@ -218,7 +240,7 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
         )}
         {m.photos.length > 0 && (
           <div className={`grid gap-0.5 ${single ? "grid-cols-1" : "grid-cols-2"} ${m.body || m.reply ? "-mx-3.5 mb-2 " + (m.reply ? "" : "-mt-2") : ""}`}>
-            {m.photos.map((p) => <PhotoTile key={p.path} path={p.path} width={p.width} height={p.height} single={single} />)}
+            {m.photos.map((p) => <PhotoTile key={p.path} path={p.path} width={p.width} height={p.height} single={single} expired={p.expired} />)}
           </div>
         )}
         {m.body && <LinkedText text={m.body} />}
