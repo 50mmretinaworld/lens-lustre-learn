@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLink from "@/components/ProfileLink";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ImagePlus, Loader2, SendHorizontal, Smile, UserRound, X } from "lucide-react";
+import { ArrowLeft, Clock, ImagePlus, Loader2, Search, SendHorizontal, Smile, UserRound, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -22,8 +22,11 @@ import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { useChatLive } from "@/hooks/messages/useChatLive";
 import { HelplineCard, MessageBubble, PersonAvatar, TypingDots, headingFont, refusalText } from "@/components/messages/MessageParts";
 import ReportChat from "@/components/messages/ReportChat";
+import ChatMenu from "@/components/messages/ChatMenu";
 import AutoBadge from "@/components/AutoBadge";
 import { usePeerStatus } from "@/hooks/messages/usePeerStatus";
+import { useMessageQueue } from "@/hooks/messages/useMessageQueue";
+import { isOfflineFailure, queueMessage } from "@/lib/messages/queue";
 import { useViewAs } from "@/components/messages/viewAs";
 
 const MAX_PHOTOS = 10;
@@ -50,7 +53,11 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
 
   const thread = useThread(convId);
   const oldestFirst = useMemo(() => [...(thread.data ?? [])].reverse(), [thread.data]);
-  const items = useMemo(() => groupChat(oldestFirst), [oldestFirst]);
+  const [searching, setSearching] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const needle = searchText.trim().toLowerCase();
+  const shown = useMemo(() => (needle ? oldestFirst.filter((m) => m.body.toLowerCase().includes(needle)) : oldestFirst), [oldestFirst, needle]);
+  const items = useMemo(() => groupChat(shown), [shown]);
   const otherId = entry?.other?.userId ?? userId ?? oldestFirst.find((m) => m.senderId !== meId)?.senderId ?? null;
   const { data: fetched } = useQuery<MessagePerson | null>({
     queryKey: ["messages", "person", otherId],
@@ -85,6 +92,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
     el.classList.add("bg-primary/15");
     window.setTimeout(() => el.classList.remove("bg-primary/15"), 1400);
   };
+  const queued = useMessageQueue(viewAs ? undefined : user?.id, otherId);   // texts written with no network, waiting to be sent
   const live = useChatLive(convId, user?.id, !viewAs);   // typing dots + instant refresh; an admin's read-only view never joins
 
   const newestId = oldestFirst.length ? oldestFirst[oldestFirst.length - 1].id : null;
@@ -123,6 +131,14 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       if (r.help) setHelp(true);
       if (!convId) navigate(`/messages/${r.conversationId}`, { replace: true });
     } catch (e) {
+      // no network: keep the message on this device and send it, once, when the network is back (same id = never twice)
+      if (isOfflineFailure(e) && meId && otherId && !viewAs && queueMessage({ id, userId: meId, to: otherId, body, replyTo: replyTo?.id ?? null })) {
+        attempt.current = null;
+        if (fromBox) setText("");
+        setReplyTo(null);
+        setPicker(false);
+        return;
+      }
       setError(refusalText(e instanceof MessageSendError ? e.refusal : "unknown"));
     }
   };
@@ -187,12 +203,27 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
             : <div className="flex min-w-0 flex-1 items-center gap-3">{head}</div>;
         })()}
         {convId && !viewAs && <ReportChat conversationId={convId} />}
+        {convId && !viewAs && <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} />}
         {otherId && (
           <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
             <UserRound className="h-5 w-5" />
           </ProfileLink>
         )}
       </header>
+
+      {searching && (
+        <div data-testid="chat-search" className="flex items-center gap-2 border-b border-border/70 bg-background/80 px-3 py-2">
+          <Search aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            autoFocus value={searchText} onChange={(e) => setSearchText(e.target.value)} maxLength={100}
+            placeholder={t("messages.searchPlaceholder", "Search messages in this chat")}
+            aria-label={t("messages.searchChat", "Search in this chat")}
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          {needle && <span className="shrink-0 text-xs text-muted-foreground">{shown.length}</span>}
+          <button type="button" onClick={() => { setSearching(false); setSearchText(""); }} aria-label={t("common.close", "Close")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5"><X className="h-4 w-4" /></button>
+        </div>
+      )}
 
       {inRequests && convId && !viewAs && (
         <div data-testid="request-bar" className="mx-3 mt-3 rounded-3xl border border-border bg-background p-4 shadow-sm">
@@ -227,6 +258,12 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
             />
           ),
         )}
+        {queued.map((q) => (
+          <div key={q.id} data-testid="queued-message" className="mt-1 flex flex-col items-end px-4">
+            <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-[22px] rounded-br-md bg-primary/60 px-3.5 py-2 text-[15px] leading-[1.35] text-primary-foreground sm:max-w-[68%]">{q.body}</div>
+            <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground"><Clock aria-hidden className="h-3 w-3" />{t("messages.waitingNetwork", "Waiting for network")}</span>
+          </div>
+        ))}
         {live.typing && <TypingDots name={person?.fullName} />}
         {help && <HelplineCard onClose={() => setHelp(false)} />}
         <div ref={endRef} />
@@ -235,6 +272,10 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       {viewAs ? (
         <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="view-as-note">
           Read-only view of {viewAs.name}'s chat. Nothing you do here is sent or marked as read.
+        </p>
+      ) : entry?.announcementOnly ? (
+        <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="announcement-only-note">
+          {t("messages.announcementOnly", "Only 50mm Retina World can write in this chat. You can read it here.")}
         </p>
       ) : !allowed ? (
         <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="send-off-note">
