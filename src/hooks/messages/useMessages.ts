@@ -58,16 +58,16 @@ function useInvalidateMessages() {
 /** One send. The message id is made once per tap (see `start`) so a retry never stores it twice. */
 export function useSendMessage() {
   const invalidate = useInvalidateMessages();
-  return useMutation<SendResult, Error, { to: string; body: string; clientMsgId: string }>({
-    mutationFn: ({ to, body, clientMsgId }) => sendMessage(to, body, clientMsgId),
+  return useMutation<SendResult, Error, { to: string; body: string; clientMsgId: string; replyTo?: number | null }>({
+    mutationFn: ({ to, body, clientMsgId, replyTo }) => sendMessage(to, body, clientMsgId, replyTo ?? null),
     onSuccess: invalidate,
   });
 }
 
 export function useSendPhotos() {
   const invalidate = useInvalidateMessages();
-  return useMutation<SendResult, Error, { to: string; caption: string; clientMsgId: string; photos: Array<{ path: string; width?: number; height?: number }> }>({
-    mutationFn: ({ to, caption, clientMsgId, photos }) => sendPhotos(to, caption, clientMsgId, photos),
+  return useMutation<SendResult, Error, { to: string; caption: string; clientMsgId: string; photos: Array<{ path: string; width?: number; height?: number }>; replyTo?: number | null }>({
+    mutationFn: ({ to, caption, clientMsgId, photos, replyTo }) => sendPhotos(to, caption, clientMsgId, photos, replyTo ?? null),
     onSuccess: invalidate,
   });
 }

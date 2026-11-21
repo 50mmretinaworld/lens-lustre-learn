@@ -62,9 +62,9 @@ export function sampleThread(body: Record<string, unknown>): unknown[] {
   return [
     ...mine,
     m(106, them, "Loved the frame from Sunday — which lens was that?", 12),
-    m(105, them, "The light on her face is unreal", 13),
+    m(105, them, "The light on her face is unreal", 13, { reply: { id: 104, sender_id: HARNESS_USER_ID, body: "", photo: true } }),
     m(104, HARNESS_USER_ID, "", 30, { kind: "photo", tick: "read", photos: [{ path: fixtureImage(11, "50mm f/1.4"), width: 900, height: 600 }] }),
-    m(103, HARNESS_USER_ID, "Thank you! Shot at golden hour, mostly natural light.", 31),
+    m(103, HARNESS_USER_ID, "Thank you! Shot at golden hour, mostly natural light.", 31, { reply: { id: 102, sender_id: them, body: "Hey! Saw your latest post. Are you free this weekend for a photo walk?", photo: false } }),
     m(102, them, "Hey! Saw your latest post. Are you free this weekend for a photo walk?", 60),
     m(101, HARNESS_USER_ID, "Are you joining the photo walk on Saturday?", 62),
     m(100, HARNESS_USER_ID, "😍🔥", 95),
