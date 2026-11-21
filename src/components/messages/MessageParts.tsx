@@ -3,7 +3,7 @@
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
 import { useQuery } from "@tanstack/react-query";
-import { Check, CheckCheck, Clock, HeartHandshake } from "lucide-react";
+import { Check, CheckCheck, Clock, HeartHandshake, Reply } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -134,11 +134,19 @@ export function LinkedText({ text }: { text: string }) {
   );
 }
 
-export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine: boolean; first: boolean; last: boolean }) {
+export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }: {
+  m: ThreadMessage; mine: boolean; first: boolean; last: boolean;
+  /** Reply to this message (swipe right on a phone, the arrow beside it on a computer). Left out where replying is not possible. */
+  onReply?: (m: ThreadMessage) => void;
+  /** Tap the quote: scroll to the original. */
+  onJump?: (messageId: number) => void;
+  /** Name shown on a quote ("You" or the person). */
+  nameOf?: (senderId: string) => string;
+}) {
   // 1–3 emoji and nothing else: shown large with no bubble, and they pop in
-  if (m.photos.length === 0 && m.status !== "held" && isEmojiOnly(m.body)) {
+  if (m.photos.length === 0 && m.status !== "held" && !m.reply && isEmojiOnly(m.body)) {
     return (
-      <div className={`flex flex-col ${mine ? "items-end" : "items-start"} px-4 ${first ? "mt-3" : "mt-0.5"}`}>
+      <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} px-4 ${first ? "mt-3" : "mt-0.5"}`}>
         <motion.span
           data-testid="emoji-big"
           initial={{ scale: 0.3, rotate: -12, opacity: 0 }}
@@ -153,17 +161,26 @@ export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine
       </div>
     );
   }
-  const photoOnly = m.photos.length > 0 && !m.body && m.status !== "held";
+  const photoOnly = m.photos.length > 0 && !m.body && !m.reply && m.status !== "held";
   const single = m.photos.length === 1;
+  // swipe right to reply: touch screens only (a mouse drag would fight with selecting text)
+  const touch = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  const canReply = !!onReply && m.status === "sent";
   // rounded 22px; the corner facing the other side tightens where bubbles join, and flattens on the tail side of the last one
   const join = mine
     ? `${first ? "rounded-tr-[22px]" : "rounded-tr-md"} ${last ? "rounded-br-md" : "rounded-br-md"}`
     : `${first ? "rounded-tl-[22px]" : "rounded-tl-md"} ${last ? "rounded-bl-md" : "rounded-bl-md"}`;
   const shape = `rounded-[22px] ${join}`;
   return (
-    <div className={`flex flex-col ${mine ? "items-end" : "items-start"} px-4 ${first ? "mt-3" : "mt-0.5"}`}>
-      <div
+    <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} px-4 ${first ? "mt-3" : "mt-0.5"} transition-colors`}>
+      <div className={`group flex w-full items-center gap-1.5 ${mine ? "flex-row-reverse" : ""}`}>
+      <motion.div
         data-testid={mine ? "bubble-mine" : "bubble-theirs"}
+        drag={canReply && touch ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 0, right: 0.4 }}
+        dragSnapToOrigin
+        onDragEnd={(_, info) => { if (canReply && info.offset.x > 56) onReply?.(m); }}
         className={`max-w-[80%] overflow-hidden whitespace-pre-wrap break-words text-[15px] leading-[1.35] sm:max-w-[68%] ${shape} ${
           photoOnly
             ? "w-[min(80%,280px)] shadow-sm ring-1 ring-border/50"
@@ -172,12 +189,35 @@ export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine
               : "bg-foreground/10 px-3.5 py-2 text-foreground"
         }`}
       >
+        {m.reply && (
+          <button
+            type="button"
+            data-testid="reply-quote"
+            onClick={() => onJump?.(m.reply!.id)}
+            className={`mb-1.5 block w-full rounded-xl border-l-4 px-2.5 py-1.5 text-left text-[13px] leading-snug ${mine ? "border-white/70 bg-white/15" : "border-primary bg-foreground/10"}`}
+          >
+            <span className="block text-[12px] font-bold opacity-90">{nameOf ? nameOf(m.reply.senderId) : "Message"}</span>
+            <span className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">{m.reply.body || (m.reply.photo ? "📷 Photo" : "")}</span>
+          </button>
+        )}
         {m.photos.length > 0 && (
-          <div className={`grid gap-0.5 ${single ? "grid-cols-1" : "grid-cols-2"} ${m.body ? "-mx-3.5 -mt-2 mb-2" : ""}`}>
+          <div className={`grid gap-0.5 ${single ? "grid-cols-1" : "grid-cols-2"} ${m.body || m.reply ? "-mx-3.5 mb-2 " + (m.reply ? "" : "-mt-2") : ""}`}>
             {m.photos.map((p) => <PhotoTile key={p.path} path={p.path} width={p.width} height={p.height} single={single} />)}
           </div>
         )}
         {m.body && <LinkedText text={m.body} />}
+      </motion.div>
+      {canReply && (
+        <button
+          type="button"
+          aria-label="Reply"
+          data-testid="reply-button"
+          onClick={() => onReply?.(m)}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
+        >
+          <Reply className="h-4 w-4" />
+        </button>
+      )}
       </div>
       {(last || m.status === "held") && (
         <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground">

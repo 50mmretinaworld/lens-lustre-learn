@@ -97,6 +97,8 @@ interface FrameProps {
   onClose: () => void;
   onTogglePause: () => void;
   onMenu: () => void;
+  /** tap the name or picture: open that member's profile (not for your own story) */
+  onProfile: () => void;
   onViewPost: () => void;
   onLike: () => void;
   onSend: (text: string) => void;
@@ -186,12 +188,22 @@ export function StoryFrame(p: FrameProps) {
       <div className="absolute inset-x-3 top-3 space-y-3">
         <StoryBars n={p.count} at={p.at} part={p.part} />
         <div className="flex items-center gap-2 text-white">
-          {person.avatar ? (
-            <OptimizedImage loading="eager" src={person.avatar} alt="" className="h-9 w-9 rounded-full border border-white/60 object-cover" />
-          ) : (
-            <div className="h-9 w-9 rounded-full border border-white/60 bg-white/20" />
-          )}
-          <p className="text-sm font-semibold" style={hf}>{p.highlightTitle ?? (own ? "Your story" : person.name)}</p>
+          {/* Owner 21 Nov: tapping the name (or picture) opens that member's profile. Your own story and a highlight title are not links. */}
+          {(() => {
+            const who = (
+              <>
+                {person.avatar ? (
+                  <OptimizedImage loading="eager" src={person.avatar} alt="" className="h-9 w-9 rounded-full border border-white/60 object-cover" />
+                ) : (
+                  <div className="h-9 w-9 rounded-full border border-white/60 bg-white/20" />
+                )}
+                <p className="text-sm font-semibold" style={hf}>{p.highlightTitle ?? (own ? "Your story" : person.name)}</p>
+              </>
+            );
+            return own || p.highlightTitle !== undefined
+              ? <div className="flex items-center gap-2">{who}</div>
+              : <button type="button" data-testid="story-author" aria-label={`${person.name}'s profile`} onClick={p.onProfile} className="flex items-center gap-2 text-left">{who}</button>;
+          })()}
           {story && p.highlightTitle === undefined && <span className="text-sm text-white/75">{storyAge(story.created_at)}</span>}
           {own ? <Users className="h-3.5 w-3.5 text-white/75" /> : <Globe className="h-3.5 w-3.5 text-white/75" />}
           <div className="ml-auto flex items-center gap-4">
@@ -594,16 +606,18 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
     onClose();
     navigate(postPath(story.post_id));
   };
+  const onProfile = () => {
+    if (!person || person.isOwn) return;
+    // F-95: a profile opens by its handle, never the id; no handle = stay here.
+    const id = person.userId;
+    void fetchProfileMap([id]).then((m) => {
+      const to = memberPath(m.get(id)?.custom_url);
+      if (to) { onClose(); navigate(to); }
+    });
+  };
   const onMenu = () => {
     if (person?.isOwn) void onDelete();
-    else if (person) {
-      // F-95: a profile opens by its handle, never the id; no handle = stay here.
-      const id = person.userId;
-      void fetchProfileMap([id]).then((m) => {
-        const to = memberPath(m.get(id)?.custom_url);
-        if (to) { onClose(); navigate(to); }
-      });
-    }
+    else onProfile();
   };
 
   const video: StoryPlayback | undefined = slide?.kind === "video" ? {
@@ -672,7 +686,7 @@ export default function StoryViewer({ people, startIndex, viewerId, onClose, onC
     <StoryFrame
       person={person} slide={slide} count={Math.max(1, slides.length)} at={si} part={part} desktop={desktop}
       paused={paused} comments={comments} liked={liked}
-      onClose={onClose} onTogglePause={() => setPaused((x) => !x)} onMenu={onMenu} onViewPost={onViewPost}
+      onClose={onClose} onTogglePause={() => setPaused((x) => !x)} onMenu={onMenu} onProfile={onProfile} onViewPost={onViewPost}
       onLike={() => void onLike()} onSend={(t) => void onSend(t)} onHighlight={() => setPicker(true)} onDelete={() => void onDelete()}
       onInputFocus={setTyping} onPrev={prev} onNext={next} onHold={setHolding}
       onOpenSheet={setSheet} onOlder={() => void loadOlder()} highlightTitle={highlight?.title}

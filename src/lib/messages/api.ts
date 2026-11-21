@@ -37,6 +37,7 @@ export interface ConversationSummary {
   last: { id: number; senderId: string; kind: "text" | "photo"; body: string; createdAt: string; tick: MessageTick | null } | null;
   unread: number;
 }
+export interface MessageReplyQuote { id: number; senderId: string; body: string; photo: boolean }
 export interface MessagePhoto { path: string; width: number | null; height: number | null }
 export interface ThreadMessage {
   id: number;
@@ -48,6 +49,8 @@ export interface ThreadMessage {
   status: "sent" | "held";
   /** Only on the viewer's OWN stored messages; never on someone else's. */
   tick: MessageTick | null;
+  /** The message this one answers (first 140 characters), when it is a reply and the original still exists. */
+  reply: MessageReplyQuote | null;
   photos: MessagePhoto[];
 }
 export interface SendResult {
@@ -71,7 +74,7 @@ const REFUSALS: Record<string, SendRefusal> = {
   "MSG-010": "not_available", "MSG-011": "recipient_unavailable", "MSG-020": "paused", "MSG-021": "text_off",
   "MSG-022": "friends_only", "MSG-023": "photos_off", "MSG-024": "bad_photo", "MSG-025": "bad_photo",
   "MSG-030": "blocked", "MSG-040": "no_link", "MSG-050": "too_fast", "MSG-051": "daily_limit",
-  "MSG-052": "chat_limit", "MSG-053": "photo_limit", "MSG-060": "word_guard", "MSG-061": "new_link",
+  "MSG-052": "chat_limit", "MSG-053": "photo_limit", "MSG-060": "word_guard", "MSG-061": "new_link", "MSG-080": "bad_message",
 };
 
 export class MessageSendError extends Error {
@@ -114,6 +117,11 @@ export function parseConversations(data: unknown): ConversationSummary[] {
   return out;
 }
 
+function quoteOf(v: unknown): MessageReplyQuote | null {
+  if (!isObj(v) || num(v.id) === null || !str(v.sender_id)) return null;
+  return { id: v.id as number, senderId: v.sender_id as string, body: str(v.body) ?? "", photo: v.photo === true };
+}
+
 export function parseThread(data: unknown): ThreadMessage[] {
   if (!Array.isArray(data)) return [];
   const out: ThreadMessage[] = [];
@@ -124,7 +132,7 @@ export function parseThread(data: unknown): ThreadMessage[] {
       : [];
     out.push({
       id: r.id as number, senderId: r.sender_id as string, kind: r.kind === "photo" ? "photo" : "text",
-      body: str(r.body) ?? "", createdAt: r.created_at as string, status: r.status === "held" ? "held" : "sent", tick: tickOf(r.tick), photos,
+      body: str(r.body) ?? "", createdAt: r.created_at as string, status: r.status === "held" ? "held" : "sent", tick: tickOf(r.tick), reply: quoteOf(r.reply), photos,
     });
   }
   return out;
@@ -171,17 +179,22 @@ export async function fetchViewThread(userId: string, conversationId: string, be
 export { fetchMessagingAllowed } from "./nav";
 export { fetchUnread } from "./unread";
 
-export async function sendMessage(to: string, body: string, clientMsgId: string): Promise<SendResult> {
-  const { data, error } = await rpc("message_send", { _to: to, _body: body, _client_msg_id: clientMsgId });
+export async function sendMessage(to: string, body: string, clientMsgId: string, replyTo: number | null = null): Promise<SendResult> {
+  // a reply goes through the one reply door (the normal send door + the link, in one transaction)
+  const { data, error } = replyTo !== null
+    ? await rpc("message_send_reply", { _to: to, _body: body, _client_msg_id: clientMsgId, _reply_to: replyTo })
+    : await rpc("message_send", { _to: to, _body: body, _client_msg_id: clientMsgId });
   if (error) throw new MessageSendError(refusalFrom(error.message), error.message ?? "send refused");
   const r = parseSendResult(data);
   if (!r) throw new MessageSendError("unknown", "unexpected reply");
   return r;
 }
 export async function sendPhotos(
-  to: string, caption: string, clientMsgId: string, photos: Array<{ path: string; width?: number; height?: number }>,
+  to: string, caption: string, clientMsgId: string, photos: Array<{ path: string; width?: number; height?: number }>, replyTo: number | null = null,
 ): Promise<SendResult> {
-  const { data, error } = await rpc("message_send_photo", { _to: to, _caption: caption, _client_msg_id: clientMsgId, _photos: photos });
+  const { data, error } = replyTo !== null
+    ? await rpc("message_send_reply", { _to: to, _body: caption, _client_msg_id: clientMsgId, _reply_to: replyTo, _photos: photos })
+    : await rpc("message_send_photo", { _to: to, _caption: caption, _client_msg_id: clientMsgId, _photos: photos });
   if (error) throw new MessageSendError(refusalFrom(error.message), error.message ?? "send refused");
   const r = parseSendResult(data);
   if (!r) throw new MessageSendError("unknown", "unexpected reply");

@@ -17,7 +17,7 @@ describe("messages data layer", () => {
       { conversationId: "c1", kind: "direct", title: null, folder: "inbox", muted: false, lastMessageAt: null, other: { userId: "u2", fullName: "Asha", username: null, avatarUrl: null }, last: null, unread: 2 },
     ]);
     expect(parseThread([{ id: "1" }, { id: 7, sender_id: "u", created_at: "t", body: "<b>hi</b>", kind: "text" }])).toEqual([
-      { id: 7, senderId: "u", kind: "text", body: "<b>hi</b>", createdAt: "t", status: "sent", tick: null, photos: [] },
+      { id: 7, senderId: "u", kind: "text", body: "<b>hi</b>", createdAt: "t", status: "sent", tick: null, reply: null, photos: [] },
     ]);
   });
 
@@ -29,6 +29,17 @@ describe("messages data layer", () => {
     ]);
     expect(rows.map((r) => r.tick)).toEqual(["read", "delivered", null]);
     expect(parseConversations([{ conversation_id: "c", last: { id: 1, sender_id: "u", created_at: "t", tick: "sent" } }])[0].last?.tick).toBe("sent");
+  });
+
+  it("reads a reply quote only when it has an id and a sender", () => {
+    const rows = parseThread([
+      { id: 3, sender_id: "u", created_at: "t", body: "a", reply: { id: 2, sender_id: "v", body: "<b>orig</b>", photo: true } },
+      { id: 2, sender_id: "v", created_at: "t", body: "b", reply: { id: "x" } },
+      { id: 1, sender_id: "u", created_at: "t", body: "c" },
+    ]);
+    expect(rows[0].reply).toEqual({ id: 2, senderId: "v", body: "<b>orig</b>", photo: true });
+    expect(rows[1].reply).toBeNull();
+    expect(rows[2].reply).toBeNull();
   });
 
   it("keeps the body as plain text and only the sender's own held status", () => {
