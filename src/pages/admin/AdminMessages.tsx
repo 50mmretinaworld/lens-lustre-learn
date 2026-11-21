@@ -1,7 +1,7 @@
 /**
  * M8b · ADMIN → Users & Community → Messages. Routed at /admin/messages (via AdminPanel).
  * One page for the private-messages controls the Owner approved (15–18 Nov 2026):
- *   Who can message · Word guard · Reports · Message boxes · History.
+ *   Who can message · Word guard · Reports · Message boxes · Broadcast · History.
  * The database does the checking (admin only, reason on every change, log rows);
  * this page only shows the state and collects the reasons.
  */
@@ -15,9 +15,10 @@ import SwitchPanel, { MODE_TEXT } from "@/components/admin/messages/SwitchPanel"
 import { WordsPanel } from "@/components/admin/messages/SafetyPanel";
 import ReportsPanel from "@/components/admin/messages/ReportsPanel";
 import MembersPanel from "@/components/admin/messages/MembersPanel";
+import BroadcastPanel from "@/components/admin/messages/BroadcastPanel";
 import { useMessageAdminState, useMessageReports, type ControlLogRow } from "@/hooks/admin/useAdminMessages";
 
-const TABS = ["who", "words", "reports", "boxes", "history"];
+const TABS = ["who", "words", "reports", "boxes", "broadcast", "history"];
 const AREA_TEXT: Record<string, string> = {
   mode: "Who can message", groups: "Groups", list: "Member list", member_rule: "Member rules",
   word_rule: "Word list", review: "Held message", lookup: "Chat list looked up (old)",
@@ -94,12 +95,14 @@ const AdminMessages = () => {
               <TabsTrigger value="words">Word guard</TabsTrigger>
               <TabsTrigger value="reports">Reports{openReports > 0 ? ` (${openReports})` : ""}</TabsTrigger>
               <TabsTrigger value="boxes">Message boxes</TabsTrigger>
+              <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
             <TabsContent value="who" className="pt-3"><SwitchPanel state={s} /></TabsContent>
             <TabsContent value="words" className="pt-3"><WordsPanel /></TabsContent>
             <TabsContent value="reports" className="pt-3"><ReportsPanel /></TabsContent>
             <TabsContent value="boxes" className="pt-3"><MembersPanel /></TabsContent>
+            <TabsContent value="broadcast" className="pt-3"><BroadcastPanel /></TabsContent>
             <TabsContent value="history" className="pt-3"><History log={s.log} me={user?.id ?? null} names={names} /></TabsContent>
           </Tabs>
         </>

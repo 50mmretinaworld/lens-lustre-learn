@@ -54,7 +54,7 @@ BEGIN
   -- a chat between m1 and m2 with two messages from m2 (unread for m1), and a chat between m2 and m3 (not m1's)
   INSERT INTO public.conversations (kind, direct_key, created_by, last_message_at)
     VALUES ('direct', least(_m1::text, _m2::text) || ':' || greatest(_m1::text, _m2::text), _m2, now()) RETURNING id INTO _conv;
-  INSERT INTO public.conversation_members (conversation_id, user_id, folder) VALUES (_conv, _m1, 'inbox'), (_conv, _m2, 'inbox');
+  INSERT INTO public.conversation_members (conversation_id, user_id, folder, joined_at) VALUES (_conv, _m1, 'inbox', now() - interval '1 hour'), (_conv, _m2, 'inbox', now() - interval '1 hour');   -- joined before the messages: now() is one value inside a transaction
   INSERT INTO public.messages (conversation_id, sender_id, body, client_msg_id) VALUES (_conv, _m2, 'M11 first', gen_random_uuid());
   INSERT INTO public.messages (conversation_id, sender_id, body, client_msg_id) VALUES (_conv, _m2, 'M11 second', gen_random_uuid()) RETURNING id INTO _msg;
   INSERT INTO public.message_attachments (message_id, storage_path, mime, bytes) VALUES (_msg, _m2::text || '/m11-probe.webp', 'image/webp', 1000);
