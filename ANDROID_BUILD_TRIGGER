@@ -1,3 +1,11 @@
+Build 1.2.52 - 2026-11-21 - FROM MAIN AFTER THE PRIVATE MESSAGES CLIENT (WEB + APP SCREENS)
+
+  Owner, 21 Nov ("App approved", "go"): the Chat icon replaces Wall in the footer for members
+  whose message box the admin switched on (everyone else: footer unchanged); the messenger with ticks,
+  typing dots and replies; tapping a name in a chat or a story opens the profile. Profile sheet and the
+  menu are as before. At launch only the Owner is on the list, so no other member sees Chat.
+  1.2.51 (run 156, vc1156) is handed to the Owner.
+
 Build 1.2.51 - 2026-11-18 - FROM MAIN AFTER STORY CAPTION, MEMBER TAGS ROOT, PHOTOGRAPHY SUGGESTIONS
 
   Owner, 18 Nov ("all approved go ahead"; "build the App"): story caption shows two
