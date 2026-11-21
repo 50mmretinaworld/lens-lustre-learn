@@ -32,7 +32,7 @@ DO $p$
 DECLARE
   _fail text[] := '{}';
   _r text; _a text; _n int; _m1 uuid; _m2 uuid; _m3 uuid; _admin uuid; _conv uuid; _res jsonb; _msg bigint;
-  _log0 int; _reads0 int; _lastread0 timestamptz; _lastread1 timestamptz; _name text;
+  _log0 int; _reads0 int; _lastread0 timestamptz; _lastread1 timestamptz; _name text; _row jsonb;
 BEGIN
   IF coalesce(current_setting('p32.lane', true), '') NOT IN ('staging', 'production') THEN
     RAISE EXCEPTION 'PROBE REFUSED — p32.lane is not asserted';
@@ -100,7 +100,11 @@ BEGIN
     _res := public.admin_message_member_search(left(_name, 3), 'all', 'name', 'asc', 25, 0);
     IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(_res -> 'rows') x WHERE x ->> 'user_id' = _m1::text) THEN _fail := _fail || 'D5 search by name did not find the member'; END IF;
   END IF;
-  _res := public.admin_message_member_search(NULL, 'active', 'chats', 'desc', 25, 0);
+  _res := public.admin_message_member_search(NULL, 'active', 'chats', 'desc', 100, 0);
+  SELECT x INTO _row FROM jsonb_array_elements(_res -> 'rows') x WHERE x ->> 'user_id' = _m1::text;
+  IF _row IS NULL OR jsonb_array_length(_row -> 'chatting_with') < 1 OR (_row -> 'chatting_with' -> 0 ->> 'user_id') IS DISTINCT FROM _m2::text THEN
+    _fail := _fail || ('D5 "chatting with" missing or wrong for the member: ' || left(coalesce(_row::text, 'no row'), 160));
+  END IF;
   IF (_res -> 'counts' ->> 'active')::int < 2 THEN _fail := _fail || 'D5 active count too small'; END IF;
   IF EXISTS (SELECT 1 FROM jsonb_array_elements(_res -> 'rows') x WHERE (x ->> 'chats')::int = 0) THEN _fail := _fail || 'D5 active filter returned a member without chats'; END IF;
   IF (_res -> 'rows' -> 0 ->> 'chats')::int < (_res -> 'rows' -> (jsonb_array_length(_res -> 'rows') - 1) ->> 'chats')::int THEN _fail := _fail || 'D5 sort by chats desc is not descending'; END IF;

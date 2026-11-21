@@ -158,6 +158,8 @@ export type MemberSortKey = "name" | "chats" | "last" | "reports" | "joined";
 export interface MsgMember {
   user_id: string; full_name: string | null; username: string | null; avatar_url: string | null; email: string | null; joined_at: string | null;
   chats: number; last_message_at: string | null; reports_30d: number; listed: boolean; paused: boolean; has_rules: boolean; is_admin: boolean;
+  /** their 3 most recent chats, each as the other person (a group by its title) */
+  chatting_with: { kind: "direct" | "group"; user_id: string | null; name: string; avatar_url: string | null }[];
 }
 export interface MemberSearchResult { total: number; counts: Record<MemberFilter, number>; rows: MsgMember[] }
 
@@ -171,6 +173,10 @@ export function parseMemberSearch(data: unknown): MemberSearchResult {
       user_id: m.user_id, full_name: str(m.full_name), username: str(m.username), avatar_url: str(m.avatar_url), email: str(m.email), joined_at: str(m.joined_at),
       chats: num(m.chats) ?? 0, last_message_at: str(m.last_message_at), reports_30d: num(m.reports_30d) ?? 0,
       listed: m.listed === true, paused: m.paused === true, has_rules: m.has_rules === true, is_admin: m.is_admin === true,
+      chatting_with: arr(m.chatting_with).flatMap((w) => {
+        const x = obj(w);
+        return x ? [{ kind: x.kind === "group" ? "group" as const : "direct" as const, user_id: str(x.user_id), name: str(x.name) ?? "Member", avatar_url: str(x.avatar_url) }] : [];
+      }),
     }];
   });
   return {

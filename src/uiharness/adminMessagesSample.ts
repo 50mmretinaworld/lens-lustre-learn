@@ -88,6 +88,10 @@ const MEMBERS: SampleMember[] = [
   mem(12, "Arjun Mehta", "arjunm", { chats: 8, last_message_at: t(60), listed: true }),
 ];
 
+/** The latest chats of a member, as the SQL returns them: the OTHER person of each (up to 3). */
+const withOf = (m: SampleMember) => MEMBERS.filter((o) => o.user_id !== m.user_id).slice(m.chats % 5, (m.chats % 5) + Math.min(3, m.chats))
+  .map((o) => ({ kind: "direct", user_id: o.user_id, name: o.full_name, avatar_url: null }));
+
 /** What admin_message_member_search answers: search, filter, sort and paging done here as the SQL does them. */
 export function sampleMemberSearch(b: Record<string, unknown>) {
   const needle = String(b._q ?? "").trim().toLowerCase();
@@ -107,7 +111,7 @@ export function sampleMemberSearch(b: Record<string, unknown>) {
       all: base.length, active: base.filter((m) => m.chats > 0).length, reported: base.filter((m) => m.reports_30d > 0).length,
       paused: base.filter((m) => m.paused).length, listed: base.filter((m) => m.listed).length,
     },
-    rows: sorted.slice(off, off + lim),
+    rows: sorted.slice(off, off + lim).map((m) => ({ ...m, chatting_with: withOf(m) })),
   };
 }
 

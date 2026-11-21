@@ -28,6 +28,23 @@ const joined = (iso: string | null) => {
 };
 const nameOf = (m: Pick<MsgMember, "full_name" | "username" | "user_id">) => m.full_name || (m.username ? `@${m.username}` : m.user_id.slice(0, 8));
 
+/** "Chatting with": the people (not message lines) — their latest 3 as photos + names, then how many more. One chat = one person. */
+function ChattingWith({ m }: { m: MsgMember }) {
+  if (m.chats === 0) return <span className="text-sm text-muted-foreground">No chats yet</span>;
+  const more = Math.max(0, m.chats - m.chatting_with.length);
+  return (
+    <div className="flex items-center gap-2" data-testid="chatting-with">
+      <span className="flex -space-x-2">
+        {m.chatting_with.map((w, i) => <MemberAvatar key={`${w.user_id ?? w.name}-${i}`} m={{ avatar_url: w.avatar_url, full_name: w.name, email: null }} size={26} />)}
+      </span>
+      <span className="min-w-0 text-sm">
+        <span className="block truncate">{m.chatting_with.map((w) => w.name).join(", ")}{more > 0 ? ` +${more} more` : ""}</span>
+        <span className="block text-[11px] text-muted-foreground">{m.chats} {m.chats === 1 ? "person" : "people"}</span>
+      </span>
+    </div>
+  );
+}
+
 /** The member's message box: their list on the left, their chat on the right, read-only. */
 function BoxViewer({ member, onBack }: { member: MsgMember; onBack: () => void }) {
   const [chatId, setChatId] = useState<string | null>(null);
@@ -82,7 +99,7 @@ export default function MembersPanel() {
           <p className="truncate text-xs text-muted-foreground">{m.email ?? "—"}{m.username ? ` · @${m.username}` : ""}</p>
         </div>
       </div>) },
-    { key: "chats", header: "Chats", sortKey: "chats", cell: (m) => <span className="tabular-nums">{m.chats}</span> },
+    { key: "chats", header: "Chatting with", sortKey: "chats", className: "min-w-[220px] max-w-[300px]", cell: (m) => <ChattingWith m={m} /> },
     { key: "last", header: "Last message", sortKey: "last", className: "whitespace-nowrap", cell: (m) => <span className="text-sm text-muted-foreground">{when(m.last_message_at)}</span> },
     { key: "reports", header: "Reports (30 d)", sortKey: "reports", cell: (m) => m.reports_30d > 0
       ? <Badge variant="destructive"><Flag className="mr-1 h-3 w-3" aria-hidden="true" />{m.reports_30d}</Badge>
@@ -103,7 +120,7 @@ export default function MembersPanel() {
 
   const exportCsv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lines = [["Name", "Username", "E-mail", "Chats", "Last message", "Reports 30 d", "On the list", "Paused"].join(",")]
+    const lines = [["Name", "Username", "E-mail", "People chatted with", "Last message", "Reports 30 d", "On the list", "Paused"].join(",")]
       .concat(rows.map((m) => [m.full_name, m.username, m.email, m.chats, m.last_message_at, m.reports_30d, m.listed, m.paused].map(esc).join(",")));
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
@@ -154,7 +171,7 @@ export default function MembersPanel() {
               <p className="truncate font-medium">{nameOf(m)}</p>
               <p className="truncate text-xs text-muted-foreground">{m.email ?? "—"}</p>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                <span>{m.chats} chat{m.chats === 1 ? "" : "s"}</span><span>· last {when(m.last_message_at)}</span>
+                <span>{m.chats === 0 ? "No chats yet" : `Chatting with ${m.chatting_with.map((w) => w.name).join(", ")}${m.chats > m.chatting_with.length ? ` +${m.chats - m.chatting_with.length} more` : ""}`}</span><span>· last {when(m.last_message_at)}</span>
                 {m.reports_30d > 0 && <Badge variant="destructive">{m.reports_30d} reports</Badge>}
                 {m.listed && <Badge variant="outline">On the list</Badge>}
                 {m.paused && <Badge variant="destructive">Paused</Badge>}

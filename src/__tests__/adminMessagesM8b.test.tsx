@@ -105,7 +105,7 @@ describe("M8b page", () => {
     // search is sent to the server (debounced), sort flips on a second click
     fireEvent.change(screen.getByLabelText("Search name, e-mail or @handle"), { target: { value: "framo" } });
     await waitFor(() => expect(calls.some((c) => c.fn === "admin_message_member_search" && c.args?._q === "framo")).toBe(true));
-    fireEvent.click(screen.getByRole("button", { name: /^Chats/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Chatting with/ }));
     await waitFor(() => expect(calls.some((c) => c.fn === "admin_message_member_search" && c.args?._sort === "chats")).toBe(true));
     // open a box: the member's inbox is read through the admin function, as that member, and nothing asks for a reason
     fireEvent.click((await screen.findAllByTestId("open-box"))[0]);

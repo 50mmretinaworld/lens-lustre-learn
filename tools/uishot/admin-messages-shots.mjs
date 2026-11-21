@@ -60,7 +60,7 @@ const SHOTS = [
   ["boxes-search", "boxes", DESKTOP, async (p) => {
     await p.getByLabel("Search name, e-mail or @handle").fill("a");
     await p.waitForTimeout(900);
-    await p.getByRole("button", { name: /^Chats/ }).click();
+    await p.getByRole("button", { name: /^Chatting with/ }).click();
     await p.waitForTimeout(600);
   }, false],
   ["boxes-reported", "boxes", DESKTOP, async (p) => { await p.getByTestId("tab-reported").click(); await p.waitForTimeout(700); }, false],

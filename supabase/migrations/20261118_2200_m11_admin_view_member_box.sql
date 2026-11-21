@@ -200,6 +200,19 @@ BEGIN
                       'user_id', g.user_id, 'full_name', g.full_name, 'username', g.username, 'avatar_url', g.avatar_url, 'email', g.email,
                       'joined_at', g.joined_at, 'chats', g.chats, 'last_message_at', g.last_at, 'reports_30d', g.reports_30d,
                       'listed', g.listed, 'paused', g.paused, 'has_rules', g.has_rules,
+                      -- who they chat with: their 3 most recent chats, each shown as the OTHER person (a group by its title)
+                      'chatting_with', coalesce((SELECT jsonb_agg(z.j ORDER BY z.last_at DESC NULLS LAST) FROM (
+                          SELECT c2.last_message_at AS last_at,
+                                 jsonb_build_object('conversation_id', c2.id, 'kind', c2.kind, 'user_id', o.user_id,
+                                                    'name', CASE WHEN c2.kind = 'group' THEN coalesce(c2.title, 'Group') ELSE op.full_name END,
+                                                    'avatar_url', CASE WHEN c2.kind = 'group' THEN NULL ELSE op.avatar_url END) AS j
+                            FROM public.conversation_members cm2
+                            JOIN public.conversations c2 ON c2.id = cm2.conversation_id
+                            LEFT JOIN LATERAL (SELECT o1.user_id FROM public.conversation_members o1
+                                                WHERE o1.conversation_id = c2.id AND o1.user_id <> g.user_id ORDER BY o1.joined_at LIMIT 1) o ON true
+                            LEFT JOIN public.profiles op ON op.id = o.user_id
+                           WHERE cm2.user_id = g.user_id
+                           ORDER BY c2.last_message_at DESC NULLS LAST LIMIT 3) z), '[]'::jsonb),
                       'is_admin', public.has_role(g.user_id, 'admin'::public.app_role))) FROM page g), '[]'::jsonb))
     INTO _res;
   RETURN _res;
