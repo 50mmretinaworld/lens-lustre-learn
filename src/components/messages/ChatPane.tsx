@@ -246,7 +246,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           {replyTo && (
             <div data-testid="reply-bar" className="mb-2 flex items-center gap-2 rounded-2xl border-l-4 border-primary bg-muted/70 px-3 py-2">
               <div className="min-w-0 flex-1 text-sm">
-                <p className="truncate text-xs font-bold text-primary">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</p>
+                <p className="flex min-w-0 items-center gap-1 text-xs font-bold text-primary"><span className="truncate">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</span><AutoBadge userId={replyTo.senderId} only="verified" /></p>
                 <p className="line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">{replyTo.body || (replyTo.photos.length > 0 ? "📷 Photo" : "")}</p>
               </div>
               <button type="button" onClick={() => setReplyTo(null)} aria-label={t("messages.cancelReply", "Cancel reply")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/10">
