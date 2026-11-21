@@ -52,6 +52,9 @@ project_id = "jtdtehuqtinjxropkkcn"
   # message-photo-purge (M19): called only by the job engine with x-internal-secret; no member or visitor token is ever sent.
   [functions.message-photo-purge]
     verify_jwt = false
+  # message-photo-verify (M25): called only by the job engine with x-internal-secret; deletes a chat file that is not a real image.
+  [functions.message-photo-verify]
+    verify_jwt = false
   [functions.send-transactional-email]
     verify_jwt = true
   [functions.preview-transactional-email]
