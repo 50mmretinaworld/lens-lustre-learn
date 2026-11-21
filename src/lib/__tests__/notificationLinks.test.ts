@@ -149,3 +149,12 @@ describe("every type that actually exists on this platform has a destination", (
     expect(fellThrough.map(([t]) => t)).toEqual([]);
   });
 });
+
+describe("private messages (push tap, Owner 21 Nov)", () => {
+  it("opens the chat whose id the push carries", () => {
+    expect(getNotifLink({ type: "new_message", reference_id: "c0ffee00-0000-4000-8000-000000000001" })).toBe("/messages/c0ffee00-0000-4000-8000-000000000001");
+  });
+  it("opens the message list when the push has no chat id", () => {
+    expect(getNotifLink({ type: "new_message", reference_id: null })).toBe("/messages");
+  });
+});
