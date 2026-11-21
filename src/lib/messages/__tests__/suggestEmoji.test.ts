@@ -3,7 +3,7 @@ import { suggestReplies } from "../suggest";
 import { isEmojiOnly } from "../emoji";
 import type { ThreadMessage } from "../api";
 
-const m = (body: string, extra: Partial<ThreadMessage> = {}): ThreadMessage => ({ id: 1, senderId: "x", kind: "text", body, createdAt: "t", status: "sent", tick: null, photos: [], ...extra });
+const m = (body: string, extra: Partial<ThreadMessage> = {}): ThreadMessage => ({ id: 1, senderId: "x", kind: "text", body, createdAt: "t", status: "sent", tick: null, reply: null, photos: [], ...extra });
 
 describe("suggested replies", () => {
   it("answers a lens question like a photographer", () => {

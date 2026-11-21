@@ -7,14 +7,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLink from "@/components/ProfileLink";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ImagePlus, Loader2, SendHorizontal, Smile, UserRound } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, SendHorizontal, Smile, UserRound, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
 import {
   newClientMsgId, useConversationActions, useConversations, useMessagingAllowed, useSendMessage, useSendPhotos, useThread,
 } from "@/hooks/messages/useMessages";
-import { fetchPerson, MessageSendError, type MessagePerson } from "@/lib/messages/api";
+import { fetchPerson, MessageSendError, type MessagePerson, type ThreadMessage } from "@/lib/messages/api";
 import { EMOJI_SETS } from "@/lib/messages/emoji";
 import { groupChat } from "@/lib/messages/format";
 import { suggestReplies } from "@/lib/messages/suggest";
@@ -72,6 +72,17 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const endRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const lastMarked = useRef<number | null>(null);
+  const [replyTo, setReplyTo] = useState<ThreadMessage | null>(null);   // the message the next send answers
+  useEffect(() => { setReplyTo(null); }, [convId]);
+  const quoteName = (senderId: string) => (senderId === meId ? "You" : person?.fullName || "Member");
+  /** Tap a quote: scroll to the original and flash it. */
+  const jumpTo = (id: number) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.classList.add("bg-primary/15");
+    window.setTimeout(() => el.classList.remove("bg-primary/15"), 1400);
+  };
   const live = useChatLive(convId, user?.id, !viewAs);   // typing dots + instant refresh; an admin's read-only view never joins
 
   const newestId = oldestFirst.length ? oldestFirst[oldestFirst.length - 1].id : null;
@@ -101,9 +112,10 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
     const id = attempt.current?.body === body ? attempt.current.id : newClientMsgId();
     attempt.current = { body, id };
     try {
-      const r = await send.mutateAsync({ to: otherId, body, clientMsgId: id });
+      const r = await send.mutateAsync({ to: otherId, body, clientMsgId: id, replyTo: replyTo?.id ?? null });
       attempt.current = null;
       live.ping();
+      setReplyTo(null);
       if (fromBox) setText("");
       setPicker(false);
       if (r.help) setHelp(true);
@@ -134,8 +146,9 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
     try {
       const uploaded = [];
       for (const f of Array.from(files).slice(0, MAX_PHOTOS)) uploaded.push(await prepareAndUploadPhoto(f, user.id));
-      const r = await sendPhotos.mutateAsync({ to: otherId, caption: text.trim(), clientMsgId: newClientMsgId(), photos: uploaded });
+      const r = await sendPhotos.mutateAsync({ to: otherId, caption: text.trim(), clientMsgId: newClientMsgId(), photos: uploaded, replyTo: replyTo?.id ?? null });
       setText("");
+      setReplyTo(null);
       live.ping();
       if (r.help) setHelp(true);
       if (!convId) navigate(`/messages/${r.conversationId}`, { replace: true });
@@ -155,11 +168,21 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         <button type="button" onClick={onBack} aria-label={t("common.back", "Back")} className="grid h-11 w-11 place-items-center rounded-full text-foreground hover:bg-foreground/5 lg:hidden">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <PersonAvatar person={person} size={42} />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-bold leading-tight" style={headingFont}>{name}</h2>
-          {person?.username && <p className="truncate text-xs text-muted-foreground">@{person.username}</p>}
-        </div>
+        {/* Owner 21 Nov: tapping the picture or the name opens that member's profile */}
+        {(() => {
+          const head = (
+            <>
+              <PersonAvatar person={person} size={42} />
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-base font-bold leading-tight" style={headingFont}>{name}</h2>
+                {person?.username && <p className="truncate text-xs text-muted-foreground">@{person.username}</p>}
+              </div>
+            </>
+          );
+          return otherId
+            ? <ProfileLink userId={otherId} handle={person?.username} aria-label={name} data-testid="chat-header-profile" className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left hover:opacity-90">{head}</ProfileLink>
+            : <div className="flex min-w-0 flex-1 items-center gap-3">{head}</div>;
+        })()}
         {convId && !viewAs && <ReportChat conversationId={convId} />}
         {otherId && (
           <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
@@ -194,7 +217,11 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
               <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-muted-foreground">{it.label}</span>
             </div>
           ) : (
-            <MessageBubble key={it.key} m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last} />
+            <MessageBubble
+              key={it.key} m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last}
+              onReply={allowed && !viewAs && !inRequests ? (msg) => { setReplyTo(msg); areaRef.current?.focus(); } : undefined}
+              onJump={jumpTo} nameOf={quoteName}
+            />
           ),
         )}
         {live.typing && <TypingDots name={person?.fullName} />}
@@ -213,6 +240,17 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       ) : (
         <div className="relative bg-background/80 px-3 pb-3 pt-2 backdrop-blur">
           {error && <p role="alert" className="mb-2 px-3 text-xs font-medium text-destructive">{error}</p>}
+          {replyTo && (
+            <div data-testid="reply-bar" className="mb-2 flex items-center gap-2 rounded-2xl border-l-4 border-primary bg-muted/70 px-3 py-2">
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="truncate text-xs font-bold text-primary">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</p>
+                <p className="line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">{replyTo.body || (replyTo.photos.length > 0 ? "📷 Photo" : "")}</p>
+              </div>
+              <button type="button" onClick={() => setReplyTo(null)} aria-label={t("messages.cancelReply", "Cancel reply")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/10">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           {chips.length > 0 && (
             <div data-testid="smart-replies" className="-mx-3 mb-2 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label={t("messages.suggested", "Suggested replies")}>
               {chips.map((c, i) => (

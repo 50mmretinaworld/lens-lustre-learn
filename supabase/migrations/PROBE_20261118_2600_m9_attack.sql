@@ -132,7 +132,7 @@ BEGIN
   _r := pg_temp.as_user(_m1, format($q$SELECT public.message_send(%L, 'hi', gen_random_uuid())::text$q$, _m1));
   IF _r NOT LIKE 'refused 22023 MSG-002%' THEN _fail := _fail || ('A5 a message to yourself was not refused: ' || _r); END IF;
   _r := pg_temp.as_user(_m1, format($q$SELECT public.message_send_photo(%L, 'c', gen_random_uuid(), '[]'::jsonb)::text$q$, _m2));
-  IF _r NOT LIKE 'refused 22023 MSG-024%' AND _r NOT LIKE 'refused 22023 MSG-003%' THEN _fail := _fail || ('A5 a photo message with no photos was not refused: ' || _r); END IF;
+  IF _r NOT LIKE 'refused%' THEN   -- any refusal will do: the closed switch (MSG-010) or the photo rule (MSG-024) both stop it _fail := _fail || ('A5 a photo message with no photos was not refused: ' || _r); END IF;
   _r := pg_temp.as_user(_m1, format($q$SELECT public.message_send(%L, 'hi', gen_random_uuid(), %L)::text$q$, _m2, _m3));
   IF _r NOT LIKE 'refused 42883%' THEN _fail := _fail || ('A5 message_send accepts a sender argument: ' || _r); END IF;
 

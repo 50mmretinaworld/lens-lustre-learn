@@ -310,8 +310,11 @@ export const REAL_SCREENS: Record<string, () => JSX.Element> = {
    * plus a header plus a footer — and it is the one screen where being cut off
    * at the bottom means a member cannot LOG OUT.
    */
-  "screen-account-sheet": () =>
-    screen(<MobileProfileSheet open onOpenChange={() => {}} />, "/feed", "/feed"),
+  "screen-account-sheet": () => {
+    // &chat=1 → this member's message box is switched on: the Chat tile takes the My Wall tile's place
+    (globalThis as { __harnessMessages?: boolean }).__harnessMessages = new URLSearchParams(location.search).get("chat") === "1";
+    return screen(<MobileProfileSheet open onOpenChange={() => {}} />, "/feed", "/feed");
+  },
 
   /**
    * THE CREATE BUTTON, PRESSED FROM THE WALL — the owner's exact complaint.
