@@ -1,7 +1,7 @@
 /**
  * M8b harness sample — what the Messages admin rpcs answer, shaped like the launch
  * state: "Only people on my list", the Owner alone on the list, groups off, the
- * English starter word list (a few rows), one held message, one member with rules.
+ * English starter word list (a few rows), three open reports, a watch list, one member with rules.
  * Only answers when __harnessAdminMessages is set (scenes screen-admin-messages*).
  */
 export function adminMessagesSampleOn(): boolean {
@@ -39,15 +39,29 @@ const w = (id: number, category: string, pattern: string, action: string, active
 export function sampleWordRules() {
   return [
     w(1, "abuse", "idiot", "block"), w(2, "abuse", "bastard", "block"), w(3, "abuse", "scum", "block", false),
-    w(4, "threat", "i will kill you", "block"), w(5, "threat", "i will find you", "hold"),
-    w(6, "political", "election", "hold"), w(7, "political", "bjp", "hold"),
-    w(8, "abnormal", "send nudes", "hold"),
+    w(4, "threat", "i will kill you", "block"), w(5, "threat", "i will find you", "block"),
+    w(6, "political", "election", "block", false), w(7, "political", "bjp", "block", false),
+    w(8, "abnormal", "send nudes", "block"),
     w(9, "self_harm", "suicide", "help"), w(10, "self_harm", "want to die", "help"),
   ];
 }
 
-export function sampleHeld() {
-  return [{ message_id: 501, conversation_id: CONV_HELD, sender_id: FRAMO, sender_name: "Framo Grapher", created_at: t(42) }];
+export function sampleReports() {
+  return [
+    { id: 12, status: "open", reason: "abuse", note: "He keeps sending rude replies on my photos.", created_at: t(42), conversation_id: CONV_HELD,
+      reporter_id: SOMNATH, reporter_name: "Somnath Roy", reported_id: FRAMO, reported_name: "Framo Grapher", reports_30d: 3, handled_at: null, handled_note: null },
+    { id: 11, status: "open", reason: "spam", note: null, created_at: t(300), conversation_id: CONV_2,
+      reporter_id: OWNER, reporter_name: "Neil Basu", reported_id: FRAMO, reported_name: "Framo Grapher", reports_30d: 3, handled_at: null, handled_note: null },
+    { id: 10, status: "open", reason: "nudity", note: null, created_at: t(1700), conversation_id: CONV_2,
+      reporter_id: FRAMO, reporter_name: "Framo Grapher", reported_id: SOMNATH, reported_name: "Somnath Roy", reports_30d: 1, handled_at: null, handled_note: null },
+  ];
+}
+
+export function sampleWatchlist() {
+  return [
+    { user_id: FRAMO, full_name: "Framo Grapher", username: "framo", avatar_url: null, reports_30d: 3, open_reports: 2, reporters: 2, last_report_at: t(42), paused: false },
+    { user_id: SOMNATH, full_name: "Somnath Roy", username: "somnath", avatar_url: null, reports_30d: 1, open_reports: 1, reporters: 1, last_report_at: t(1700), paused: true },
+  ];
 }
 
 export function sampleMemberChats() {
@@ -65,7 +79,7 @@ export function sampleReadConversation() {
       { user_id: FRAMO, full_name: "Framo Grapher", username: "framo", folder: "inbox" },
     ],
     messages: [
-      { id: 501, sender_id: FRAMO, kind: "text", body: "Did you see the election results? Tell me what you think about the BJP win.", status: "held", created_at: t(42), photos: [] },
+      { id: 501, sender_id: FRAMO, kind: "text", body: "Did you see the election results? Tell me what you think about the BJP win.", status: "sent", created_at: t(42), photos: [] },
       { id: 500, sender_id: OWNER, kind: "text", body: "Thanks for the sunset frames. The second one is my favourite.", status: "sent", created_at: t(95), photos: [] },
       { id: 499, sender_id: FRAMO, kind: "text", body: "Shot them at Digha on Sunday, 50mm at f/1.8.", status: "sent", created_at: t(130), photos: [] },
     ],

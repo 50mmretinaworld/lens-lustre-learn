@@ -23,8 +23,17 @@ export interface MemberRule {
 export interface ControlLogRow { at: string; actor: string | null; area: string; user_id: string | null; old: string | null; new: string | null; reason: string }
 export interface MessageAdminState { mode: MessageMode; groups_enabled: boolean; updated_at: string | null; members: ListedMember[]; rules: MemberRule[]; log: ControlLogRow[] }
 
-export interface WordRule { id: number; category: string; pattern: string; lang: string | null; action: "block" | "hold" | "help"; active: boolean; added_at: string | null }
-export interface HeldRow { message_id: number; conversation_id: string; sender_id: string; sender_name: string | null; created_at: string }
+export interface WordRule { id: number; category: string; pattern: string; lang: string | null; action: "block" | "help"; active: boolean; added_at: string | null }
+export type ReportReasonKey = "spam" | "abuse" | "threat" | "nudity" | "other";
+export interface ReportRow {
+  id: number; status: "open" | "done"; reason: ReportReasonKey; note: string | null; created_at: string; conversation_id: string;
+  reporter_id: string; reporter_name: string | null; reported_id: string | null; reported_name: string | null;
+  reports_30d: number; handled_at: string | null; handled_note: string | null;
+}
+export interface WatchRow {
+  user_id: string; full_name: string | null; username: string | null; avatar_url: string | null;
+  reports_30d: number; open_reports: number; reporters: number; last_report_at: string | null; paused: boolean;
+}
 export interface ChatOther { user_id: string; full_name: string | null; username: string | null }
 export interface MemberChat { conversation_id: string; kind: "direct" | "group"; title: string | null; last_message_at: string | null; messages: number; others: ChatOther[] }
 export interface ViewedMessage { id: number; sender_id: string; kind: "text" | "photo"; body: string; status: "sent" | "held" | "rejected"; created_at: string; photos: { path: string; width: number | null; height: number | null }[] }
@@ -66,17 +75,35 @@ export function parseWordRules(data: unknown): WordRule[] {
     const m = obj(r);
     const id = num(m?.id);
     if (!m || id === null || typeof m.pattern !== "string" || typeof m.category !== "string") return [];
-    if (m.action !== "block" && m.action !== "hold" && m.action !== "help") return [];
+    if (m.action !== "block" && m.action !== "help") return [];
     return [{ id, category: m.category, pattern: m.pattern, lang: str(m.lang), action: m.action, active: m.active !== false, added_at: str(m.added_at) }];
   });
 }
 
-export function parseHeld(data: unknown): HeldRow[] {
+const REASONS: ReportReasonKey[] = ["spam", "abuse", "threat", "nudity", "other"];
+export function parseReports(data: unknown): ReportRow[] {
   return arr(data).flatMap((r) => {
     const m = obj(r);
-    const id = num(m?.message_id);
-    if (!m || id === null || typeof m.conversation_id !== "string" || typeof m.sender_id !== "string" || typeof m.created_at !== "string") return [];
-    return [{ message_id: id, conversation_id: m.conversation_id, sender_id: m.sender_id, sender_name: str(m.sender_name), created_at: m.created_at }];
+    const id = num(m?.id);
+    if (!m || id === null || typeof m.conversation_id !== "string" || typeof m.reporter_id !== "string" || typeof m.created_at !== "string") return [];
+    return [{
+      id, status: m.status === "done" ? "done" : "open", reason: REASONS.includes(m.reason as ReportReasonKey) ? (m.reason as ReportReasonKey) : "other",
+      note: str(m.note), created_at: m.created_at, conversation_id: m.conversation_id, reporter_id: m.reporter_id, reporter_name: str(m.reporter_name),
+      reported_id: str(m.reported_id), reported_name: str(m.reported_name), reports_30d: num(m.reports_30d) ?? 0,
+      handled_at: str(m.handled_at), handled_note: str(m.handled_note),
+    }];
+  });
+}
+
+export function parseWatchlist(data: unknown): WatchRow[] {
+  return arr(data).flatMap((r) => {
+    const m = obj(r);
+    if (!m || typeof m.user_id !== "string") return [];
+    return [{
+      user_id: m.user_id, full_name: str(m.full_name), username: str(m.username), avatar_url: str(m.avatar_url),
+      reports_30d: num(m.reports_30d) ?? 0, open_reports: num(m.open_reports) ?? 0, reporters: num(m.reporters) ?? 0,
+      last_report_at: str(m.last_report_at), paused: m.paused === true,
+    }];
   });
 }
 
@@ -139,16 +166,28 @@ export function useMessageWordRules() {
   });
 }
 
-export function useMessageHeldQueue() {
+export function useMessageReports(status: "open" | "done") {
   return useQuery({
-    queryKey: queryKeys.adminMessagesHeld(),
+    queryKey: queryKeys.adminMessagesReports(status),
     queryFn: async () => {
-      const { data, error } = await rpc("admin_message_held_queue");
-      if (error) throw new Error(error.message ?? "Could not read the held messages");
-      return parseHeld(data);
+      const { data, error } = await rpc("admin_message_reports", { _status: status });
+      if (error) throw new Error(error.message ?? "Could not read the reports");
+      return parseReports(data);
     },
-    // P10: an admin-only review queue; 60 s keeps it current while the page is open.
+    // P10: an admin-only list of what members reported; 60 s keeps it current while the page is open.
     refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+
+export function useMessageWatchlist() {
+  return useQuery({
+    queryKey: queryKeys.adminMessagesWatch(),
+    queryFn: async () => {
+      const { data, error } = await rpc("admin_message_watchlist");
+      if (error) throw new Error(error.message ?? "Could not read the watch list");
+      return parseWatchlist(data);
+    },
     staleTime: 30_000,
   });
 }
@@ -166,6 +205,7 @@ export function useRefreshAdminMessages() {
   return () => Promise.all([
     qc.invalidateQueries({ queryKey: queryKeys.adminMessagesState() }),
     qc.invalidateQueries({ queryKey: queryKeys.adminMessagesWords() }),
-    qc.invalidateQueries({ queryKey: queryKeys.adminMessagesHeld() }),
+    qc.invalidateQueries({ queryKey: ["admin-messages-reports"] }),
+    qc.invalidateQueries({ queryKey: queryKeys.adminMessagesWatch() }),
   ]);
 }

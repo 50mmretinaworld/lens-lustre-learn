@@ -36,7 +36,8 @@ export function refusalText(r: SendRefusal): string {
     case "under_review": return "Your account is under review · Contact support@50mmretina.com";
     case "no_link": return "You can message people you follow and your friends.";
     case "blocked": return "You can't message this member.";
-    case "word_guard": return "This message can't be sent.";
+    case "word_guard": return "This message can't be sent. Please change the words and try again.";
+    case "new_link": return "New accounts can't send web links yet. You can after 7 days.";
     case "too_fast": return "You're sending too fast. Try again in a minute.";
     case "daily_limit": return "You've reached today's message limit.";
     case "chat_limit": return "You've started too many new chats today.";

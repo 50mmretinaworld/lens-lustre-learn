@@ -1,34 +1,27 @@
 /**
- * M8b · Admin → Messages → "Word guard" (the word list) and "Held" (messages the
- * guard kept back for review). English starter list only; more languages come
- * from the Owner / lawyer. Every change asks for a reason.
+ * M8b · Admin → Messages → "Word guard" (the word list). The guard works by itself: Block or Help,
+ * no approval queue. English starter list only; more languages come from the Owner / lawyer.
+ * Every change to the list asks for a reason.
  */
 import { useState } from "react";
-import { Loader2, Eye } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import ReasonDialog, { type ReasonRequest } from "./ReasonDialog";
-import ChatReader from "./ChatReader";
 import {
-  adminMessageCall, useMessageHeldQueue, useMessageWordRules, useRefreshAdminMessages, type WordRule,
+  adminMessageCall, useMessageWordRules, useRefreshAdminMessages, type WordRule,
 } from "@/hooks/admin/useAdminMessages";
 
 const ACTION_TEXT: Record<WordRule["action"], { label: string; blurb: string; variant: "destructive" | "outline" | "secondary" }> = {
-  block: { label: "Block", blurb: "The message is not sent.", variant: "destructive" },
-  hold: { label: "Hold", blurb: "Waits for you in the Held list.", variant: "outline" },
+  block: { label: "Block", blurb: "The message is not sent. The sender is told to change the words; the receiver never sees it.", variant: "destructive" },
   help: { label: "Help", blurb: "Sent; the sender sees the helpline and you get an alarm.", variant: "secondary" },
 };
 const CATEGORY_TEXT: Record<string, string> = {
   abuse: "Abuse", threat: "Threats", political: "Political", self_harm: "Self-harm", abnormal: "Abnormal",
 };
 const selectClass = "h-9 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-primary";
-const when = (iso: string | null) => {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-};
 
 export function WordsPanel() {
   const words = useMessageWordRules();
@@ -65,7 +58,8 @@ export function WordsPanel() {
   return (
     <div className="space-y-4" data-testid="messages-words">
       <p className="text-xs text-muted-foreground">
-        Every message is checked against this list before it is sent. The strictest match wins: Block, then Hold, then Help.
+        Every message is checked against this list before it is sent, automatically. Block refuses it; Help lets it through and shows the sender a helpline.
+        Add any word you want stopped (for example political words) as Block. New accounts also cannot send web links for their first 7 days.
       </p>
       <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-3">
         <label className="space-y-1 text-xs"><span className="font-medium">Kind</span>
@@ -101,37 +95,6 @@ export function WordsPanel() {
         </section>
       ))}
       <ReasonDialog request={request} onClose={() => setRequest(null)} />
-    </div>
-  );
-}
-
-export function HeldPanel() {
-  const held = useMessageHeldQueue();
-  const [open, setOpen] = useState<string | null>(null);
-  const rows = held.data ?? [];
-  return (
-    <div className="space-y-3" data-testid="messages-held">
-      <p className="text-xs text-muted-foreground">
-        Messages the word guard kept back. Nobody else has seen them. Reading one opens the chat and is logged; there you can deliver or reject it.
-      </p>
-      {held.isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="Loading" />}
-      {held.error && <p className="text-sm text-destructive">Could not read the held messages.</p>}
-      {held.data && rows.length === 0 && <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">Nothing is waiting.</p>}
-      {rows.length > 0 && (
-        <ul className="divide-y divide-border rounded-lg border border-border">
-          {rows.map((h) => (
-            <li key={h.message_id} className="flex flex-wrap items-center gap-2 p-2 text-sm" data-testid="messages-held-row">
-              <Badge variant="outline">Held</Badge>
-              <span className="font-medium">{h.sender_name || h.sender_id.slice(0, 8)}</span>
-              <span className="text-xs text-muted-foreground">{when(h.created_at)}</span>
-              <Button size="sm" variant="outline" className="ml-auto" onClick={() => setOpen(h.conversation_id)}>
-                <Eye className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Read and decide
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {open && <ChatReader conversationId={open} onClose={() => setOpen(null)} />}
     </div>
   );
 }
