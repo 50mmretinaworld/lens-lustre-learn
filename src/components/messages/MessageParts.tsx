@@ -100,6 +100,7 @@ export function refusalText(r: SendRefusal): string {
     case "photos_off": return "Photos aren't available for your account.";
     case "friends_only": return "Your account can message friends only.";
     case "recipient_unavailable": return "This member can't receive messages right now.";
+    case "announcement_only": return "Only 50mm Retina World can write in this chat.";
     case "groups_off": return "Group chats are not available for your account.";
     case "bad_group": return "A group needs a name and 2 to 19 of your friends who have chat.";
     case "bad_photo": return "That photo couldn't be sent. Try another one.";
