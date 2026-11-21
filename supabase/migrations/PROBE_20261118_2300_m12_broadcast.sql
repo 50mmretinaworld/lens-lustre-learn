@@ -99,6 +99,18 @@ BEGIN
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
 
   -- E4 the batch job (runs as the job engine: no signed-in user)
+  -- Inside one transaction now() is a single value, so a chat the batch creates would have joined_at = the message time and
+  -- show unread 0. Real chats are older than the message: create both chats an hour old, the batch reuses them.
+  INSERT INTO public.conversations (kind, direct_key, created_by, last_message_at, created_at)
+    SELECT 'direct', least(_admin::text, u::text) || ':' || greatest(_admin::text, u::text), _admin, now() - interval '1 hour', now() - interval '1 hour'
+      FROM unnest(ARRAY[_m1, _m2]) u
+    ON CONFLICT (direct_key) DO NOTHING;
+  INSERT INTO public.conversation_members (conversation_id, user_id, role, folder, joined_at)
+    SELECT c.id, v.uid, v.role, 'inbox', now() - interval '1 hour'
+      FROM unnest(ARRAY[_m1, _m2]) u
+      JOIN public.conversations c ON c.direct_key = least(_admin::text, u::text) || ':' || greatest(_admin::text, u::text)
+      CROSS JOIN LATERAL (VALUES (_admin, 'owner'), (u, 'member')) AS v(uid, role)
+    ON CONFLICT DO NOTHING;
   PERFORM set_config('request.jwt.claims', '', true); PERFORM set_config('request.jwt.claim.sub', '', true);
   PERFORM public.message_broadcast_run_batch(jsonb_build_object('batch_id', _batch));
   SELECT count(*) INTO _msgs FROM public.messages WHERE sender_id = _admin AND body LIKE 'Welcome to the new messages%';
