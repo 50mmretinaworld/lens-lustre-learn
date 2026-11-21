@@ -1,6 +1,7 @@
 import { UserPlus, UserMinus, UserCheck, Users, Heart, Clock, MessageCircle } from "lucide-react";
 import PendingMark from "@/components/offline/PendingMark";
 import { useMessagingAllowed } from "@/hooks/messages/useMessagingAllowed";
+import { useCanReachMember } from "@/hooks/messages/useCanReachMember";
 import { useFriendFollow } from "@/hooks/social/useFriendFollow";
 import { useNavigate } from "react-router-dom";
 import { useConnections, type ConnectionKind } from "@/components/ConnectionsSheet";
@@ -132,7 +133,8 @@ export const FriendFollowButtons = ({ targetUserId }: Props) => {
   // Messages: the button shows only when the server's switch lets THIS member message, and the two
   // are linked (you follow them, or friends, or the target is the official account). The server
   // refuses a send anyway; this only decides whether to show the button.
-  const canMessage = useMessagingAllowed();
+  // Both sides need the chat facility: me (admin switch) AND the member whose profile this is.
+  const canMessage = useMessagingAllowed() && useCanReachMember(targetUserId);
 
   const requireLogin = () => {
     if (!isLoggedIn) {
