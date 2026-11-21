@@ -97,6 +97,14 @@ BEGIN
   DELETE FROM public.messages WHERE id = _a;
   IF NOT EXISTS (SELECT 1 FROM public.messages WHERE id = _id AND reply_to_id IS NULL) THEN _fail := _fail || 'R5 deleting the quoted message removed or kept a dead link'; END IF;
 
+  -- R7 a stored message still cannot be edited: the link can only arrive with the insert
+  PERFORM pg_temp.set_user(_m1);
+  BEGIN
+    UPDATE public.messages SET reply_to_id = _other WHERE id = _id;
+    _fail := _fail || 'R7 a member could edit a message''s reply link';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  IF current_setting('messages.reply_to', true) IS NOT NULL AND current_setting('messages.reply_to', true) <> '' THEN _fail := _fail || 'R7 the reply setting leaked past the send'; END IF;
+
   -- R6
   IF has_function_privilege('anon', 'public.message_send_reply(uuid,text,uuid,bigint,jsonb)', 'EXECUTE') THEN _fail := _fail || 'R6 anon can use the reply door'; END IF;
 
