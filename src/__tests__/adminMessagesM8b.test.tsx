@@ -6,7 +6,7 @@
  * travels to the right rpc.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -72,7 +72,7 @@ describe("M8b page", () => {
     renderPage();
     expect((await screen.findByTestId("messages-status")).textContent).toContain("Only people on my list");
     expect(screen.getByTestId("messages-status").textContent).toContain("3 open reports");
-    expect(screen.getAllByTestId("messages-list-row")).toHaveLength(1);
+    expect(within(screen.getByTestId("messages-list")).getAllByTestId("table-row")).toHaveLength(1);
     expect(screen.getByTestId("messages-rules").textContent).toContain("Somnath Roy");
   });
 

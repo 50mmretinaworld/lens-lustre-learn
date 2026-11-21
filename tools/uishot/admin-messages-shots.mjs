@@ -49,6 +49,8 @@ const reason = async (p, text) => {
 const SHOTS = [
   ["who", "who", DESKTOP, null, true],
   ["who-top", "who", DESKTOP, null, false],
+  ["who-side", "who", DESKTOP, async (p) => { await p.getByTestId("messages-list").getByTestId("table-row").first().click(); await p.waitForSelector("[data-testid='list-side-panel']"); await p.waitForTimeout(600); }, false],
+  ["history-side", "history", DESKTOP, async (p) => { await p.getByTestId("table-row").first().click(); await p.waitForSelector("[data-testid='history-side-panel']"); await p.waitForTimeout(600); }, false],
   ["who-change-mode", "who", DESKTOP, async (p) => {
     await p.getByRole("radio", { name: /Everyone except my list/ }).click();
     await p.waitForSelector("[data-testid='messages-reason']");
