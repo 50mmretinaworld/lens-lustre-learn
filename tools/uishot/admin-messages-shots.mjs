@@ -49,13 +49,24 @@ const reason = async (p, text) => {
 const SHOTS = [
   ["who", "who", DESKTOP, null, true],
   ["who-top", "who", DESKTOP, null, false],
+  ["who-side", "who", DESKTOP, async (p) => { await p.getByTestId("messages-list").getByTestId("table-row").first().click(); await p.waitForSelector("[data-testid='list-side-panel']"); await p.waitForTimeout(600); }, false],
+  ["history-side", "history", DESKTOP, async (p) => { await p.getByTestId("table-row").first().click(); await p.waitForSelector("[data-testid='history-side-panel']"); await p.waitForTimeout(600); }, false],
   ["who-change-mode", "who", DESKTOP, async (p) => {
     await p.getByRole("radio", { name: /Everyone except my list/ }).click();
     await p.waitForSelector("[data-testid='messages-reason']");
     await reason(p, "Open to everyone except people I name");
   }, false],
   ["words", "words", DESKTOP, null, true],
+  ["words-side", "words", DESKTOP, async (p) => { await p.getByTestId("table-row").first().click(); await p.waitForSelector("[data-testid='word-side-panel']"); await p.waitForTimeout(600); }, false],
+  ["words-bulk", "words", DESKTOP, async (p) => {
+    const boxes = p.getByRole("checkbox", { name: "Select" });
+    await boxes.nth(0).click(); await boxes.nth(1).click(); await boxes.nth(2).click();
+    await p.waitForSelector("[data-testid='table-bulk-bar']"); await p.waitForTimeout(400);
+  }, false],
+  ["words-add", "words", DESKTOP, async (p) => { await p.getByTestId("word-add-open").click(); await p.getByTestId("word-add-panel").getByPlaceholder("2 to 200 characters").fill("pay me or else"); await p.waitForTimeout(500); }, false],
   ["reports", "reports", DESKTOP, null, true],
+  ["reports-side", "reports", DESKTOP, async (p) => { await p.getByTestId("table-row").first().click(); await p.waitForSelector("[data-testid='report-side-panel']"); await p.waitForTimeout(1200); }, false],
+  ["reports-watch", "reports", DESKTOP, async (p) => { await p.getByTestId("tab-watch").click(); await p.waitForTimeout(700); }, false],
   ["boxes", "boxes", DESKTOP, null, true],
   ["boxes-search", "boxes", DESKTOP, async (p) => {
     await p.getByLabel("Search name, e-mail or @handle").fill("a");

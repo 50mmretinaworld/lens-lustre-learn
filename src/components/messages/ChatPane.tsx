@@ -19,7 +19,8 @@ import { EMOJI_SETS } from "@/lib/messages/emoji";
 import { groupChat } from "@/lib/messages/format";
 import { suggestReplies } from "@/lib/messages/suggest";
 import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
-import { HelplineCard, MessageBubble, PersonAvatar, headingFont, refusalText } from "@/components/messages/MessageParts";
+import { useChatLive } from "@/hooks/messages/useChatLive";
+import { HelplineCard, MessageBubble, PersonAvatar, TypingDots, headingFont, refusalText } from "@/components/messages/MessageParts";
 import ReportChat from "@/components/messages/ReportChat";
 import { useViewAs } from "@/components/messages/viewAs";
 
@@ -71,13 +72,14 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const endRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const lastMarked = useRef<number | null>(null);
+  const live = useChatLive(convId, user?.id, !viewAs);   // typing dots + instant refresh; an admin's read-only view never joins
 
   const newestId = oldestFirst.length ? oldestFirst[oldestFirst.length - 1].id : null;
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [newestId, help, convId]);
   useEffect(() => {
     if (!viewAs && convId && newestId !== null && lastMarked.current !== newestId) {
       lastMarked.current = newestId;
-      markRead.mutate(convId);
+      markRead.mutate(convId, { onSuccess: () => live.ping() });   // the sender's ticks turn blue at once
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- markRead is a stable mutation object per render; the guard above is the dedupe
   }, [convId, newestId]);
@@ -101,6 +103,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
     try {
       const r = await send.mutateAsync({ to: otherId, body, clientMsgId: id });
       attempt.current = null;
+      live.ping();
       if (fromBox) setText("");
       setPicker(false);
       if (r.help) setHelp(true);
@@ -133,6 +136,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       for (const f of Array.from(files).slice(0, MAX_PHOTOS)) uploaded.push(await prepareAndUploadPhoto(f, user.id));
       const r = await sendPhotos.mutateAsync({ to: otherId, caption: text.trim(), clientMsgId: newClientMsgId(), photos: uploaded });
       setText("");
+      live.ping();
       if (r.help) setHelp(true);
       if (!convId) navigate(`/messages/${r.conversationId}`, { replace: true });
     } catch (e) {
@@ -193,6 +197,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
             <MessageBubble key={it.key} m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last} />
           ),
         )}
+        {live.typing && <TypingDots name={person?.fullName} />}
         {help && <HelplineCard onClose={() => setHelp(false)} />}
         <div ref={endRef} />
       </div>
@@ -254,7 +259,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
             <textarea
               ref={areaRef}
               value={text}
-              onChange={(e) => setText(e.target.value.slice(0, 4000))}
+              onChange={(e) => { setText(e.target.value.slice(0, 4000)); live.notifyTyping(e.target.value.trim().length > 0); }}
               rows={1}
               placeholder={t("messages.placeholder", "Message…")}
               aria-label={t("messages.placeholder", "Message…")}

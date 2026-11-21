@@ -6,5 +6,11 @@ export async function fetchUnread(): Promise<{ inbox: number; requests: number }
   if (error || typeof data !== "object" || data === null) return { inbox: 0, requests: 0 };
   const o = data as Record<string, unknown>;
   const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-  return { inbox: n(o.inbox), requests: n(o.requests) };
+  const counts = { inbox: n(o.inbox), requests: n(o.requests) };
+  // This app has just heard about those messages: tell the senders they are delivered (double grey tick).
+  // Only when something is waiting, so a quiet inbox costs nothing. Fire-and-forget.
+  if (counts.inbox + counts.requests > 0) {
+    void (supabase.rpc as unknown as (fn: string) => Promise<unknown>)("message_mark_delivered").then(undefined, () => undefined);
+  }
+  return counts;
 }

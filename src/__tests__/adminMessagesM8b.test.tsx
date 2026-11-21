@@ -6,7 +6,7 @@
  * travels to the right rpc.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -72,7 +72,7 @@ describe("M8b page", () => {
     renderPage();
     expect((await screen.findByTestId("messages-status")).textContent).toContain("Only people on my list");
     expect(screen.getByTestId("messages-status").textContent).toContain("3 open reports");
-    expect(screen.getAllByTestId("messages-list-row")).toHaveLength(1);
+    expect(within(screen.getByTestId("messages-list")).getAllByTestId("table-row")).toHaveLength(1);
     expect(screen.getByTestId("messages-rules").textContent).toContain("Somnath Roy");
   });
 
@@ -90,11 +90,12 @@ describe("M8b page", () => {
   it("Reports tab lists what members reported + the watch list; closing one needs no reason box", async () => {
     renderPage();
     fireEvent.mouseDown(await screen.findByRole("tab", { name: /Reports/ }), { button: 0 });
-    expect((await screen.findAllByTestId("messages-report-row")).length).toBe(3);
-    expect((await screen.findAllByTestId("messages-watch-row")).length).toBe(2);
+    expect((await screen.findAllByTestId("table-row")).length).toBe(3);
     expect(screen.queryByTestId("messages-reason")).toBeNull();
     fireEvent.click(screen.getAllByRole("button", { name: /Mark done/ })[0]);
     await waitFor(() => expect(calls.find((c) => c.fn === "admin_message_report_done")?.args).toMatchObject({ _id: 12 }));
+    fireEvent.click(screen.getByTestId("tab-watch"));
+    await waitFor(() => expect(screen.getAllByTestId("table-row").length).toBe(2));
   });
 
   it("Message boxes: a searchable, sortable member table; opening one reads THAT member's box, with no reason box", async () => {
@@ -118,6 +119,7 @@ describe("M8b page", () => {
   it("the word list has no Hold: only Block and Help can be added", async () => {
     renderPage();
     fireEvent.mouseDown(await screen.findByRole("tab", { name: /Word guard/ }), { button: 0 });
+    fireEvent.click(await screen.findByTestId("word-add-open"));
     const what = (await screen.findByLabelText("What happens")) as HTMLSelectElement;
     expect([...what.options].map((o) => o.value)).toEqual(["block", "help"]);
   });

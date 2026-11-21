@@ -522,6 +522,8 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
   /** One chat: text, a photo, a held message of mine, composer. */
   "screen-message-thread": () => {
     (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
+    // &typing=1 → the other person's typing dots are on (the live channel itself needs a real server)
+    (globalThis as { __harnessTyping?: boolean }).__harnessTyping = new URLSearchParams(location.search).get("typing") === "1";
     return screen(<MessagesRoutes />, "/messages/aaaaaaaa-0000-4000-8000-000000000001", "/messages/*");
   },
   /** A chat in Requests: the Accept / Decline bar. */

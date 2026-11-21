@@ -16,37 +16,10 @@ import { WordsPanel } from "@/components/admin/messages/SafetyPanel";
 import ReportsPanel from "@/components/admin/messages/ReportsPanel";
 import MembersPanel from "@/components/admin/messages/MembersPanel";
 import BroadcastPanel from "@/components/admin/messages/BroadcastPanel";
-import { useMessageAdminState, useMessageReports, type ControlLogRow } from "@/hooks/admin/useAdminMessages";
+import HistoryPanel from "@/components/admin/messages/HistoryPanel";
+import { useMessageAdminState, useMessageReports } from "@/hooks/admin/useAdminMessages";
 
 const TABS = ["who", "words", "reports", "boxes", "broadcast", "history"];
-const AREA_TEXT: Record<string, string> = {
-  mode: "Who can message", groups: "Groups", list: "Member list", member_rule: "Member rules",
-  word_rule: "Word list", review: "Held message", lookup: "Chat list looked up (old)",
-};
-const when = (iso: string) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-};
-
-function History({ log, me, names }: { log: ControlLogRow[]; me: string | null; names: Map<string, string> }) {
-  if (log.length === 0) return <p className="text-sm text-muted-foreground">No changes yet.</p>;
-  return (
-    <ul className="divide-y divide-border rounded-lg border border-border" data-testid="messages-history">
-      {log.map((l, i) => (
-        <li key={`${l.at}-${i}`} className="space-y-0.5 p-2 text-sm" data-testid="messages-history-row">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{AREA_TEXT[l.area] ?? l.area}</Badge>
-            <span className="font-medium">{l.actor === me ? "You" : l.actor ? (names.get(l.actor) ?? l.actor.slice(0, 8)) : "System"}</span>
-            {l.user_id && <span className="text-xs text-muted-foreground">about {names.get(l.user_id) ?? l.user_id.slice(0, 8)}</span>}
-            <span className="ml-auto text-xs text-muted-foreground">{when(l.at)}</span>
-          </div>
-          {(l.old || l.new) && <div className="text-xs text-muted-foreground">{l.old ?? "—"} → {l.new ?? "—"}</div>}
-          <div className="text-xs">“{l.reason}”</div>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 const AdminMessages = () => {
   const state = useMessageAdminState();
@@ -103,7 +76,7 @@ const AdminMessages = () => {
             <TabsContent value="reports" className="pt-3"><ReportsPanel /></TabsContent>
             <TabsContent value="boxes" className="pt-3"><MembersPanel /></TabsContent>
             <TabsContent value="broadcast" className="pt-3"><BroadcastPanel /></TabsContent>
-            <TabsContent value="history" className="pt-3"><History log={s.log} me={user?.id ?? null} names={names} /></TabsContent>
+            <TabsContent value="history" className="pt-3"><HistoryPanel log={s.log} me={user?.id ?? null} names={names} /></TabsContent>
           </Tabs>
         </>
       )}
