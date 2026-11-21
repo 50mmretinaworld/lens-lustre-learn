@@ -39,7 +39,7 @@ import { clearOutbox } from "./outbox";
 import { clearVideoUploads } from "@/lib/video/uploadJobs";
 import { clearPhotoUploads } from "@/lib/upload/photoJobs";
 import { clearSavedVideos } from "@/lib/video/offlineVideo";
-import { clearMessageQueue } from "@/lib/messages/queue";
+import { clearMessageQueue } from "@/lib/messages/queueWipe";
 
 export interface WipeResult {
   imageCaches: string[] | null;

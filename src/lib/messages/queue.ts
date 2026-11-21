@@ -13,8 +13,11 @@
  * Storage is localStorage on purpose: a handful of short texts, no schema, works in the web app and in the Android WebView.
  */
 import { isNetworkError } from "@/lib/offline/retryPolicy";
+import { QUEUE_KEY, clearMessageQueue } from "@/lib/messages/queueWipe";
 
-const KEY = "msg-queue:v1";
+export { clearMessageQueue };
+
+const KEY = QUEUE_KEY;
 const EVENT = "msg-queue-changed";
 const MAX_ITEMS = 50;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -65,10 +68,6 @@ export function removeQueued(id: string): void {
   write(read().filter((q) => q.id !== id));
 }
 
-/** Sign-out: nothing a member wrote is left for the next person on this device. */
-export function clearMessageQueue(): void {
-  try { if (typeof localStorage !== "undefined") localStorage.removeItem(KEY); } catch { /* never block sign-out */ }
-}
 
 /** True when a failed send was the NETWORK's fault (so the message should wait), not the server's answer. */
 export function isOfflineFailure(error: unknown): boolean {

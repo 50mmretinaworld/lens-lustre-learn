@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLink from "@/components/ProfileLink";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, ImagePlus, Loader2, SendHorizontal, Smile, UserRound, X } from "lucide-react";
+import { ArrowLeft, Clock, ImagePlus, Loader2, Search, SendHorizontal, Smile, UserRound, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -22,6 +22,7 @@ import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { useChatLive } from "@/hooks/messages/useChatLive";
 import { HelplineCard, MessageBubble, PersonAvatar, TypingDots, headingFont, refusalText } from "@/components/messages/MessageParts";
 import ReportChat from "@/components/messages/ReportChat";
+import ChatMenu from "@/components/messages/ChatMenu";
 import AutoBadge from "@/components/AutoBadge";
 import { usePeerStatus } from "@/hooks/messages/usePeerStatus";
 import { useMessageQueue } from "@/hooks/messages/useMessageQueue";
@@ -52,7 +53,11 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
 
   const thread = useThread(convId);
   const oldestFirst = useMemo(() => [...(thread.data ?? [])].reverse(), [thread.data]);
-  const items = useMemo(() => groupChat(oldestFirst), [oldestFirst]);
+  const [searching, setSearching] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const needle = searchText.trim().toLowerCase();
+  const shown = useMemo(() => (needle ? oldestFirst.filter((m) => m.body.toLowerCase().includes(needle)) : oldestFirst), [oldestFirst, needle]);
+  const items = useMemo(() => groupChat(shown), [shown]);
   const otherId = entry?.other?.userId ?? userId ?? oldestFirst.find((m) => m.senderId !== meId)?.senderId ?? null;
   const { data: fetched } = useQuery<MessagePerson | null>({
     queryKey: ["messages", "person", otherId],
@@ -198,12 +203,27 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
             : <div className="flex min-w-0 flex-1 items-center gap-3">{head}</div>;
         })()}
         {convId && !viewAs && <ReportChat conversationId={convId} />}
+        {convId && !viewAs && <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} />}
         {otherId && (
           <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
             <UserRound className="h-5 w-5" />
           </ProfileLink>
         )}
       </header>
+
+      {searching && (
+        <div data-testid="chat-search" className="flex items-center gap-2 border-b border-border/70 bg-background/80 px-3 py-2">
+          <Search aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            autoFocus value={searchText} onChange={(e) => setSearchText(e.target.value)} maxLength={100}
+            placeholder={t("messages.searchPlaceholder", "Search messages in this chat")}
+            aria-label={t("messages.searchChat", "Search in this chat")}
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          {needle && <span className="shrink-0 text-xs text-muted-foreground">{shown.length}</span>}
+          <button type="button" onClick={() => { setSearching(false); setSearchText(""); }} aria-label={t("common.close", "Close")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5"><X className="h-4 w-4" /></button>
+        </div>
+      )}
 
       {inRequests && convId && !viewAs && (
         <div data-testid="request-bar" className="mx-3 mt-3 rounded-3xl border border-border bg-background p-4 shadow-sm">
