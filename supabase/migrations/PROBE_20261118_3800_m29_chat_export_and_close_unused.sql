@@ -19,7 +19,7 @@ $f$;
 DO $p$
 DECLARE
   _fail text[] := '{}';
-  _m1 uuid; _m2 uuid; _m3 uuid; _admin uuid; _conv uuid; _msg bigint; _r jsonb; _n int; r record;
+  _m1 uuid; _m2 uuid; _m3 uuid; _admin uuid; _conv uuid; _msg bigint; _r jsonb; _n int; rec record;
 BEGIN
   IF coalesce(current_setting('p32.lane', true), '') NOT IN ('staging', 'production') THEN
     RAISE EXCEPTION 'PROBE REFUSED — p32.lane is not asserted';
@@ -71,9 +71,9 @@ BEGIN
   END;
 
   -- P3
-  FOR r IN SELECT p.oid, p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  FOR rec IN SELECT p.oid, p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
             WHERE n.nspname = 'public' AND p.proname IN ('admin_message_member_chats', 'admin_read_conversation', 'admin_message_held_queue', 'admin_message_review') LOOP
-    IF has_function_privilege('authenticated', r.oid, 'EXECUTE') OR has_function_privilege('anon', r.oid, 'EXECUTE') THEN _fail := _fail || ('P3 ' || r.sig::text || ' can still be run by members or visitors'); END IF;
+    IF has_function_privilege('authenticated', rec.oid, 'EXECUTE') OR has_function_privilege('anon', rec.oid, 'EXECUTE') THEN _fail := _fail || ('P3 ' || rec.sig::text || ' can still be run by members or visitors'); END IF;
   END LOOP;
   IF has_function_privilege('anon', 'public.admin_message_export(uuid,uuid)', 'EXECUTE') THEN _fail := _fail || 'P3 anon can run the export'; END IF;
 
