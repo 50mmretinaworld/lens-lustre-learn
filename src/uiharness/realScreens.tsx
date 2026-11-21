@@ -502,6 +502,12 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     (globalThis as { __harnessAdminJobs?: boolean }).__harnessAdminJobs = true;
     return screen(<AdminPanel />, "/admin/jobs", "/admin/*");
   },
+  /** M8b · Admin → Messages, the REAL AdminPanel route with the messages sample (adminMessagesSample.ts). &tab=words|held|chats|history opens that tab. */
+  "screen-admin-messages": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    (globalThis as { __harnessAdminMessages?: boolean }).__harnessAdminMessages = true;
+    return screen(<AdminPanel />, "/admin/messages", "/admin/*");
+  },
   /** Another member's wall for a signed-in member who may message: the Message button beside Follow. */
   "screen-wall-messages": () => {
     (globalThis as { __harnessMessages?: boolean }).__harnessMessages = true;
