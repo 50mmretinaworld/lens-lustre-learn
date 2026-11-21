@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/core/useAuth";
 import { relativeAge } from "@/lib/notifications/describe";
 import { useConversations, useUnreadCounts } from "@/hooks/messages/useMessages";
 import { PersonAvatar, headingFont } from "@/components/messages/MessageParts";
+import { useViewAs } from "@/components/messages/viewAs";
 import type { ConversationSummary, MessageFolder } from "@/lib/messages/api";
 
 function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: boolean; meId: string | undefined; onOpen: () => void }) {
@@ -51,9 +52,11 @@ function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: bool
 export default function ConversationList({ activeId, onOpen }: { activeId: string | null; onOpen: (conversationId: string) => void }) {
   const t = useT();
   const { user } = useAuth();
+  const viewAs = useViewAs();   // admin viewing a member's box: that member is "me", no unread badges of the admin
   const [folder, setFolder] = useState<MessageFolder>("inbox");
   const [q, setQ] = useState("");
-  const unread = useUnreadCounts();
+  const ownUnread = useUnreadCounts();
+  const unread = viewAs ? { inbox: 0, requests: 0 } : ownUnread;
   const { data, isLoading, isError } = useConversations(folder);
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -112,7 +115,7 @@ export default function ConversationList({ activeId, onOpen }: { activeId: strin
           </div>
         )}
         <ul className="space-y-0.5">
-          {rows.map((c) => <Row key={c.conversationId} c={c} active={c.conversationId === activeId} meId={user?.id} onOpen={() => onOpen(c.conversationId)} />)}
+          {rows.map((c) => <Row key={c.conversationId} c={c} active={c.conversationId === activeId} meId={viewAs?.userId ?? user?.id} onOpen={() => onOpen(c.conversationId)} />)}
         </ul>
       </div>
     </div>

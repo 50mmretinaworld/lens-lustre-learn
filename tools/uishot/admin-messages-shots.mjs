@@ -44,14 +44,6 @@ const reason = async (p, text) => {
   await p.getByTestId("messages-reason").fill(text);
   await p.waitForTimeout(200);
 };
-/** pick the first search result of a member picker */
-const pick = async (p, label, q) => {
-  const box = p.getByPlaceholder("Search by name or email…").first();
-  await box.fill(q);
-  await p.waitForTimeout(900);
-  await p.locator("button, li").filter({ hasText: /Somnath Roy/ }).first().click();
-  await p.waitForTimeout(500);
-};
 
 /** [file, tab, viewport, steps(page), fullPage] */
 const SHOTS = [
@@ -64,18 +56,25 @@ const SHOTS = [
   }, false],
   ["words", "words", DESKTOP, null, true],
   ["reports", "reports", DESKTOP, null, true],
-  ["chats", "chats", DESKTOP, async (p) => {
-    await pick(p, "Member", "Som");
-    await p.waitForSelector("[data-testid='messages-reason']");
-    await reason(p, "Report about this member");
-    await p.getByRole("button", { name: "Show chats" }).click();
-    await p.waitForSelector("[data-testid='messages-chat-row']");
-    await p.waitForTimeout(400);
+  ["boxes", "boxes", DESKTOP, null, true],
+  ["boxes-search", "boxes", DESKTOP, async (p) => {
+    await p.getByLabel("Search name, e-mail or @handle").fill("a");
+    await p.waitForTimeout(900);
+    await p.getByRole("button", { name: /^Chatting with/ }).click();
+    await p.waitForTimeout(600);
+  }, false],
+  ["boxes-reported", "boxes", DESKTOP, async (p) => { await p.getByTestId("tab-reported").click(); await p.waitForTimeout(700); }, false],
+  ["box-open", "boxes", DESKTOP, async (p) => {
+    await p.getByTestId("open-box").first().click();
+    await p.waitForSelector("[data-testid='conversation-row']");
+    await p.getByTestId("conversation-row").first().click();
+    await p.waitForTimeout(900);
   }, false],
   ["history", "history", DESKTOP, null, true],
   ["who-phone", "who", PHONE, null, true],
   ["words-phone", "words", PHONE, null, false],
   ["reports-phone", "reports", PHONE, null, true],
+  ["boxes-phone", "boxes", PHONE, null, true],
 ];
 
 let failed = false;

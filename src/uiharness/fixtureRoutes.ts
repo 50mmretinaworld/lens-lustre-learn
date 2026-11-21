@@ -33,7 +33,7 @@ import {
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
-import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberChats, sampleReadConversation, sampleProfileSearch } from "./adminMessagesSample";
+import { adminMessagesSampleOn, sampleMessageAdminState, sampleWordRules, sampleReports, sampleWatchlist, sampleMemberSearch, sampleProfileSearch } from "./adminMessagesSample";
 import { messagesFlag, messagesSampleOn, sampleConversations, sampleThread, sampleUnread } from "./messagesSample";
 import {
   HARNESS_USER_ID, fixtureImage,
@@ -341,8 +341,9 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_message_watchlist: () => (adminMessagesSampleOn() ? sampleWatchlist() : []),
   admin_message_report_done: () => true,
   message_report: () => true,
-  admin_message_member_chats: () => (adminMessagesSampleOn() ? sampleMemberChats() : []),
-  admin_read_conversation: () => (adminMessagesSampleOn() ? sampleReadConversation() : null),
+  admin_message_member_search: (b) => (adminMessagesSampleOn() ? sampleMemberSearch(b) : { total: 0, counts: { all: 0, active: 0, reported: 0, paused: 0, listed: 0 }, rows: [] }),
+  admin_view_inbox: (b) => (messagesSampleOn() ? sampleConversations(b) : []),
+  admin_view_thread: (b) => (messagesSampleOn() ? sampleThread(b) : []),
   message_admin_set_mode: (b) => b._mode,
   message_admin_set_groups: (b) => b._on === true,
   message_admin_list_add: () => true,

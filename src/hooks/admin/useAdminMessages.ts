@@ -5,7 +5,7 @@
  * page only collects them. Reading text goes through admin_read_conversation,
  * which writes the log row BEFORE it returns a single message.
  */
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -34,10 +34,6 @@ export interface WatchRow {
   user_id: string; full_name: string | null; username: string | null; avatar_url: string | null;
   reports_30d: number; open_reports: number; reporters: number; last_report_at: string | null; paused: boolean;
 }
-export interface ChatOther { user_id: string; full_name: string | null; username: string | null }
-export interface MemberChat { conversation_id: string; kind: "direct" | "group"; title: string | null; last_message_at: string | null; messages: number; others: ChatOther[] }
-export interface ViewedMessage { id: number; sender_id: string; kind: "text" | "photo"; body: string; status: "sent" | "held" | "rejected"; created_at: string; photos: { path: string; width: number | null; height: number | null }[] }
-export interface ViewedChat { conversation_id: string; members: { user_id: string; full_name: string | null; username: string | null; folder: string }[]; messages: ViewedMessage[] }
 
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
@@ -107,41 +103,6 @@ export function parseWatchlist(data: unknown): WatchRow[] {
   });
 }
 
-export function parseMemberChats(data: unknown): MemberChat[] {
-  return arr(data).flatMap((r) => {
-    const m = obj(r);
-    if (!m || typeof m.conversation_id !== "string") return [];
-    const others = arr(m.others).flatMap((x) => {
-      const o = obj(x);
-      return o && typeof o.user_id === "string" ? [{ user_id: o.user_id, full_name: str(o.full_name), username: str(o.username) }] : [];
-    });
-    return [{ conversation_id: m.conversation_id, kind: m.kind === "group" ? "group" : "direct", title: str(m.title), last_message_at: str(m.last_message_at), messages: num(m.messages) ?? 0, others }];
-  });
-}
-
-export function parseViewedChat(data: unknown): ViewedChat | null {
-  const o = obj(data);
-  if (!o || typeof o.conversation_id !== "string") return null;
-  const members = arr(o.members).flatMap((r) => {
-    const m = obj(r);
-    return m && typeof m.user_id === "string" ? [{ user_id: m.user_id, full_name: str(m.full_name), username: str(m.username), folder: str(m.folder) ?? "inbox" }] : [];
-  });
-  const messages = arr(o.messages).flatMap((r) => {
-    const m = obj(r);
-    const id = num(m?.id);
-    if (!m || id === null || typeof m.sender_id !== "string" || typeof m.created_at !== "string") return [];
-    const photos = arr(m.photos).flatMap((p) => {
-      const x = obj(p);
-      return x && typeof x.path === "string" ? [{ path: x.path, width: num(x.width), height: num(x.height) }] : [];
-    });
-    return [{
-      id, sender_id: m.sender_id, kind: m.kind === "photo" ? "photo" : "text", body: str(m.body) ?? "",
-      status: m.status === "held" || m.status === "rejected" ? m.status : "sent", created_at: m.created_at, photos,
-    } as ViewedMessage];
-  });
-  return { conversation_id: o.conversation_id, members, messages };
-}
-
 export function useMessageAdminState() {
   return useQuery({
     queryKey: queryKeys.adminMessagesState(),
@@ -189,6 +150,54 @@ export function useMessageWatchlist() {
       return parseWatchlist(data);
     },
     staleTime: 30_000,
+  });
+}
+
+export type MemberFilter = "all" | "active" | "reported" | "paused" | "listed";
+export type MemberSortKey = "name" | "chats" | "last" | "reports" | "joined";
+export interface MsgMember {
+  user_id: string; full_name: string | null; username: string | null; avatar_url: string | null; email: string | null; joined_at: string | null;
+  chats: number; last_message_at: string | null; reports_30d: number; listed: boolean; paused: boolean; has_rules: boolean; is_admin: boolean;
+  /** their 3 most recent chats, each as the other person (a group by its title) */
+  chatting_with: { kind: "direct" | "group"; user_id: string | null; name: string; avatar_url: string | null }[];
+}
+export interface MemberSearchResult { total: number; counts: Record<MemberFilter, number>; rows: MsgMember[] }
+
+export function parseMemberSearch(data: unknown): MemberSearchResult {
+  const o = obj(data) ?? {};
+  const c = obj(o.counts) ?? {};
+  const rows = arr(o.rows).flatMap((r) => {
+    const m = obj(r);
+    if (!m || typeof m.user_id !== "string") return [];
+    return [{
+      user_id: m.user_id, full_name: str(m.full_name), username: str(m.username), avatar_url: str(m.avatar_url), email: str(m.email), joined_at: str(m.joined_at),
+      chats: num(m.chats) ?? 0, last_message_at: str(m.last_message_at), reports_30d: num(m.reports_30d) ?? 0,
+      listed: m.listed === true, paused: m.paused === true, has_rules: m.has_rules === true, is_admin: m.is_admin === true,
+      chatting_with: arr(m.chatting_with).flatMap((w) => {
+        const x = obj(w);
+        return x ? [{ kind: x.kind === "group" ? "group" as const : "direct" as const, user_id: str(x.user_id), name: str(x.name) ?? "Member", avatar_url: str(x.avatar_url) }] : [];
+      }),
+    }];
+  });
+  return {
+    total: num(o.total) ?? rows.length,
+    counts: { all: num(c.all) ?? 0, active: num(c.active) ?? 0, reported: num(c.reported) ?? 0, paused: num(c.paused) ?? 0, listed: num(c.listed) ?? 0 },
+    rows,
+  };
+}
+
+export function useMessageMembers(p: { q: string; filter: MemberFilter; sort: MemberSortKey; dir: "asc" | "desc"; page: number; pageSize: number }) {
+  return useQuery({
+    queryKey: queryKeys.adminMessagesMembers(p.q, p.filter, p.sort, p.dir, p.page, p.pageSize),
+    queryFn: async () => {
+      const { data, error } = await rpc("admin_message_member_search", {
+        _q: p.q.trim() || null, _filter: p.filter, _sort: p.sort, _dir: p.dir, _limit: p.pageSize, _offset: p.page * p.pageSize,
+      });
+      if (error) throw new Error(error.message ?? "Could not read the members");
+      return parseMemberSearch(data);
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 20_000,
   });
 }
 

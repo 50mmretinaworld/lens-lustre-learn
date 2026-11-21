@@ -60,7 +60,7 @@ export function sampleThread(body: Record<string, unknown>): unknown[] {
     m(104, HARNESS_USER_ID, "", 30, { kind: "photo", photos: [{ path: fixtureImage(11, "50mm f/1.4"), width: 900, height: 600 }] }),
     m(103, HARNESS_USER_ID, "Thank you! Shot at golden hour, mostly natural light.", 31),
     m(102, them, "Hey! Saw your latest post. Are you free this weekend for a photo walk?", 60),
-    m(101, HARNESS_USER_ID, "Waiting for review", 62, { status: "held", body: "Which party are you voting for in the election?" }),
+    m(101, HARNESS_USER_ID, "Are you joining the photo walk on Saturday?", 62),
     m(100, HARNESS_USER_ID, "😍🔥", 95),
   ];
 }
