@@ -38,7 +38,8 @@ export interface ConversationSummary {
   unread: number;
 }
 export interface MessageReplyQuote { id: number; senderId: string; body: string; photo: boolean }
-export interface MessagePhoto { path: string; width: number | null; height: number | null }
+/** `expired`: the server deleted the file after 30 days (SQL 3100); only a device that kept its own copy can still show it. */
+export interface MessagePhoto { path: string; width: number | null; height: number | null; expired?: boolean }
 export interface ThreadMessage {
   id: number;
   senderId: string;
@@ -128,7 +129,7 @@ export function parseThread(data: unknown): ThreadMessage[] {
   for (const r of data) {
     if (!isObj(r) || num(r.id) === null || !str(r.sender_id) || !str(r.created_at)) continue;
     const photos: MessagePhoto[] = Array.isArray(r.photos)
-      ? r.photos.filter(isObj).filter((p) => !!str(p.path)).map((p) => ({ path: p.path as string, width: num(p.width), height: num(p.height) }))
+      ? r.photos.filter(isObj).filter((p) => !!str(p.path)).map((p) => ({ path: p.path as string, width: num(p.width), height: num(p.height), expired: p.expired === true }))
       : [];
     out.push({
       id: r.id as number, senderId: r.sender_id as string, kind: r.kind === "photo" ? "photo" : "text",

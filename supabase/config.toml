@@ -49,6 +49,9 @@ project_id = "jtdtehuqtinjxropkkcn"
   # admin already scheduled and that is due (push_broadcast_claim).
   [functions.send-broadcast-push]
     verify_jwt = false
+  # message-photo-purge (M19): called only by the job engine with x-internal-secret; no member or visitor token is ever sent.
+  [functions.message-photo-purge]
+    verify_jwt = false
   [functions.send-transactional-email]
     verify_jwt = true
   [functions.preview-transactional-email]
