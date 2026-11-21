@@ -178,6 +178,7 @@ const CommunityGuidelines = lazyRetry(() => import("./pages/CommunityGuidelines"
 const NotificationSettings = lazyRetry(() => import("./pages/NotificationSettings"), "NotificationSettings");
 const OfflineSettings = lazyRetry(() => import("./pages/OfflineSettings"), "OfflineSettings");
 const Notifications = lazyRetry(() => import("./pages/Notifications"), "Notifications");
+const MessagesRoutes = lazyRetry(() => import("./pages/MessagesRoutes"), "MessagesRoutes");
 const WatermarkQAMatrix = lazyRetry(() => import("./pages/qa/WatermarkQAMatrix"), "WatermarkQAMatrix");
 const ScheduledPostsPage = lazyRetry(() => import("./pages/ScheduledPosts"), "ScheduledPosts");
 const IDVerification = lazyRetry(() => import("./pages/IDVerification"), "IDVerification");
@@ -424,6 +425,7 @@ const App = () => {
                   <Route path="/photos" element={<MyPhotos />} />
                   <Route path="/my-stories" element={<MyStories />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/messages/*" element={<MessagesRoutes />} />
                 </Route>
                 <Route path="/profile/:userId" element={<PublicProfile />} />
                 <Route path="/friends" element={<Friends />} />
