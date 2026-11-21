@@ -3,14 +3,26 @@
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
 import { useQuery } from "@tanstack/react-query";
-import { Clock, HeartHandshake } from "lucide-react";
+import { Check, CheckCheck, Clock, HeartHandshake } from "lucide-react";
 import { motion } from "framer-motion";
 import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
-import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson } from "@/lib/messages/api";
+import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
 import { clockText } from "@/lib/messages/format";
 
 export const headingFont = { fontFamily: "var(--font-heading)" };
+
+/** One grey tick = sent · two grey = delivered to their app · two blue = read. Shown only on the viewer's own messages. */
+export function Ticks({ tick, className = "" }: { tick: MessageTick | null | undefined; className?: string }) {
+  if (!tick) return null;
+  const label = tick === "read" ? "Read" : tick === "delivered" ? "Delivered" : "Sent";
+  const Icon = tick === "sent" ? Check : CheckCheck;
+  return (
+    <span role="img" aria-label={label} data-testid={`tick-${tick}`} className={`inline-flex shrink-0 ${tick === "read" ? "text-sky-500" : "text-muted-foreground"} ${className}`}>
+      <Icon className="h-3.5 w-3.5" strokeWidth={2.4} />
+    </span>
+  );
+}
 
 export function PersonAvatar({ person, size = 44 }: { person: MessagePerson | null; size?: number }) {
   const name = person?.fullName?.trim() || "Member";
@@ -118,7 +130,7 @@ export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine
         >
           {m.body.trim()}
         </motion.span>
-        {last && <span className="mt-1 px-1 text-[11px] text-muted-foreground">{clockText(m.createdAt)}</span>}
+        {last && <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground">{clockText(m.createdAt)}{mine && <Ticks tick={m.tick} />}</span>}
       </div>
     );
   }
@@ -150,7 +162,7 @@ export function MessageBubble({ m, mine, first, last }: { m: ThreadMessage; mine
       </div>
       {(last || m.status === "held") && (
         <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground">
-          {m.status === "held" ? <><Clock className="h-3 w-3" /> Waiting for review</> : clockText(m.createdAt)}
+          {m.status === "held" ? <><Clock className="h-3 w-3" /> Waiting for review</> : <>{clockText(m.createdAt)}{mine && <Ticks tick={m.tick} />}</>}
         </span>
       )}
     </div>

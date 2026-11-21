@@ -22,6 +22,10 @@ export interface MessagePerson {
   username: string | null;
   avatarUrl: string | null;
 }
+/** How far one of MY messages has got: stored → the other person's app fetched it → they opened the chat. */
+export type MessageTick = "sent" | "delivered" | "read";
+const tickOf = (v: unknown): MessageTick | null => (v === "sent" || v === "delivered" || v === "read" ? v : null);
+
 export interface ConversationSummary {
   conversationId: string;
   kind: "direct" | "group";
@@ -30,7 +34,7 @@ export interface ConversationSummary {
   muted: boolean;
   lastMessageAt: string | null;
   other: MessagePerson | null;
-  last: { id: number; senderId: string; kind: "text" | "photo"; body: string; createdAt: string } | null;
+  last: { id: number; senderId: string; kind: "text" | "photo"; body: string; createdAt: string; tick: MessageTick | null } | null;
   unread: number;
 }
 export interface MessagePhoto { path: string; width: number | null; height: number | null }
@@ -42,6 +46,8 @@ export interface ThreadMessage {
   createdAt: string;
   /** Only the sender's own held message says 'held'; everything else is 'sent'. */
   status: "sent" | "held";
+  /** Only on the viewer's OWN stored messages; never on someone else's. */
+  tick: MessageTick | null;
   photos: MessagePhoto[];
 }
 export interface SendResult {
@@ -97,7 +103,7 @@ export function parseConversations(data: unknown): ConversationSummary[] {
     if (!isObj(r) || !str(r.conversation_id)) continue;
     const last = isObj(r.last) && num(r.last.id) !== null && str(r.last.sender_id) && str(r.last.created_at)
       ? { id: r.last.id as number, senderId: r.last.sender_id as string, kind: (r.last.kind === "photo" ? "photo" : "text") as "text" | "photo",
-          body: str(r.last.body) ?? "", createdAt: r.last.created_at as string }
+          body: str(r.last.body) ?? "", createdAt: r.last.created_at as string, tick: tickOf(r.last.tick) }
       : null;
     out.push({
       conversationId: r.conversation_id as string, kind: r.kind === "group" ? "group" : "direct", title: str(r.title),
@@ -118,7 +124,7 @@ export function parseThread(data: unknown): ThreadMessage[] {
       : [];
     out.push({
       id: r.id as number, senderId: r.sender_id as string, kind: r.kind === "photo" ? "photo" : "text",
-      body: str(r.body) ?? "", createdAt: r.created_at as string, status: r.status === "held" ? "held" : "sent", photos,
+      body: str(r.body) ?? "", createdAt: r.created_at as string, status: r.status === "held" ? "held" : "sent", tick: tickOf(r.tick), photos,
     });
   }
   return out;
@@ -184,6 +190,10 @@ export async function sendPhotos(
 
 export async function markConversationRead(conversationId: string): Promise<void> {
   await rpc("message_mark_read", { _conversation: conversationId });
+}
+/** "My app has loaded my chats": the senders' single tick becomes a double grey one. Fire-and-forget; a failure changes nothing for the member. */
+export async function markDelivered(): Promise<void> {
+  await rpc("message_mark_delivered");
 }
 export async function acceptRequest(conversationId: string): Promise<void> {
   const { error } = await rpc("message_accept_request", { _conversation: conversationId });

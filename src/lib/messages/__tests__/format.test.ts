@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dayLabel, groupChat } from "../format";
 import type { ThreadMessage } from "../api";
 
-const m = (id: number, sender: string, iso: string): ThreadMessage => ({ id, senderId: sender, kind: "text", body: "x", createdAt: iso, status: "sent", photos: [] });
+const m = (id: number, sender: string, iso: string): ThreadMessage => ({ id, senderId: sender, kind: "text", body: "x", createdAt: iso, status: "sent", tick: null, photos: [] });
 
 describe("messages display rules", () => {
   const now = new Date(2026, 10, 18, 12, 0);
