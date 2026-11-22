@@ -49,6 +49,11 @@ const SHOTS = [
   ["chat-phone", "screen-message-thread", PHONE, null],
   ["request-chat-phone", "screen-message-request", PHONE, null],
   ["chat-menu-phone", "screen-message-thread", PHONE, async (p) => { const b = p.getByTestId("chat-menu"); if (await b.count()) { await b.first().click(); await p.waitForTimeout(600); } }],
+  ["profile-visitor-phone", "screen-wall-messages", PHONE, null],
+  ["profile-notfollowing-phone", "screen-wall-visitor", PHONE, null],
+  ["profile-visitor-menu-phone", "screen-wall-messages", PHONE, async (p) => { const b = p.getByTestId("visitor-menu"); if (await b.count()) { await b.first().click(); await p.waitForTimeout(600); } }],
+  ["profile-visitor-scrolled-phone", "screen-wall-messages", PHONE, async (p) => { await p.mouse.wheel(0, 900); await p.waitForTimeout(800); }],
+  ["chat-longpress-phone", "screen-message-thread", PHONE, async (p) => { const b = p.getByTestId("bubble-theirs"); if (await b.count()) { await b.first().click({ button: "right" }); await p.waitForTimeout(500); } }],
   ["inbox-desktop", "screen-messages", DESKTOP, null],
   ["chat-desktop", "screen-message-thread", DESKTOP, null],
   // the app's own pages, for the pattern
@@ -70,7 +75,11 @@ try {
     const page = await context.newPage();
     try {
       if (DARK) await page.addInitScript(() => { try { localStorage.setItem("theme", "dark"); } catch { /* */ } });
+      // the Favourites switch on, so a profile shows Follow → Favourite as members on that switch see it
+      if (name.startsWith("profile-")) await page.addInitScript(() => { globalThis.__harnessFeatures = ["personal_feed"]; globalThis.__harnessLongBio = true; });
       await page.goto(`${BASE}/uiharness.html?scene=${scene}&strict=0`, { waitUntil: "load", timeout: 180000 });
+      // the harness page starts with class="dark"; light mode = the same page without it
+      if (!DARK) await page.evaluate(() => document.documentElement.classList.remove("dark"));
       await page.waitForTimeout(4500);
       if (steps) await steps(page);
       await page.screenshot({ path: join(OUT, `messages-${name}-${SUFFIX}.png`), fullPage: false });

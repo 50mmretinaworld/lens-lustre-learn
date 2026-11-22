@@ -2,16 +2,14 @@
  * Messages · shared pieces of the messenger: avatar, refusal wording, helpline card, bubbles with photos.
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, CheckCheck, Clock, Copy, HeartHandshake, ImageOff, Reply } from "lucide-react";
+import { Camera, Check, CheckCheck, Clock, Copy, HeartHandshake, ImageOff, Reply } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useT } from "@/i18n/I18nContext";
 import { isEmojiOnly } from "@/lib/messages/emoji";
 import OptimizedImage from "@/components/OptimizedImage";
-import AutoBadge from "@/components/AutoBadge";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
-import { clockText } from "@/lib/messages/format";
 import { keepPhotoOnDevice, readLocalPhoto } from "@/lib/messages/photoCache";
 import PresenceAvatar from "@/components/PresenceAvatar";
 
@@ -169,7 +167,40 @@ export function LinkedText({ text }: { text: string }) {
   );
 }
 
-export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }: {
+/** The small picture on a reply to a photo (WhatsApp): same cache as the photo itself, so no second download. */
+function QuoteThumb({ path }: { path: string }) {
+  const { data } = useQuery({
+    queryKey: ["messages", "photo", path, false],
+    queryFn: async (): Promise<{ url: string | null; gone: boolean }> => {
+      const local = await readLocalPhoto(path);
+      if (local) return { url: local, gone: false };
+      const url = await signedPhotoUrl(path);
+      if (url) void keepPhotoOnDevice(path, url);
+      return { url, gone: false };
+    },
+    staleTime: 4 * 60_000,
+  });
+  return (
+    <span className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-foreground/10" aria-hidden>
+      {data?.url && <OptimizedImage src={data.url} alt="" loading="lazy" className="h-full w-full object-cover" />}
+    </span>
+  );
+}
+
+/** Hold a finger on a bubble (phone) or right-click it (computer): the message's own menu. Moving the finger cancels. */
+function useLongPress(onLong: (() => void) | undefined) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  if (!onLong) return {};
+  const clear = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
+  return {
+    onTouchStart: () => { clear(); timer.current = setTimeout(() => { timer.current = null; onLong(); }, 450); },
+    onTouchMove: clear,
+    onTouchEnd: clear,
+    onContextMenu: (e: ReactMouseEvent) => { e.preventDefault(); clear(); onLong(); },
+  };
+}
+
+export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf, status, quotePhotoPath, onLongPress }: {
   m: ThreadMessage; mine: boolean; first: boolean; last: boolean;
   /** Reply to this message (swipe right on a phone, the arrow beside it on a computer). Left out where replying is not possible. */
   onReply?: (m: ThreadMessage) => void;
@@ -177,22 +208,32 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
   onJump?: (messageId: number) => void;
   /** Name shown on a quote ("You" or the person). */
   nameOf?: (senderId: string) => string;
+  /** "Seen" / "Delivered" / "Sent" — only under MY LAST message (Instagram), never under every bubble. */
+  status?: string | null;
+  /** The quoted message's photo, when it had one and is loaded: shown small on the quote (WhatsApp). */
+  quotePhotoPath?: string | null;
+  /** Hold (phone) / right-click (computer): the message's menu — Reply, Copy. */
+  onLongPress?: (m: ThreadMessage) => void;
 }) {
+  const press = useLongPress(onLongPress && m.status === "sent" ? () => onLongPress(m) : undefined);
+  const statusLine = status ? <span className="mt-0.5 px-1 text-[11px] text-muted-foreground" data-testid="message-status">{status}</span> : null;
   // 1–3 emoji and nothing else: shown large with no bubble, and they pop in
   if (m.photos.length === 0 && m.status !== "held" && !m.reply && isEmojiOnly(m.body)) {
     return (
-      <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} px-3 ${first ? "mt-2.5" : "mt-0.5"}`}>
+      <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} px-3 ${first ? "mt-2.5" : "mt-1"}`}>
         <motion.span
           data-testid="emoji-big"
           initial={{ scale: 0.3, rotate: -12, opacity: 0 }}
           animate={{ scale: 1, rotate: 0, opacity: 1 }}
           whileHover={{ scale: 1.18, rotate: [0, -8, 8, -4, 0] }}
           transition={{ type: "spring", stiffness: 420, damping: 14 }}
-          className="inline-block cursor-default select-none text-[40px] leading-none"
+          // the emoji's own box is taller than 1em on Android: line-height and padding keep it off the next bubble
+          className="inline-block cursor-default select-none py-0.5 text-[36px] leading-[1.2]"
+          {...press}
         >
           {m.body.trim()}
         </motion.span>
-        {last && <span className="mt-0.5 flex items-center gap-1 px-1 text-[10.5px] text-muted-foreground">{clockText(m.createdAt)}{mine && <Ticks tick={m.tick} />}</span>}
+        {statusLine}
       </div>
     );
   }
@@ -216,6 +257,7 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
         dragElastic={{ left: 0, right: 0.4 }}
         dragSnapToOrigin
         onDragEnd={(_, info) => { if (canReply && info.offset.x > 56) onReply?.(m); }}
+        {...press}
         className={`max-w-[78%] overflow-hidden whitespace-pre-wrap break-words text-[14px] leading-[1.4] sm:max-w-[65%] ${shape} ${
           photoOnly
             ? "w-[min(70%,240px)] ring-1 ring-border/60"
@@ -229,10 +271,17 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
             type="button"
             data-testid="reply-quote"
             onClick={() => onJump?.(m.reply!.id)}
-            className={`mb-1 block w-full rounded-lg border-l-[3px] px-2 py-1 text-left text-[12px] leading-snug ${mine ? "border-white/70 bg-white/15" : "border-primary bg-foreground/[0.06]"}`}
+            // WhatsApp: a tinted box with the sender's colour bar, their name in that colour, the text, a small picture for a photo
+            className={`mb-1 flex w-full items-center gap-2 overflow-hidden rounded-lg border-l-[3px] py-1 pl-2 pr-1 text-left text-[12px] leading-snug ${mine ? "border-white bg-black/15" : "border-primary bg-foreground/[0.07]"}`}
           >
-            <span className="flex items-center gap-1 text-[11px] font-bold opacity-90"><span className="truncate">{nameOf ? nameOf(m.reply.senderId) : "Message"}</span><AutoBadge userId={m.reply.senderId} only="verified" /></span>
-            <span className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">{m.reply.body || (m.reply.photo ? "📷 Photo" : "")}</span>
+            <span className="min-w-0 flex-1">
+              <span className={`block truncate text-[12px] font-semibold ${mine ? "text-white" : "text-primary"}`}>{nameOf ? nameOf(m.reply.senderId) : "Message"}</span>
+              <span className="flex items-center gap-1 opacity-85">
+                {m.reply.photo && <Camera aria-hidden className="h-3 w-3 shrink-0" />}
+                <span className="line-clamp-2 whitespace-pre-wrap break-words">{m.reply.body || (m.reply.photo ? "Photo" : "")}</span>
+              </span>
+            </span>
+            {quotePhotoPath && <QuoteThumb path={quotePhotoPath} />}
           </button>
         )}
         {m.photos.length > 0 && (
@@ -265,11 +314,12 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf }:
         </button>
       )}
       </div>
-      {(last || m.status === "held") && (
-        <span className="mt-0.5 flex items-center gap-1 px-1 text-[10.5px] text-muted-foreground">
-          {m.status === "held" ? <><Clock className="h-3 w-3" /> Waiting for review</> : <>{clockText(m.createdAt)}{mine && <Ticks tick={m.tick} />}</>}
+      {m.status === "held" && (
+        <span className="mt-0.5 flex items-center gap-1 px-1 text-[11px] text-muted-foreground">
+          <Clock className="h-3 w-3" /> Waiting for review
         </span>
       )}
+      {m.status !== "held" && statusLine}
     </div>
   );
 }

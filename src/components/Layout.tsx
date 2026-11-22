@@ -19,6 +19,7 @@ import OnboardingModal from "@/components/OnboardingModal";
  */
 const PHOTO_PROMPT_SNOOZE_KEY = "dp_prompt_snoozed_v1";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { isChatScreen } from "@/lib/appBar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SiteFooter from "@/components/SiteFooter";
 import PageTransition from "@/components/PageTransition";
@@ -100,6 +101,7 @@ const LayoutInner = () => {
   // column, so the full-bleed hero was squeezed to 590px on desktop and the
   // 90%-wide .container left blank bands down both edges on mobile/app.
   const isHome = pathname === "/" || pathname === "/home";
+  const chatScreen = isChatScreen(pathname);
   const isProfilePage = pathname === "/profile";
   const isSidebarHiddenRoute = hideSidebarRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
@@ -302,9 +304,12 @@ const LayoutInner = () => {
           className={
             isHome
               ? "absolute top-0 left-0 right-0 z-50"
-              : isNativeCapacitorApp()
-                ? undefined
-                : "sticky top-0 z-50"
+              : chatScreen
+                // a chat is full screen on a phone (lib/appBar): its own header carries ←
+                ? "max-lg:hidden lg:sticky lg:top-0 lg:z-50"
+                : isNativeCapacitorApp()
+                  ? undefined
+                  : "sticky top-0 z-50"
           }
         >
           <AnnouncementBar />
@@ -411,7 +416,7 @@ const LayoutInner = () => {
       <NetworkBanner />
       {/* A4: "Your account is under review" + support e-mail; nothing for an active member. */}
       {user && <Suspense fallback={null}><AccountStateBanner /></Suspense>}
-      <div className="pb-12 lg:pb-0">
+      <div className={chatScreen ? "lg:pb-0" : "pb-12 lg:pb-0"}>
         <div className={isSidebarEligibleRoute ? "flex gap-8 container mx-auto" : undefined}>
           {isSidebarEligibleRoute ? (
             <aside className="hidden xl:block w-64 shrink-0 sticky top-24 self-start py-6 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">

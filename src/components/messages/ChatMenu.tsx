@@ -11,8 +11,10 @@ import { useT } from "@/i18n/I18nContext";
 import { useBlockedUsers } from "@/hooks/core/useBlockedUsers";
 import { useConversationActions } from "@/hooks/messages/useMessages";
 
-export default function ChatMenu({ conversationId, otherId, muted, onSearch, onReport }: {
+export default function ChatMenu({ conversationId, otherId, muted, onSearch, onReport, canBlock = true }: {
   conversationId: string; otherId: string | null; muted: boolean; onSearch: () => void; onReport?: () => void;
+  /** false for the official 50mm Retina World account: it can never be blocked (Owner 22 Nov 2026) */
+  canBlock?: boolean;
 }) {
   const t = useT();
   const navigate = useNavigate();
@@ -42,7 +44,7 @@ export default function ChatMenu({ conversationId, otherId, muted, onSearch, onR
             }
           }}
         ><Trash2 className="h-4 w-4" />{t("messages.deleteChat", "Delete chat for me")}</DropdownMenuItem>
-        {otherId && (
+        {otherId && canBlock && (
           <DropdownMenuItem
             className={`${item} ${blocked ? "" : "text-destructive focus:text-destructive"}`}
             data-testid="chat-menu-block"

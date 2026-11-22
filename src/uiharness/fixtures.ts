@@ -87,7 +87,10 @@ export const profiles: FixtureProfile[] = [
     user_type: "photographer",
     custom_url: "ranjana",
     avatar_url: null, // no avatar: the initials fallback must be looked at too
-    bio: null,
+    // a long About only when a shot asks for it (globalThis.__harnessLongBio): See more / See less must be looked at
+    bio: (globalThis as { __harnessLongBio?: boolean }).__harnessLongBio
+      ? "I am an amateur photographer with a deep passion for capturing life through my lens. My photography focuses on nature, wildlife, and everyday human stories. I enjoy documenting birds in action, street moments, and portraits that reflect real emotions and character."
+      : null,
   },
   {
     id: "33333333-3333-4333-8333-333333333333",

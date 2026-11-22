@@ -1013,3 +1013,11 @@
   60% { opacity: 0.85; filter: blur(1px); }
   100% { opacity: 1; filter: blur(0); }
 }
+
+/* NOTHING EVER SLIDES SIDEWAYS (Owner 22 Nov 2026, phone screenshots: a too-wide button row let the whole profile
+   page pan left, half the bottom bar went off screen). body { overflow-x: hidden } (App.css) is not enough inside the
+   Android WebView. clip (not hidden) on the app root cuts anything wider than the screen without making #root a
+   scroll box, so sticky bars and the fixed bottom bar keep working. */
+#root {
+  overflow-x: clip;
+}

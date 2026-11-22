@@ -2,9 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { useSiteLogo } from "@/hooks/core/useSiteLogo";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { isNativeCapacitorApp } from "@/lib/native/authDeepLink";
+import { useAppBarSpec } from "@/lib/appBar";
+import { goBackOrFeed } from "@/lib/navigationContract";
+import { inAppHistoryDepth } from "@/hooks/core/useAndroidBackButton";
 import { NavLink } from "@/components/NavLink";
 import {
-  Menu, X, Sun, Moon, ChevronDown, Plus,
+  Menu, X, Sun, Moon, ChevronDown, Plus, ArrowLeft,
   // ── Curated nav-icon set. PERF, 2026-08-07. ──
   // The admin nav menu references icons by NAME. Importing the whole
   // lucide-react namespace to resolve them dragged all ~1,500 icons (~500 KB)
@@ -76,6 +79,8 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
   const { isAdmin } = useIsAdmin();
   const location = useLocation();
   const navigate = useNavigate();
+  // An inner screen (another member's wall, …) asks for its own phone bar: [←] title … actions [☰]. See lib/appBar.
+  const pageBar = useAppBarSpec();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { menuTree, loading } = useNavigationMenu();
@@ -301,7 +306,22 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               APP ONLY, and both halves of that matter: `lg:hidden` keeps it off
               desktop, and `isNativeCapacitorApp()` keeps it off the mobile
               WEBSITE, which still posts from its own composer row. */}
-          {!transparent && user && isNativeCapacitorApp() && (
+          {/* Inner screen (Owner 22 Nov 2026, pro app): ← and the screen's own title in place of [+] and the wordmark. */}
+          {!transparent && pageBar && (
+            <div className="lg:hidden flex min-w-0 items-center gap-1.5" data-testid="page-bar">
+              <button
+                type="button"
+                onClick={() => goBackOrFeed(navigate, inAppHistoryDepth())}
+                aria-label={t("common.back", "Back")}
+                data-testid="page-bar-back"
+                className="-ml-1.5 grid h-11 w-11 shrink-0 place-items-center text-foreground transition-colors hover:text-primary"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+              <span className="min-w-0 max-w-[58vw] truncate text-[16px] font-semibold leading-tight text-foreground">{pageBar.title}</span>
+            </div>
+          )}
+          {!transparent && !pageBar && user && isNativeCapacitorApp() && (
             <button
               type="button"
               /**
@@ -381,7 +401,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               WHOLE bar, not shoved by the actions on the right. pointer-events
               off so it can never sit over and block the bell or search. Shown
               only below lg and only on the normal (non-hero) bar. */}
-          {!transparent && (
+          {!transparent && !pageBar && (
             <span
               className="lg:hidden pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-base font-semibold tracking-[0.2em] uppercase"
               style={{ fontFamily: "var(--font-heading)" }}
@@ -466,6 +486,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               out of sight, so its unread count, sound and live updates keep running;
               search stays mounted so ☰ → Search opens its sheet. */}
           <div className="flex items-center lg:hidden">
+            {pageBar?.actions}
             {user && <div className="hidden"><NotificationBell /></div>}
             {user && <GlobalSearch hideTrigger />}
             {user && <MobileTopMenu />}

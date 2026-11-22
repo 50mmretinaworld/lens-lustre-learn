@@ -44,7 +44,11 @@ function refusalMessage(e: unknown): string {
   return "Couldn't save that — try again.";
 }
 
-export default function FavouriteMuteButtons({ viewerId, authorId, authorName }: { viewerId: string | null | undefined; authorId: string; authorName?: string | null }) {
+/**
+ * The ONE favourite / mute logic for a member's profile (Owner 22 Nov 2026: after Follow, the SAME button becomes
+ * Favourite — profile/VisitorActions uses this; the old separate ★ button below keeps working where it is still used).
+ */
+export function useAuthorPrefs(viewerId: string | null | undefined, authorId: string, authorName?: string | null) {
   const qc = useQueryClient();
   const key = authorPrefsKey(viewerId, authorId);
   // Shown only to members the personal_feed switch includes (review #466 B1):
@@ -52,11 +56,8 @@ export default function FavouriteMuteButtons({ viewerId, authorId, authorName }:
   const allowed = useFeatureAllowed("personal_feed");
   const enabled = allowed && !!viewerId && viewerId !== authorId;
   const { data } = useQuery({ queryKey: key, enabled, queryFn: () => readPrefs(viewerId!, authorId), staleTime: 60_000 });
-  if (!enabled) return null;
   const prefs: Prefs = data ?? { favourite: false, muted: mutedThisSession(authorId) };
-
   const set = (patch: Partial<Prefs>) => qc.setQueryData<Prefs>(key, (old) => ({ ...(old ?? prefs), ...patch }));
-
   const toggleFavourite = () => {
     const next = !prefs.favourite;
     set({ favourite: next });
@@ -68,7 +69,6 @@ export default function FavouriteMuteButtons({ viewerId, authorId, authorName }:
       toast({ title: refusalMessage(e), variant: "destructive" });
     });
   };
-
   const unmute = () => {
     set({ muted: false });
     forgetMute(authorId);
@@ -79,6 +79,13 @@ export default function FavouriteMuteButtons({ viewerId, authorId, authorName }:
       toast({ title: refusalMessage(e), variant: "destructive" });
     });
   };
+  return { enabled, loaded: data !== undefined, prefs, toggleFavourite, unmute };
+}
+
+export default function FavouriteMuteButtons({ viewerId, authorId, authorName }: { viewerId: string | null | undefined; authorId: string; authorName?: string | null }) {
+  const { enabled, loaded, prefs, toggleFavourite, unmute } = useAuthorPrefs(viewerId, authorId, authorName);
+  if (!enabled) return null;
+  const data = loaded ? prefs : undefined;
 
   const btn = "inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 border transition-all duration-300 disabled:opacity-50";
   return (

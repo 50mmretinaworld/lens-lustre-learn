@@ -7,7 +7,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLink from "@/components/ProfileLink";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, ImagePlus, Loader2, Search, SendHorizontal, Smile, X } from "lucide-react";
+import { Clock, Copy, ImagePlus, Loader2, Reply, Search, SendHorizontal, Smile, X } from "lucide-react";
+import { useIsOfficial } from "@/hooks/messages/useIsOfficial";
 import { motion } from "framer-motion";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -68,6 +69,8 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
     staleTime: 5 * 60_000,
   });
   const person = entry?.other ?? fetched ?? null;
+  const official = useIsOfficial(otherId);        // 50mm Retina World: never blocked or reported, no "Active … ago", no chips
+  const [menuFor, setMenuFor] = useState<ThreadMessage | null>(null);   // the message held down (its Reply / Copy menu)
 
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +151,17 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
 
   // smart replies: shown only when the last message in this chat is the other person's, and sending is allowed
   const lastMsg = oldestFirst.length ? oldestFirst[oldestFirst.length - 1] : null;
-  const chips = allowed && !viewAs && lastMsg && lastMsg.senderId !== meId && !inRequests ? suggestReplies(lastMsg) : [];
+  // …and never in the official chat, and gone as soon as the member starts typing
+  const chips = allowed && !viewAs && !official && !text && lastMsg && lastMsg.senderId !== meId && !inRequests ? suggestReplies(lastMsg) : [];
+  // Instagram: one status line, under MY LAST message only — "Seen" / "Delivered" / "Sent"
+  const lastMineId = useMemo(() => {
+    for (let i = oldestFirst.length - 1; i >= 0; i--) if (oldestFirst[i].senderId === meId && oldestFirst[i].status === "sent") return oldestFirst[i].id;
+    return null;
+  }, [oldestFirst, meId]);
+  const statusOf = (msg: ThreadMessage) => (msg.id !== lastMineId ? null
+    : msg.tick === "read" ? t("messages.status.seen", "Seen") : msg.tick === "delivered" ? t("messages.status.delivered", "Delivered") : t("messages.status.sent", "Sent"));
+  // a reply to a photo shows that photo small on the quote (WhatsApp), when the original is loaded
+  const photoById = useMemo(() => new Map(oldestFirst.filter((x) => x.photos.length > 0).map((x) => [x.id, x.photos[0].path])), [oldestFirst]);
 
   const addEmoji = (e: string) => {
     const el = areaRef.current;
@@ -189,15 +202,17 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         onBack={onBack}
         actions={convId && !viewAs ? (
           <>
-            <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} onReport={() => setReporting(true)} />
-            <ReportChat conversationId={convId} open={reporting} onOpenChange={setReporting} />
+            <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} onReport={official ? undefined : () => setReporting(true)} canBlock={!official} />
+            {!official && <ReportChat conversationId={convId} open={reporting} onOpenChange={setReporting} />}
           </>
         ) : undefined}
       >
         {/* Owner 21 Nov: tapping the picture or the name opens that member's profile */}
         {(() => {
-          const sub = (peer.text || person?.username)
-            ? <span data-testid="peer-status">{peer.text && <span className={peer.online ? "text-green-500" : ""}>{peer.text}</span>}{peer.text && person?.username ? " · " : ""}{person?.username ? `@${person.username}` : ""}</span>
+          // the official account shows its @handle only (no "Active … ago"); a member: "Active now" or "@handle" — never a dangling "·"
+          const presence = official ? null : peer.text;
+          const sub = (presence || person?.username)
+            ? <span data-testid="peer-status">{presence ? <span className={peer.online ? "text-green-500" : ""}>{presence}</span> : `@${person?.username}`}</span>
             : undefined;
           const head = (
             <>
@@ -253,13 +268,16 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
               key={it.key} m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last}
               onReply={allowed && !viewAs && !inRequests ? (msg) => { setReplyTo(msg); areaRef.current?.focus(); } : undefined}
               onJump={jumpTo} nameOf={quoteName}
+              status={statusOf(it.m)}
+              quotePhotoPath={it.m.reply?.photo ? photoById.get(it.m.reply.id) ?? null : null}
+              onLongPress={viewAs ? undefined : setMenuFor}
             />
           ),
         )}
         {queued.map((q) => (
           <div key={q.id} data-testid="queued-message" className="mt-[2px] flex flex-col items-end px-3">
             <div className="max-w-[78%] whitespace-pre-wrap break-words rounded-[18px] bg-primary/60 px-3 py-[7px] text-[14px] leading-[1.4] text-primary-foreground sm:max-w-[65%]">{q.body}</div>
-            <span className="mt-0.5 flex items-center gap-1 px-1 text-[10.5px] text-muted-foreground"><Clock aria-hidden className="h-3 w-3" />{t("messages.waitingNetwork", "Waiting for network")}</span>
+            <span className="mt-0.5 flex items-center gap-1 px-1 text-[11px] text-muted-foreground"><Clock aria-hidden className="h-3 w-3" />{t("messages.waitingNetwork", "Waiting for network")}</span>
           </div>
         ))}
         {live.typing && <TypingDots name={person?.fullName} />}
@@ -285,8 +303,8 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           {replyTo && (
             <div data-testid="reply-bar" className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-primary bg-foreground/[0.06] px-2.5 py-1.5">
               <div className="min-w-0 flex-1 text-[13px]">
-                <p className="flex min-w-0 items-center gap-1 text-[11px] font-bold text-primary"><span className="truncate">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</span><AutoBadge userId={replyTo.senderId} only="verified" /></p>
-                <p className="line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">{replyTo.body || (replyTo.photos.length > 0 ? "📷 Photo" : "")}</p>
+                <p className="truncate text-[12px] font-semibold text-primary">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</p>
+                <p className="line-clamp-1 whitespace-pre-wrap break-words text-muted-foreground">{replyTo.body || (replyTo.photos.length > 0 ? t("messages.photo", "Photo") : "")}</p>
               </div>
               <button type="button" onClick={() => setReplyTo(null)} aria-label={t("messages.cancelReply", "Cancel reply")} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/10">
                 <X className="h-4 w-4" />
@@ -346,14 +364,39 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
               className={MSG.composerInput}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void onSend(); } }}
             />
-            <button
-              type="button"
-              onClick={() => void onSend()}
-              disabled={busy || !text.trim()}
-              aria-label={t("messages.send", "Send")}
-              className={MSG.sendBtn}
-            >
-              {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+            {/* Send appears only once there is something to send (Instagram / WhatsApp) */}
+            {(text.trim() || send.isPending) && (
+              <button
+                type="button"
+                onClick={() => void onSend()}
+                disabled={busy || !text.trim()}
+                aria-label={t("messages.send", "Send")}
+                className={MSG.sendBtn}
+              >
+                {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Hold a message (phone) / right-click (computer): its own small menu, from the bottom like WhatsApp */}
+      {menuFor && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-black/40" onClick={() => setMenuFor(null)} data-testid="message-menu">
+          <div className="w-full rounded-t-2xl border-t border-border bg-background pb-[max(8px,env(safe-area-inset-bottom))] pt-1.5" onClick={(e) => e.stopPropagation()}>
+            <p className="line-clamp-2 px-4 pb-1.5 pt-1 text-[12px] text-muted-foreground">{menuFor.body || t("messages.photo", "Photo")}</p>
+            {allowed && !inRequests && (
+              <button type="button" className="flex h-12 w-full items-center gap-3 px-4 text-left text-[15px] hover:bg-foreground/5" onClick={() => { setReplyTo(menuFor); setMenuFor(null); areaRef.current?.focus(); }}>
+                <Reply className="h-5 w-5" />{t("messages.reply", "Reply")}
+              </button>
+            )}
+            {menuFor.body && (
+              <button type="button" className="flex h-12 w-full items-center gap-3 px-4 text-left text-[15px] hover:bg-foreground/5" onClick={() => { void navigator.clipboard?.writeText(menuFor.body).catch(() => undefined); setMenuFor(null); }}>
+                <Copy className="h-5 w-5" />{t("messages.copy", "Copy")}
+              </button>
+            )}
+            <button type="button" className="flex h-12 w-full items-center gap-3 px-4 text-left text-[15px] text-muted-foreground hover:bg-foreground/5" onClick={() => setMenuFor(null)}>
+              <X className="h-5 w-5" />{t("common.cancel", "Cancel")}
             </button>
           </div>
         </div>
