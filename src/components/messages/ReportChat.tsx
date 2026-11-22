@@ -4,7 +4,7 @@
  * keeps it that way). Only reported chats reach the admins — there is no approval queue.
  */
 import { useState } from "react";
-import { Flag, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,9 +12,10 @@ import { toast } from "@/hooks/core/use-toast";
 import { useT } from "@/i18n/I18nContext";
 import { reportConversation, type ReportReason } from "@/lib/messages/api";
 
-export default function ReportChat({ conversationId }: { conversationId: string }) {
+/** Opened from the chat's ⋯ menu ("Report this chat") — no button of its own in the header (Owner 22 Nov: one menu, not three icons). */
+export default function ReportChat({ conversationId, open, onOpenChange }: { conversationId: string; open: boolean; onOpenChange: (open: boolean) => void }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
+  const setOpen = onOpenChange;
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,10 +44,6 @@ export default function ReportChat({ conversationId }: { conversationId: string 
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label={t("messages.report.open", "Report this chat")}
-        className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
-        <Flag className="h-5 w-5" />
-      </button>
       <Dialog open={open} onOpenChange={(o) => { if (!busy) setOpen(o); }}>
         <DialogContent>
           <DialogHeader>

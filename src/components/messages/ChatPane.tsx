@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLink from "@/components/ProfileLink";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, ImagePlus, Loader2, Search, SendHorizontal, Smile, UserRound, X } from "lucide-react";
+import { Clock, ImagePlus, Loader2, Search, SendHorizontal, Smile, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -20,7 +20,8 @@ import { groupChat } from "@/lib/messages/format";
 import { suggestReplies } from "@/lib/messages/suggest";
 import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { useChatLive } from "@/hooks/messages/useChatLive";
-import { HelplineCard, MessageBubble, PersonAvatar, TypingDots, headingFont, refusalText } from "@/components/messages/MessageParts";
+import { HelplineCard, MessageBubble, PersonAvatar, TypingDots, refusalText } from "@/components/messages/MessageParts";
+import { ChatHeader, DaySeparator, HeaderTitle, MSG } from "@/components/messages/ui";
 import ReportChat from "@/components/messages/ReportChat";
 import ChatMenu from "@/components/messages/ChatMenu";
 import AutoBadge from "@/components/AutoBadge";
@@ -54,6 +55,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const thread = useThread(convId);
   const oldestFirst = useMemo(() => [...(thread.data ?? [])].reverse(), [thread.data]);
   const [searching, setSearching] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [searchText, setSearchText] = useState("");
   const needle = searchText.trim().toLowerCase();
   const shown = useMemo(() => (needle ? oldestFirst.filter((m) => m.body.toLowerCase().includes(needle)) : oldestFirst), [oldestFirst, needle]);
@@ -182,74 +184,70 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const peer = usePeerStatus(otherId, !viewAs);   // "Active now" / "Active 12 m ago" (Owner 21 Nov, Meta style)
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-gradient-to-b from-background to-muted/30">
-      <header className="flex items-center gap-3 border-b border-border/70 bg-background/80 px-3 py-2.5 backdrop-blur">
-        <button type="button" onClick={onBack} aria-label={t("common.back", "Back")} className="grid h-11 w-11 place-items-center rounded-full text-foreground hover:bg-foreground/5 lg:hidden">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <ChatHeader
+        onBack={onBack}
+        actions={convId && !viewAs ? (
+          <>
+            <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} onReport={() => setReporting(true)} />
+            <ReportChat conversationId={convId} open={reporting} onOpenChange={setReporting} />
+          </>
+        ) : undefined}
+      >
         {/* Owner 21 Nov: tapping the picture or the name opens that member's profile */}
         {(() => {
+          const sub = (peer.text || person?.username)
+            ? <span data-testid="peer-status">{peer.text && <span className={peer.online ? "text-green-500" : ""}>{peer.text}</span>}{peer.text && person?.username ? " · " : ""}{person?.username ? `@${person.username}` : ""}</span>
+            : undefined;
           const head = (
             <>
-              <PersonAvatar person={person} size={42} showOnline />
-              <div className="min-w-0 flex-1">
-                <h2 className="flex min-w-0 items-center gap-1 text-base font-bold leading-tight" style={headingFont}><span className="truncate">{name}</span>{otherId && <AutoBadge userId={otherId} only="verified" />}</h2>
-                {(peer.text || person?.username) && <p className="truncate text-xs text-muted-foreground" data-testid="peer-status">{peer.text && <span className={peer.online ? "font-medium text-green-500" : ""}>{peer.text}</span>}{peer.text && person?.username ? " · " : ""}{person?.username ? `@${person.username}` : ""}</p>}
-              </div>
+              <PersonAvatar person={person} size={34} showOnline />
+              <HeaderTitle title={name} sub={sub} badge={otherId ? <AutoBadge userId={otherId} only="verified" /> : undefined} />
             </>
           );
           return otherId
-            ? <ProfileLink userId={otherId} handle={person?.username} aria-label={name} data-testid="chat-header-profile" className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left hover:opacity-90">{head}</ProfileLink>
-            : <div className="flex min-w-0 flex-1 items-center gap-3">{head}</div>;
+            ? <ProfileLink userId={otherId} handle={person?.username} aria-label={name} data-testid="chat-header-profile" className="flex min-w-0 flex-1 items-center gap-2.5 text-left hover:opacity-90">{head}</ProfileLink>
+            : <div className="flex min-w-0 flex-1 items-center gap-2.5">{head}</div>;
         })()}
-        {convId && !viewAs && <ReportChat conversationId={convId} />}
-        {convId && !viewAs && <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} />}
-        {otherId && (
-          <ProfileLink userId={otherId} handle={person?.username} aria-label={t("messages.viewProfile", "View profile")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
-            <UserRound className="h-5 w-5" />
-          </ProfileLink>
-        )}
-      </header>
+      </ChatHeader>
 
       {searching && (
-        <div data-testid="chat-search" className="flex items-center gap-2 border-b border-border/70 bg-background/80 px-3 py-2">
+        <div data-testid="chat-search" className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
           <Search aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             autoFocus value={searchText} onChange={(e) => setSearchText(e.target.value)} maxLength={100}
             placeholder={t("messages.searchPlaceholder", "Search messages in this chat")}
             aria-label={t("messages.searchChat", "Search in this chat")}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
           />
           {needle && <span className="shrink-0 text-xs text-muted-foreground">{shown.length}</span>}
-          <button type="button" onClick={() => { setSearching(false); setSearchText(""); }} aria-label={t("common.close", "Close")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={() => { setSearching(false); setSearchText(""); }} aria-label={t("common.close", "Close")} className={MSG.iconBtn}><X className="h-4 w-4" /></button>
         </div>
       )}
 
       {inRequests && convId && !viewAs && (
-        <div data-testid="request-bar" className="mx-3 mt-3 rounded-3xl border border-border bg-background p-4 shadow-sm">
-          <p className="text-sm font-semibold" style={headingFont}>{t("messages.request.title", "Message request")}</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t("messages.request.note", "You don't follow this person. Accept to move this chat to your Chats.")}</p>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => accept.mutate(convId)} className="flex-1 rounded-full bg-gradient-to-br from-primary to-amber-400 py-2 text-sm font-bold text-white">{t("messages.request.accept", "Accept")}</button>
-            <button type="button" onClick={() => decline.mutate(convId, { onSuccess: () => navigate("/messages", { replace: true }) })} className="flex-1 rounded-full bg-muted py-2 text-sm font-semibold">{t("messages.request.decline", "Decline")}</button>
+        <div data-testid="request-bar" className="shrink-0 border-b border-border bg-foreground/[0.03] px-4 py-3">
+          <p className="text-[13px] font-semibold">{t("messages.request.title", "Message request")}</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">{t("messages.request.note", "You don't follow this person. Accept to move this chat to your Chats.")}</p>
+          <div className="mt-2.5 flex gap-2">
+            <button type="button" onClick={() => accept.mutate(convId)} className={`${MSG.pill} flex-1 bg-primary text-primary-foreground hover:bg-primary/90`}>{t("messages.request.accept", "Accept")}</button>
+            <button type="button" onClick={() => decline.mutate(convId, { onSuccess: () => navigate("/messages/requests", { replace: true }) })} className={`${MSG.pill} flex-1 bg-foreground/[0.08] text-foreground hover:bg-foreground/[0.12]`}>{t("messages.request.decline", "Decline")}</button>
           </div>
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-3 pt-1" aria-live="polite">
+      <div className={`${MSG.scroll} pb-2`} aria-live="polite">
         {thread.isLoading && convId && <p className="py-10 text-center text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>}
         {!thread.isLoading && items.length === 0 && (
-          <div className="px-8 py-20 text-center">
-            <PersonAvatar person={person} size={72} />
-            <p className="mt-3 text-base font-semibold" style={headingFont}>{name}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t("messages.thread.empty", "Say hello and start the conversation.")}</p>
+          <div className="flex flex-col items-center px-8 py-16 text-center">
+            <PersonAvatar person={person} size={64} />
+            <p className="mt-2.5 text-[15px] font-semibold">{name}</p>
+            <p className="mt-0.5 text-[13px] text-muted-foreground">{t("messages.thread.empty", "Say hello and start the conversation.")}</p>
           </div>
         )}
         {items.map((it) =>
           it.type === "day" ? (
-            <div key={it.key} className="flex justify-center pt-4">
-              <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-muted-foreground">{it.label}</span>
-            </div>
+            <DaySeparator key={it.key} label={it.label} />
           ) : (
             <MessageBubble
               key={it.key} m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last}
@@ -259,9 +257,9 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           ),
         )}
         {queued.map((q) => (
-          <div key={q.id} data-testid="queued-message" className="mt-1 flex flex-col items-end px-4">
-            <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-[22px] rounded-br-md bg-primary/60 px-3.5 py-2 text-[15px] leading-[1.35] text-primary-foreground sm:max-w-[68%]">{q.body}</div>
-            <span className="mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground"><Clock aria-hidden className="h-3 w-3" />{t("messages.waitingNetwork", "Waiting for network")}</span>
+          <div key={q.id} data-testid="queued-message" className="mt-[2px] flex flex-col items-end px-3">
+            <div className="max-w-[78%] whitespace-pre-wrap break-words rounded-[18px] bg-primary/60 px-3 py-[7px] text-[14px] leading-[1.4] text-primary-foreground sm:max-w-[65%]">{q.body}</div>
+            <span className="mt-0.5 flex items-center gap-1 px-1 text-[10.5px] text-muted-foreground"><Clock aria-hidden className="h-3 w-3" />{t("messages.waitingNetwork", "Waiting for network")}</span>
           </div>
         ))}
         {live.typing && <TypingDots name={person?.fullName} />}
@@ -270,33 +268,33 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       </div>
 
       {viewAs ? (
-        <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="view-as-note">
+        <p className={MSG.note} data-testid="view-as-note">
           Read-only view of {viewAs.name}'s chat. Nothing you do here is sent or marked as read.
         </p>
       ) : entry?.announcementOnly ? (
-        <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="announcement-only-note">
+        <p className={MSG.note} data-testid="announcement-only-note">
           {t("messages.announcementOnly", "Only 50mm Retina World can write in this chat. You can read it here.")}
         </p>
       ) : !allowed ? (
-        <p className="border-t border-border/70 bg-background/80 px-4 py-3.5 text-center text-sm text-muted-foreground" data-testid="send-off-note">
+        <p className={MSG.note} data-testid="send-off-note">
           {t("messages.sendOff", "Sending messages isn't available for your account. You can still read your chats.")}
         </p>
       ) : (
-        <div className="relative bg-background/80 px-3 pb-3 pt-2 backdrop-blur">
-          {error && <p role="alert" className="mb-2 px-3 text-xs font-medium text-destructive">{error}</p>}
+        <div className={MSG.composerWrap}>
+          {error && <p role="alert" className="mb-1.5 px-2 text-xs font-medium text-destructive">{error}</p>}
           {replyTo && (
-            <div data-testid="reply-bar" className="mb-2 flex items-center gap-2 rounded-2xl border-l-4 border-primary bg-muted/70 px-3 py-2">
-              <div className="min-w-0 flex-1 text-sm">
-                <p className="flex min-w-0 items-center gap-1 text-xs font-bold text-primary"><span className="truncate">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</span><AutoBadge userId={replyTo.senderId} only="verified" /></p>
+            <div data-testid="reply-bar" className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-primary bg-foreground/[0.06] px-2.5 py-1.5">
+              <div className="min-w-0 flex-1 text-[13px]">
+                <p className="flex min-w-0 items-center gap-1 text-[11px] font-bold text-primary"><span className="truncate">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</span><AutoBadge userId={replyTo.senderId} only="verified" /></p>
                 <p className="line-clamp-2 whitespace-pre-wrap break-words text-muted-foreground">{replyTo.body || (replyTo.photos.length > 0 ? "📷 Photo" : "")}</p>
               </div>
-              <button type="button" onClick={() => setReplyTo(null)} aria-label={t("messages.cancelReply", "Cancel reply")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/10">
+              <button type="button" onClick={() => setReplyTo(null)} aria-label={t("messages.cancelReply", "Cancel reply")} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/10">
                 <X className="h-4 w-4" />
               </button>
             </div>
           )}
           {chips.length > 0 && (
-            <div data-testid="smart-replies" className="-mx-3 mb-2 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label={t("messages.suggested", "Suggested replies")}>
+            <div data-testid="smart-replies" className="-mx-3 mb-1.5 flex gap-1.5 overflow-x-auto px-3 scrollbar-hide" aria-label={t("messages.suggested", "Suggested replies")}>
               {chips.map((c, i) => (
                 <motion.button
                   key={c}
@@ -307,7 +305,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
                   whileTap={{ scale: 0.94 }}
                   onClick={() => void sendText(c, false)}
                   disabled={busy}
-                  className="h-11 shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-4 text-sm font-semibold text-foreground hover:bg-primary/15 disabled:opacity-50"
+                  className={`${MSG.pill} border border-border bg-background font-medium text-foreground hover:bg-muted`}
                 >
                   {c}
                 </motion.button>
@@ -315,28 +313,28 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
             </div>
           )}
           {picker && (
-            <div data-testid="emoji-picker" className="absolute inset-x-3 bottom-full mb-2 rounded-3xl border border-border bg-background p-2 shadow-xl">
+            <div data-testid="emoji-picker" className="absolute inset-x-3 bottom-full mb-2 rounded-2xl border border-border bg-background p-1.5 shadow-xl">
               <div role="tablist" className="mb-1 flex gap-1 px-1">
                 {EMOJI_SETS.map((s, i) => (
                   <button key={s.id} type="button" role="tab" aria-selected={pickerTab === i} aria-label={s.label} onClick={() => setPickerTab(i)}
-                    className={`grid h-11 flex-1 place-items-center rounded-2xl text-xl ${pickerTab === i ? "bg-primary/15" : "hover:bg-foreground/5"}`}>{s.icon}</button>
+                    className={`grid h-9 flex-1 place-items-center rounded-xl text-lg ${pickerTab === i ? "bg-primary/15" : "hover:bg-foreground/5"}`}>{s.icon}</button>
                 ))}
               </div>
-              <div className="grid max-h-56 grid-cols-6 gap-0.5 overflow-y-auto sm:grid-cols-8">
+              <div className="grid max-h-52 grid-cols-7 gap-0.5 overflow-y-auto scrollbar-hide sm:grid-cols-9">
                 {EMOJI_SETS[pickerTab].items.map((e) => (
                   <motion.button key={e} type="button" aria-label={e} onClick={() => addEmoji(e)} whileHover={{ scale: 1.3, rotate: [0, -10, 10, 0] }} whileTap={{ scale: 0.85 }}
-                    className="grid h-11 w-full place-items-center rounded-xl text-[26px] hover:bg-foreground/5">{e}</motion.button>
+                    className="grid h-9 w-full place-items-center rounded-lg text-[22px] hover:bg-foreground/5">{e}</motion.button>
                 ))}
               </div>
             </div>
           )}
-          <div className="flex items-end gap-1.5 rounded-[30px] border border-border bg-background p-1.5 shadow-sm focus-within:ring-2 focus-within:ring-primary/60">
+          <div className={MSG.composerPill}>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" multiple hidden onChange={(e) => void onPickPhotos(e.target.files)} />
-            <button type="button" onClick={() => setPicker((p) => !p)} aria-label={t("messages.emoji", "Emoji")} aria-expanded={picker} className={`grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-foreground/5 ${picker ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-primary"}`}>
-              <Smile className="h-6 w-6" />
+            <button type="button" onClick={() => setPicker((p) => !p)} aria-label={t("messages.emoji", "Emoji")} aria-expanded={picker} className={`${MSG.composerIcon} ${picker ? "text-primary" : ""}`}>
+              <Smile className="h-5 w-5" />
             </button>
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t("messages.addPhoto", "Add photo")} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-primary disabled:opacity-50">
-              {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t("messages.addPhoto", "Add photo")} className={MSG.composerIcon}>
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
             </button>
             <textarea
               ref={areaRef}
@@ -345,7 +343,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
               rows={1}
               placeholder={t("messages.placeholder", "Message…")}
               aria-label={t("messages.placeholder", "Message…")}
-              className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-1.5 py-3 text-[15px] leading-5 placeholder:text-muted-foreground focus:outline-none"
+              className={MSG.composerInput}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void onSend(); } }}
             />
             <button
@@ -353,9 +351,9 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
               onClick={() => void onSend()}
               disabled={busy || !text.trim()}
               aria-label={t("messages.send", "Send")}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-amber-400 text-white shadow-md shadow-primary/30 transition-opacity disabled:opacity-40 disabled:shadow-none"
+              className={MSG.sendBtn}
             >
-              {send.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
+              {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
             </button>
           </div>
         </div>

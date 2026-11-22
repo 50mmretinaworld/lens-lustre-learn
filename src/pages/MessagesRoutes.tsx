@@ -16,7 +16,8 @@ import ConversationList from "@/components/messages/ConversationList";
 import ChatPane from "@/components/messages/ChatPane";
 import GroupChatPane from "@/components/messages/GroupChatPane";
 import { useChatKind } from "@/hooks/messages/useChatKind";
-import { headingFont } from "@/components/messages/MessageParts";
+import { goBackOrFeed } from "@/lib/navigationContract";
+import { inAppHistoryDepth } from "@/hooks/core/useAndroidBackButton";
 import type { MessageFolder } from "@/lib/messages/api";
 
 const FOLDER_SEGMENTS: Record<string, MessageFolder> = { requests: "requests" };
@@ -42,14 +43,15 @@ export default function MessagesRoutes() {
   const back = () => navigate(folderPath(folder));
 
   return (
-    <div className="mx-auto h-[calc(100dvh-7.5rem)] w-full max-w-[1180px] lg:h-[calc(100dvh-6.5rem)] lg:px-4 lg:py-3">
-      <div className="flex h-full overflow-hidden bg-background lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl lg:shadow-black/10">
-        <section aria-label={t("messages.title", "Messages")} className={`${hasChat ? "hidden lg:block" : "block"} h-full w-full shrink-0 lg:w-[380px] lg:border-r lg:border-border`}>
+    <div className="mx-auto h-[calc(100dvh-7.5rem)] w-full max-w-[1100px] lg:h-[calc(100dvh-6.5rem)] lg:px-4 lg:py-3">
+      <div className="flex h-full overflow-hidden bg-background lg:rounded-2xl lg:border lg:border-border">
+        <section aria-label={t("messages.title", "Messages")} className={`${hasChat ? "hidden lg:block" : "block"} h-full w-full shrink-0 lg:w-[340px] lg:border-r lg:border-border`}>
           <ConversationList
             activeId={chatId}
             folder={folder}
             onFolder={(f) => navigate(folderPath(f))}
             onOpen={(id) => navigate(`/messages/${id}`, { state: { folder } })}
+            onBack={() => goBackOrFeed(navigate, inAppHistoryDepth())}
           />
         </section>
         <section className={`${hasChat ? "block" : "hidden lg:block"} h-full min-w-0 flex-1`}>
@@ -60,11 +62,11 @@ export default function MessagesRoutes() {
               : kind === "direct" ? <ChatPane key={chatId} conversationId={chatId} userId={null} onBack={back} />
               : <div className="grid h-full place-items-center" data-testid="chat-kind-loading"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} /></div>
           ) : (
-            <div className="grid h-full place-items-center bg-gradient-to-b from-background to-muted/30 px-8 text-center">
+            <div className="grid h-full place-items-center px-8 text-center">
               <div>
-                <span className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-primary/15 to-amber-400/15 text-primary"><MessageCircle className="h-9 w-9" /></span>
-                <h2 className="text-xl font-bold" style={headingFont}>{t("messages.empty.pane.title", "Your messages")}</h2>
-                <p className="mx-auto mt-1.5 max-w-[32ch] text-sm text-muted-foreground">{t("messages.empty.pane.text", "Pick a chat on the left, or open a profile you follow and tap the message icon.")}</p>
+                <MessageCircle className="mx-auto mb-3 h-12 w-12 text-muted-foreground/70" strokeWidth={1.25} />
+                <h2 className="text-[17px] font-bold">{t("messages.empty.pane.title", "Your messages")}</h2>
+                <p className="mx-auto mt-1 max-w-[32ch] text-[13px] text-muted-foreground">{t("messages.empty.pane.text", "Pick a chat on the left, or open a profile you follow and tap the message icon.")}</p>
               </div>
             </div>
           )}

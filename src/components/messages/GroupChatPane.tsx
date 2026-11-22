@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, LogOut, MoreVertical, SendHorizontal, UserPlus, Users, X } from "lucide-react";
+import { Loader2, LogOut, MoreVertical, SendHorizontal, UserPlus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -20,7 +20,8 @@ import { useChatLive } from "@/hooks/messages/useChatLive";
 import { groupAddMember, groupLeave, groupRemoveMember, sendGroupMessage } from "@/lib/messages/groups";
 import { MessageSendError } from "@/lib/messages/api";
 import { groupChat } from "@/lib/messages/format";
-import { HelplineCard, MessageBubble, PersonAvatar, headingFont, refusalText } from "@/components/messages/MessageParts";
+import { HelplineCard, MessageBubble, PersonAvatar, refusalText } from "@/components/messages/MessageParts";
+import { ChatHeader, DaySeparator, HeaderTitle, MSG } from "@/components/messages/ui";
 import AutoBadge from "@/components/AutoBadge";
 
 function MembersDialog({ conversationId, open, onOpenChange, meId }: { conversationId: string; open: boolean; onOpenChange: (o: boolean) => void; meId: string | undefined }) {
@@ -142,40 +143,40 @@ export default function GroupChatPane({ conversationId, onBack }: { conversation
   const count = members.data?.length;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-gradient-to-b from-background to-muted/30" data-testid="group-chat">
-      <header className="flex items-center gap-3 border-b border-border/70 bg-background/80 px-3 py-2.5 backdrop-blur">
-        <button type="button" onClick={onBack} aria-label={t("common.back", "Back")} className="grid h-11 w-11 place-items-center rounded-full text-foreground hover:bg-foreground/5 lg:hidden"><ArrowLeft className="h-5 w-5" /></button>
-        <button type="button" onClick={() => setShowMembers(true)} className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left hover:opacity-90" data-testid="group-header">
-          <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/20 to-amber-400/20 text-primary"><Users className="h-5 w-5" aria-hidden="true" /></span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-base font-bold leading-tight" style={headingFont}>{title}</span>
-            <span className="block truncate text-xs text-muted-foreground">{count ? t("messages.group.count", "{n} members").replace("{n}", String(count)) : t("messages.group.members", "Members")}</span>
-          </span>
+    <div className="flex h-full min-h-0 flex-col bg-background" data-testid="group-chat">
+      <ChatHeader
+        onBack={onBack}
+        actions={(
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" aria-label={t("messages.menu", "More options")} data-testid="group-menu" className={MSG.iconBtn}><MoreVertical className="h-5 w-5" /></button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[200px]">
+              <DropdownMenuItem className={MSG.menuItem} onSelect={() => setShowMembers(true)}><Users className="h-4 w-4" />{t("messages.group.members", "Members")}</DropdownMenuItem>
+              <DropdownMenuItem
+                className={`${MSG.menuItem} text-destructive focus:text-destructive`} data-testid="group-leave"
+                onSelect={() => { if (window.confirm(t("messages.group.leaveConfirm", "Leave this group? You will stop receiving its messages."))) leave.mutate(); }}
+              ><LogOut className="h-4 w-4" />{t("messages.group.leave", "Leave group")}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      >
+        <button type="button" onClick={() => setShowMembers(true)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left hover:opacity-90" data-testid="group-header">
+          <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-foreground/[0.07] text-muted-foreground"><Users className="h-4 w-4" aria-hidden="true" /></span>
+          <HeaderTitle title={title} sub={count ? t("messages.group.count", "{n} members").replace("{n}", String(count)) : t("messages.group.members", "Members")} />
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" aria-label={t("messages.menu", "More options")} data-testid="group-menu" className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground"><MoreVertical className="h-5 w-5" /></button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[200px]">
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 text-sm" onSelect={() => setShowMembers(true)}><Users className="h-4 w-4" />{t("messages.group.members", "Members")}</DropdownMenuItem>
-            <DropdownMenuItem
-              className="flex cursor-pointer items-center gap-2 text-sm text-destructive focus:text-destructive" data-testid="group-leave"
-              onSelect={() => { if (window.confirm(t("messages.group.leaveConfirm", "Leave this group? You will stop receiving its messages."))) leave.mutate(); }}
-            ><LogOut className="h-4 w-4" />{t("messages.group.leave", "Leave group")}</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </header>
+      </ChatHeader>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-3 pt-1" aria-live="polite">
-        {thread.isLoading && <p className="py-10 text-center text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>}
-        {!thread.isLoading && items.length === 0 && <p className="px-8 py-20 text-center text-sm text-muted-foreground">{t("messages.thread.empty", "Say hello and start the conversation.")}</p>}
+      <div className={`${MSG.scroll} pb-2`} aria-live="polite">
+        {thread.isLoading && <p className="py-10 text-center text-[13px] text-muted-foreground">{t("common.loading", "Loading…")}</p>}
+        {!thread.isLoading && items.length === 0 && <p className="px-8 py-16 text-center text-[13px] text-muted-foreground">{t("messages.thread.empty", "Say hello and start the conversation.")}</p>}
         {items.map((it) =>
           it.type === "day" ? (
-            <div key={it.key} className="flex justify-center pt-4"><span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-muted-foreground">{it.label}</span></div>
+            <DaySeparator key={it.key} label={it.label} />
           ) : (
             <div key={it.key}>
               {it.first && it.m.senderId !== meId && (
-                <p className="flex items-center gap-1 px-5 pt-1.5 text-[11px] font-semibold text-muted-foreground" data-testid="group-sender">{nameOf(it.m.senderId)}<AutoBadge userId={it.m.senderId} only="verified" /></p>
+                <p className="flex items-center gap-1 px-4 pt-2 text-[11px] font-semibold text-muted-foreground" data-testid="group-sender">{nameOf(it.m.senderId)}<AutoBadge userId={it.m.senderId} only="verified" /></p>
               )}
               <MessageBubble m={it.m} mine={it.m.senderId === meId} first={it.first} last={it.last} nameOf={nameOf} />
             </div>
@@ -185,17 +186,17 @@ export default function GroupChatPane({ conversationId, onBack }: { conversation
         <div ref={endRef} />
       </div>
 
-      <div className="border-t border-border/70 bg-background/80 p-2.5 backdrop-blur">
-        {error && <p role="alert" className="px-2 pb-1.5 text-xs text-destructive" data-testid="group-error">{error}</p>}
-        <div className="flex items-end gap-2 rounded-3xl border border-border bg-background px-3 py-1.5">
+      <div className={MSG.composerWrap}>
+        {error && <p role="alert" className="mb-1.5 px-2 text-xs font-medium text-destructive" data-testid="group-error">{error}</p>}
+        <div className={MSG.composerPill}>
           <textarea
             value={text} onChange={(e) => { setText(e.target.value); live.notifyTyping(e.target.value.trim().length > 0); }} rows={1} maxLength={4000}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void sendNow(); } }}
             placeholder={t("messages.placeholder", "Message…")} aria-label={t("messages.placeholder", "Message…")} data-testid="group-input"
-            className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent py-1.5 text-[15px] outline-none placeholder:text-muted-foreground"
+            className={`${MSG.composerInput} pl-2.5`}
           />
           <button type="button" onClick={() => void sendNow()} disabled={!text.trim() || send.isPending} aria-label={t("messages.send", "Send")} data-testid="group-send"
-            className="mb-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-amber-400 text-white disabled:opacity-40">
+            className={MSG.sendBtn}>
             {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
           </button>
         </div>
