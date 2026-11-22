@@ -74,7 +74,8 @@ try {
     const context = await browser.newContext({ viewport, deviceScaleFactor: 2, reducedMotion: "reduce", isMobile: viewport.width < 600, hasTouch: viewport.width < 600, colorScheme: DARK ? "dark" : "light" });
     const page = await context.newPage();
     try {
-      if (DARK) await page.addInitScript(() => { try { localStorage.setItem("theme", "dark"); } catch { /* */ } });
+      // the app's ThemeProvider reads localStorage "theme" (default dark) — set it, or a "light" shot comes out dark
+      await page.addInitScript((mode) => { try { localStorage.setItem("theme", mode); } catch { /* */ } }, DARK ? "dark" : "light");
       // the Favourites switch on, so a profile shows Follow → Favourite as members on that switch see it
       if (name.startsWith("profile-")) await page.addInitScript(() => { globalThis.__harnessFeatures = ["personal_feed"]; globalThis.__harnessLongBio = true; });
       await page.goto(`${BASE}/uiharness.html?scene=${scene}&strict=0`, { waitUntil: "load", timeout: 180000 });

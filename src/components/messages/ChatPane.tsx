@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/core/useAuth";
 import {
   newClientMsgId, useConversationActions, useConversations, useMessagingAllowed, useSendMessage, useSendPhotos, useThread,
 } from "@/hooks/messages/useMessages";
-import { fetchPerson, MessageSendError, type MessagePerson, type ThreadMessage } from "@/lib/messages/api";
+import { fetchPerson, fetchThread, fetchViewThread, MessageSendError, type MessagePerson, type ThreadMessage } from "@/lib/messages/api";
 import { EMOJI_SETS } from "@/lib/messages/emoji";
 import { groupChat } from "@/lib/messages/format";
 import { suggestReplies } from "@/lib/messages/suggest";
@@ -54,7 +54,34 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   }, [userId, existing, navigate]);
 
   const thread = useThread(convId);
-  const oldestFirst = useMemo(() => [...(thread.data ?? [])].reverse(), [thread.data]);
+  // OLDER MESSAGES (Owner 22 Nov 2026): the chat used to show only its newest 50. Scrolling to the top — or tapping a quote
+  // whose original is older — now loads the page before, 50 at a time, until the start of the chat.
+  const [older, setOlder] = useState<ThreadMessage[]>([]);          // oldest first, all before the newest page
+  const [noMore, setNoMore] = useState(false);
+  const loadingOlder = useRef(false);
+  useEffect(() => { setOlder([]); setNoMore(false); }, [convId]);
+  const oldestFirst = useMemo(() => {
+    const latest = [...(thread.data ?? [])].reverse();
+    if (older.length === 0) return latest;
+    const seen = new Set(latest.map((x) => x.id));
+    return [...older.filter((x) => !seen.has(x.id)), ...latest];
+  }, [thread.data, older]);
+  const PAGE = 50;
+  const loadOlder = async (): Promise<boolean> => {
+    if (!convId || noMore || loadingOlder.current || oldestFirst.length < PAGE) return false;
+    loadingOlder.current = true;
+    try {
+      const firstId = oldestFirst[0].id;
+      const page = viewAs ? await fetchViewThread(viewAs.userId, convId, firstId, PAGE) : await fetchThread(convId, firstId, PAGE);
+      if (page.length < PAGE) setNoMore(true);
+      if (page.length > 0) setOlder((o) => [...[...page].reverse(), ...o]);
+      return page.length > 0;
+    } catch {
+      return false;
+    } finally {
+      loadingOlder.current = false;
+    }
+  };
   const [searching, setSearching] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -89,13 +116,39 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const [replyTo, setReplyTo] = useState<ThreadMessage | null>(null);   // the message the next send answers
   useEffect(() => { setReplyTo(null); }, [convId]);
   const quoteName = (senderId: string) => (senderId === meId ? "You" : person?.fullName || "Member");
-  /** Tap a quote: scroll to the original and flash it. */
-  const jumpTo = (id: number) => {
-    const el = document.getElementById(`msg-${id}`);
-    if (!el) return;
+  /** Tap a quote: scroll to the original and flash it — loading older pages first when it is not on screen yet. */
+  const pendingJump = useRef<number | null>(null);
+  const flash = (el: HTMLElement) => {
     el.scrollIntoView({ block: "center", behavior: "smooth" });
     el.classList.add("bg-primary/15");
     window.setTimeout(() => el.classList.remove("bg-primary/15"), 1400);
+  };
+  const jumpTo = (id: number) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) { flash(el); return; }
+    pendingJump.current = id;
+    void loadOlder();
+  };
+  // after an older page arrives: either the quoted message is there now, or load one more page (stops at the chat's start)
+  useEffect(() => {
+    const id = pendingJump.current;
+    if (id === null) return;
+    const el = document.getElementById(`msg-${id}`);
+    if (el) { pendingJump.current = null; flash(el); return; }
+    if (noMore) { pendingJump.current = null; return; }
+    void loadOlder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when a page has been added
+  }, [older, noMore]);
+  /** Scrolled to the top: the page before, keeping the reader's place. */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const onThreadScroll = () => {
+    const box = scrollRef.current;
+    if (!box || box.scrollTop > 80 || noMore || loadingOlder.current) return;
+    const before = box.scrollHeight;
+    void loadOlder().then((added) => {
+      if (!added) return;
+      window.requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop += scrollRef.current.scrollHeight - before; });
+    });
   };
   const queued = useMessageQueue(viewAs ? undefined : user?.id, otherId);   // texts written with no network, waiting to be sent
   const live = useChatLive(convId, user?.id, !viewAs);   // typing dots + instant refresh; an admin's read-only view never joins
@@ -251,7 +304,12 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         </div>
       )}
 
-      <div className={`${MSG.scroll} pb-2`} aria-live="polite">
+      <div ref={scrollRef} onScroll={onThreadScroll} className={`${MSG.scroll} pb-2`} aria-live="polite">
+        {!noMore && oldestFirst.length >= PAGE && (
+          <button type="button" onClick={() => void loadOlder()} className="mx-auto mt-2 block text-[12px] font-medium text-muted-foreground hover:text-foreground" data-testid="load-older">
+            {t("messages.loadOlder", "Load earlier messages")}
+          </button>
+        )}
         {thread.isLoading && convId && <p className="py-10 text-center text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>}
         {!thread.isLoading && items.length === 0 && (
           <div className="flex flex-col items-center px-8 py-16 text-center">

@@ -17947,6 +17947,20 @@
   ],
   "screen-wall-visitor--android-360": [
     {
+      "path": "button.-ml-1.5.grid",
+      "w": 44,
+      "h": 44,
+      "reachable": true,
+      "options": null
+    },
+    {
+      "path": "button#radix-_r_10_.grid.h-11",
+      "w": 44,
+      "h": 44,
+      "reachable": true,
+      "options": null
+    },
+    {
       "path": "button.relative.grid",
       "w": 44,
       "h": 44,
@@ -17954,13 +17968,6 @@
       "options": null
     },
     {
-      "path": "button#radix-_r_m_.grid.min-h-11",
-      "w": 44,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
-    {
       "path": "button.flex.min-h-11",
       "w": 60,
       "h": 44,
@@ -17969,29 +17976,22 @@
     },
     {
       "path": "button.flex.min-h-11",
-      "w": 60,
+      "w": 59,
       "h": 44,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 118,
+      "w": 159,
       "h": 36,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 114,
+      "w": 159,
       "h": 36,
-      "reachable": true,
-      "options": null
-    },
-    {
-      "path": "button.inline-flex.items-center",
-      "w": 75,
-      "h": 35,
       "reachable": true,
       "options": null
     },
@@ -18018,7 +18018,14 @@
     },
     {
       "path": "a.font-semibold.tracking-[0.15em]",
-      "w": 76,
+      "w": 77,
+      "h": 17,
+      "reachable": null,
+      "options": null
+    },
+    {
+      "path": "a.hover:text-primary.transition-colors",
+      "w": 119,
       "h": 17,
       "reachable": null,
       "options": null
@@ -18041,39 +18048,53 @@
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 48,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "button.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     }
   ],
   "screen-wall-visitor--iphone-390": [
+    {
+      "path": "button.-ml-1.5.grid",
+      "w": 44,
+      "h": 44,
+      "reachable": true,
+      "options": null
+    },
+    {
+      "path": "button#radix-_r_10_.grid.h-11",
+      "w": 44,
+      "h": 44,
+      "reachable": true,
+      "options": null
+    },
     {
       "path": "button.relative.grid",
       "w": 44,
@@ -18082,13 +18103,6 @@
       "options": null
     },
     {
-      "path": "button#radix-_r_m_.grid.min-h-11",
-      "w": 44,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
-    {
       "path": "button.flex.min-h-11",
       "w": 60,
       "h": 44,
@@ -18097,29 +18111,22 @@
     },
     {
       "path": "button.flex.min-h-11",
-      "w": 60,
+      "w": 59,
       "h": 44,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 128,
+      "w": 171,
       "h": 36,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 128,
+      "w": 171,
       "h": 36,
-      "reachable": true,
-      "options": null
-    },
-    {
-      "path": "button.inline-flex.items-center",
-      "w": 75,
-      "h": 35,
       "reachable": true,
       "options": null
     },
@@ -18146,7 +18153,14 @@
     },
     {
       "path": "a.font-semibold.tracking-[0.15em]",
-      "w": 76,
+      "w": 77,
+      "h": 17,
+      "reachable": null,
+      "options": null
+    },
+    {
+      "path": "a.hover:text-primary.transition-colors",
+      "w": 119,
       "h": 17,
       "reachable": null,
       "options": null
@@ -18169,35 +18183,35 @@
       "path": "a.flex.flex-col",
       "w": 76,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 76,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 76,
       "h": 48,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 76,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "button.flex.flex-col",
       "w": 76,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     }
   ],
@@ -18211,21 +18225,14 @@
     },
     {
       "path": "a.hover:opacity-60.transition-opacity",
-      "w": 93,
+      "w": 94,
       "h": 16,
       "reachable": null,
       "options": null
     },
     {
       "path": "a.hover:opacity-60.transition-opacity",
-      "w": 61,
-      "h": 16,
-      "reachable": null,
-      "options": null
-    },
-    {
-      "path": "a.hover:opacity-60.transition-opacity",
-      "w": 65,
+      "w": 60,
       "h": 16,
       "reachable": null,
       "options": null
@@ -18233,6 +18240,13 @@
     {
       "path": "a.hover:opacity-60.transition-opacity",
       "w": 65,
+      "h": 16,
+      "reachable": null,
+      "options": null
+    },
+    {
+      "path": "a.hover:opacity-60.transition-opacity",
+      "w": 64,
       "h": 16,
       "reachable": null,
       "options": null
@@ -18344,42 +18358,63 @@
     },
     {
       "path": "a.text-xs.font-medium",
-      "w": 35,
+      "w": 34,
       "h": 16,
       "reachable": null,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 118,
+      "w": 177,
       "h": 36,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 88,
+      "w": 177,
       "h": 36,
       "reachable": true,
       "options": null
     },
     {
-      "path": "button.inline-flex.items-center",
-      "w": 75,
-      "h": 35,
+      "path": "button#radix-_r_g_.grid.h-11",
+      "w": 44,
+      "h": 44,
       "reachable": true,
       "options": null
     },
     {
+      "path": "button.rounded-sm.underline-offset-2",
+      "w": 62,
+      "h": 17,
+      "reachable": null,
+      "options": null
+    },
+    {
+      "path": "button.rounded-sm.underline-offset-2",
+      "w": 73,
+      "h": 17,
+      "reachable": null,
+      "options": null
+    },
+    {
+      "path": "button.rounded-sm.underline-offset-2",
+      "w": 73,
+      "h": 17,
+      "reachable": null,
+      "options": null
+    },
+    {
       "path": "button.relative.px-5",
-      "w": 64,
+      "w": 63,
       "h": 45,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.relative.px-5",
-      "w": 76,
+      "w": 75,
       "h": 45,
       "reachable": true,
       "options": null
@@ -18463,7 +18498,7 @@
     },
     {
       "path": "a.text-xs.font-medium",
-      "w": 35,
+      "w": 34,
       "h": 16,
       "reachable": null,
       "options": null
@@ -18491,7 +18526,7 @@
     },
     {
       "path": "a.text-[9px].tracking-[0.15em]",
-      "w": 108,
+      "w": 107,
       "h": 15,
       "reachable": null,
       "options": null
@@ -18506,7 +18541,7 @@
     {
       "path": "a.text-[9px].text-muted-foreground",
       "w": 62,
-      "h": 17,
+      "h": 25,
       "reachable": null,
       "options": null
     },
@@ -18527,7 +18562,7 @@
     {
       "path": "a.text-[9px].text-muted-foreground",
       "w": 192,
-      "h": 17,
+      "h": 25,
       "reachable": null,
       "options": null
     },
@@ -18540,14 +18575,21 @@
     },
     {
       "path": "a.text-[9px].tracking-[0.15em]",
-      "w": 110,
+      "w": 109,
       "h": 15,
       "reachable": null,
       "options": null
     },
     {
       "path": "a.font-semibold.tracking-[0.15em]",
-      "w": 76,
+      "w": 77,
+      "h": 17,
+      "reachable": null,
+      "options": null
+    },
+    {
+      "path": "a.hover:text-primary.transition-colors",
+      "w": 119,
       "h": 17,
       "reachable": null,
       "options": null
@@ -18569,7 +18611,14 @@
   ],
   "screen-wall-visitor--app-360": [
     {
-      "path": "button.lg:hidden.relative",
+      "path": "button.-ml-1.5.grid",
+      "w": 44,
+      "h": 44,
+      "reachable": true,
+      "options": null
+    },
+    {
+      "path": "button#radix-_r_16_.grid.h-11",
       "w": 44,
       "h": 44,
       "reachable": true,
@@ -18583,13 +18632,6 @@
       "options": null
     },
     {
-      "path": "button#radix-_r_s_.grid.min-h-11",
-      "w": 44,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
-    {
       "path": "button.flex.min-h-11",
       "w": 60,
       "h": 44,
@@ -18598,29 +18640,22 @@
     },
     {
       "path": "button.flex.min-h-11",
-      "w": 60,
+      "w": 59,
       "h": 44,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 118,
+      "w": 159,
       "h": 36,
       "reachable": true,
       "options": null
     },
     {
       "path": "button.inline-flex.h-9",
-      "w": 114,
+      "w": 159,
       "h": 36,
-      "reachable": true,
-      "options": null
-    },
-    {
-      "path": "button.inline-flex.items-center",
-      "w": 75,
-      "h": 35,
       "reachable": true,
       "options": null
     },
@@ -18649,35 +18684,35 @@
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 48,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "a.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     },
     {
       "path": "button.flex.flex-col",
       "w": 70,
       "h": 36,
-      "reachable": null,
+      "reachable": true,
       "options": null
     }
   ],
