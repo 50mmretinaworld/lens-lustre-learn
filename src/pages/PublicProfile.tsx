@@ -10,9 +10,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import JudgingStampBadge from "@/components/JudgingStampBadge";
 import { participantLabelForJudgingTag } from "@/lib/judging/participantStageLabels";
 import PhaseWatermark from "@/components/competition/PhaseWatermark";
-import BlockUserButton from "@/components/moderation/BlockUserButton";
-import FavouriteMuteButtons from "@/components/profile/FavouriteMuteButtons";
-import FriendFollowActions, { FriendFollowStats, FriendFollowButtons, ProfileStatRow } from "@/components/FriendFollowActions";
+import { VisitorActionRow, VisitorMenu } from "@/components/profile/VisitorActions";
+import { PageAppBar } from "@/lib/appBar";
+import ClampedText from "@/components/profile/ClampedText";
+import FriendFollowActions, { FriendFollowStats, ProfileStatRow } from "@/components/FriendFollowActions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import MutualFriends from "@/components/MutualFriends";
 import { toast } from "@/hooks/core/use-toast";
@@ -576,7 +577,26 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
    * It used to occupy a whole row of its own above the avatar — 44px of
    * screen carrying one icon. Owner: "see how nicelys insta used space".
    */
-  const profileMenu = (
+  const worksAboutItems = (
+    <>
+      <DropdownMenuItem onClick={() => setActiveTab(activeTab === "works" ? "wall" : "works")} className="flex items-center gap-2.5">
+        <Layers className="h-4 w-4" />
+        {activeTab === "works" ? "Back to Wall" : "Works"}
+        {worksCount > 0 && <span className="ml-auto text-[11px] text-muted-foreground">{worksCount}</span>}
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setActiveTab(activeTab === "about" ? "wall" : "about")} className="flex items-center gap-2.5">
+        <User className="h-4 w-4" />
+        {activeTab === "about" ? "Back to Wall" : "About"}
+      </DropdownMenuItem>
+    </>
+  );
+  /** A visitor's ⋮ (Owner 22 Nov 2026): Works, About, then Unfollow / Unfriend / Unmute / Block — never a red Block button on the page. */
+  const visitorMenu = !isOwner && !isGuest
+    ? <VisitorMenu targetUserId={userId!} displayName={displayName}>{worksAboutItems}</VisitorMenu>
+    : null;
+  /** The phone's top bar on another member's profile: ← @handle (Instagram) · ⋮ */
+  const handleTitle = handle ? `@${handle}` : displayName;
+  const profileMenu = visitorMenu ?? (
     <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -637,6 +657,7 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
 
     return (
     <main className="min-h-screen bg-background text-foreground">
+      {!isOwner && <PageAppBar title={handleTitle} actions={visitorMenu ?? undefined} />}
       <PageSEO
         title={displayName}
         description={profile.bio ? profile.bio.slice(0, 155) : `${displayName}'s photography profile on 50mm Retina World.`}
@@ -710,9 +731,8 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
               {/* Actions row */}
               <div className="flex items-start justify-end mt-1.5" style={{ paddingLeft: "160px" }}>
                 <div className="flex items-center gap-2 shrink-0">
-                  {!isOwner && !isGuest && <FriendFollowButtons targetUserId={userId!} />}
-                {!isOwner && !isGuest && <FavouriteMuteButtons viewerId={currentUser?.id} authorId={userId!} authorName={displayName} />}
-                {!isOwner && !isGuest && <BlockUserButton targetUserId={userId!} targetName={displayName} />}
+                  {!isOwner && !isGuest && <div className="w-[360px]"><VisitorActionRow targetUserId={userId!} displayName={displayName} /></div>}
+                  {visitorMenu}
                   {isOwner && (
                     <Link
                       to="/edit-profile"
@@ -792,7 +812,8 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
           <div className="relative -mx-4 flex sm:hidden flex-col gap-1 sm:mx-0">
             {/* ⋮ pinned to the top-right corner of the profile block, exactly
                 where the reference puts it — no row of its own. */}
-            {!isGuest && <div className="absolute -right-2 -top-1 z-10">{profileMenu}</div>}
+            {/* a visitor's ⋮ is in the top bar now (Instagram); the owner keeps theirs here */}
+            {!isGuest && isOwner && <div className="absolute -right-2 -top-1 z-10">{profileMenu}</div>}
             {/**
              * DP LEFT · NAME AND COUNTS STACKED BESIDE IT · ☰ FAR RIGHT.
              *
@@ -885,9 +906,7 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
              * the links sat in a bordered card further down the page.
              */}
             {canView("bio") && profile.bio && (
-              <p className="text-[15px] leading-snug text-foreground whitespace-pre-line" style={bodyFont}>
-                {profile.bio}
-              </p>
+              <ClampedText text={profile.bio} className="text-[14px] leading-snug text-foreground" style={bodyFont} />
             )}
 
             {/**
@@ -922,6 +941,8 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
                     >
                       <link.icon className="h-[18px] w-[18px]" />
                       {isIg && instagramHandle && <span className="truncate">@{instagramHandle}</span>}
+                      {/* Facebook gets its word too — never a lone icon beside a named link */}
+                      {!isIg && <span className="truncate">{link.label}</span>}
                     </a>
                   );
                 })}
@@ -953,10 +974,9 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
              * gives the consistent height and native proportion §8 asks for.
              */}
             {(!isOwner || isGuest) && (
-              <div className="mt-2 flex items-center gap-2 py-1">
-                {!isOwner && !isGuest && <FriendFollowButtons targetUserId={userId!} />}
-                {!isOwner && !isGuest && <FavouriteMuteButtons viewerId={currentUser?.id} authorId={userId!} authorName={displayName} />}
-                {!isOwner && !isGuest && <BlockUserButton targetUserId={userId!} targetName={displayName} />}
+              <div className="mt-2 flex min-w-0 items-center gap-2 py-1">
+                {/* Owner 22 Nov 2026: Add Friend · Chat · Follow (→ Favourite). Block & co. under ⋮. Never wider than the phone. */}
+                {!isOwner && !isGuest && <VisitorActionRow targetUserId={userId!} displayName={displayName} />}
                 {isGuest && (
                   <Link to="/signup" className="inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90" style={headingFont}>
                     Follow

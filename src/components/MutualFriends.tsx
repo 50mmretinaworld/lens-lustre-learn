@@ -82,10 +82,16 @@ const MutualFriends = ({ targetUserId }: Props) => {
         </div>
       )}
       <span className="text-[11px] text-muted-foreground" style={headingFont}>
-        {count} mutual friend{count !== 1 ? "s" : ""}
-        {mutuals.length > 0 && (
-          <> including <strong className="text-foreground">{mutuals[0]?.full_name || "a friend"}</strong>
-            {count > 1 && mutuals.length > 1 && <> and <strong className="text-foreground">{mutuals[1]?.full_name || "others"}</strong></>}
+        {/* Owner 22 Nov 2026: "1 mutual friend including X" read wrong. Now: "Mutual friend: X" ·
+            "Mutual friends: X and Y" · "Mutual friends: X, Y and 3 others". */}
+        {mutuals.length === 0 ? (
+          <>{count} mutual friend{count !== 1 ? "s" : ""}</>
+        ) : (
+          <>
+            {count === 1 ? "Mutual friend: " : "Mutual friends: "}
+            <strong className="text-foreground">{mutuals[0]?.full_name || "a friend"}</strong>
+            {count === 2 && mutuals[1] && <> and <strong className="text-foreground">{mutuals[1].full_name || "a friend"}</strong></>}
+            {count > 2 && mutuals[1] && <>, <strong className="text-foreground">{mutuals[1].full_name || "a friend"}</strong> and {count - 2} other{count - 2 !== 1 ? "s" : ""}</>}
           </>
         )}
       </span>

@@ -20,6 +20,16 @@ const headingFont = { fontFamily: "var(--font-heading)" };
 // The viewer loads only when a story is opened (P13 entry-bundle ceiling).
 const StoryViewer = lazy(() => import("@/components/stories/StoryViewer"));
 
+function storyDayLabel(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "";
+  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(new Date()) - day(d)) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
 const MAX_ACTIVE_STORIES = 10;
 const MAX_HIGHLIGHTS = 20;
 
@@ -326,7 +336,8 @@ const ProfileStories = ({ userId, isOwner }: Props) => {
             >
               <StoryTile ring="unseen" cover={memberPhotoSrc(story.image_url, 320)} alt="Story" />
               <span className={STORY_TILE_LABEL} style={headingFont}>
-                {new Date(story.created_at).toLocaleDateString("en", { hour: "numeric", minute: "2-digit" }).split(",")[0]}
+                {/* "Today" / "Yesterday" / "22 Nov" — never "11/22/2026" (US order) */}
+                {storyDayLabel(story.created_at)}
               </span>
             </button>
           ))}

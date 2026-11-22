@@ -23,7 +23,9 @@ describe("App Store review compliance", () => {
     expect(read("src/pages/Login.tsx")).toMatch(/community-guidelines/);
     expect(read("src/components/post/PostCard.tsx")).toMatch(/BlockUserDialog/);
     expect(read("src/components/comments/CommentThread.tsx")).toMatch(/onBlockUser/);
-    expect(read("src/pages/PublicProfile.tsx")).toMatch(/BlockUserButton/);
+    // a profile's Block lives in the visitor's ⋮ menu (Owner 22 Nov 2026: never a red main button) — still one tap away
+    expect(read("src/pages/PublicProfile.tsx")).toMatch(/VisitorMenu/);
+    expect(read("src/components/profile/VisitorActions.tsx")).toMatch(/BlockUserDialog/);
     expect(read("src/pages/Feed.tsx")).toMatch(/blockedIds/);
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayLabel, groupChat } from "../format";
+import { clockText, dayLabel, groupChat } from "../format";
 import type { ThreadMessage } from "../api";
 
 import { activeAgoText } from "../format";
@@ -8,10 +8,10 @@ describe("activeAgoText", () => {
   const ago = (ms: number) => new Date(now.getTime() - ms).toISOString();
   it("reads like Meta: minutes, hours, yesterday, days, then nothing", () => {
     expect(activeAgoText(ago(20_000), now)).toBe("Active just now");
-    expect(activeAgoText(ago(12 * 60_000), now)).toBe("Active 12 m ago");
-    expect(activeAgoText(ago(3 * 3_600_000), now)).toBe("Active 3 h ago");
+    expect(activeAgoText(ago(12 * 60_000), now)).toBe("Active 12m ago");
+    expect(activeAgoText(ago(3 * 3_600_000), now)).toBe("Active 3h ago");
     expect(activeAgoText(ago(30 * 3_600_000), now)).toBe("Active yesterday");
-    expect(activeAgoText(ago(4 * 86_400_000), now)).toBe("Active 4 d ago");
+    expect(activeAgoText(ago(4 * 86_400_000), now)).toBe("Active 4d ago");
     expect(activeAgoText(ago(9 * 86_400_000), now)).toBeNull();
     expect(activeAgoText(null, now)).toBeNull();
     expect(activeAgoText("nonsense", now)).toBeNull();
@@ -39,5 +39,18 @@ describe("messages display rules", () => {
   it("starts a new run and a new day chip across midnight", () => {
     const items = groupChat([m(1, "a", new Date(2026, 10, 17, 23, 59).toISOString()), m(2, "a", new Date(2026, 10, 18, 0, 1).toISOString())], now);
     expect(items.filter((i) => i.type === "day")).toHaveLength(2);
+  });
+
+  it("puts a centred time (Instagram) at a new day and after an hour's pause, never under every bubble", () => {
+    const at = (h: number, min: number) => new Date(2026, 10, 18, h, min).toISOString();
+    const items = groupChat([m(1, "a", at(9, 5)), m(2, "b", at(9, 20)), m(3, "a", at(16, 8))], now);
+    const labels = items.filter((i) => i.type === "day").map((i) => (i as { label: string }).label);
+    expect(labels).toEqual(["Today 9:05 AM", "4:08 PM"]);
+  });
+
+  it("writes the clock one way on every phone", () => {
+    expect(clockText(new Date(2026, 10, 18, 4, 8).toISOString())).toBe("4:08 AM");
+    expect(clockText(new Date(2026, 10, 18, 0, 5).toISOString())).toBe("12:05 AM");
+    expect(clockText(new Date(2026, 10, 18, 12, 30).toISOString())).toBe("12:30 PM");
   });
 });
