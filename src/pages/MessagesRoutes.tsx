@@ -1,9 +1,13 @@
 /**
- * /messages/* — the messenger. One screen, three addresses: /messages (list), /messages/<chat id> (a chat),
- * /messages/with/<member id> (start a chat). Wide screens show the list and the chat side by side; a phone
- * shows one at a time. No site footer here (Layout leaves it out): the messenger fills the screen.
+ * /messages/* — the messenger. Addresses (same shape as Instagram / Messenger):
+ *   /messages                 the chat list (Chats)
+ *   /messages/requests        the chat list, Requests folder
+ *   /messages/<chat id>       one chat — group or one-to-one, the chat itself decides which screen (useChatKind)
+ *   /messages/with/<member>   start / open the chat with a member; becomes /messages/<chat id> once the chat exists
+ * Wide screens show the list and the chat side by side; a phone shows one at a time. No site footer here (Layout
+ * leaves it out): the messenger fills the screen. Back from a chat returns to the folder it was opened from.
  */
-import { MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -11,33 +15,50 @@ import { useEffect } from "react";
 import ConversationList from "@/components/messages/ConversationList";
 import ChatPane from "@/components/messages/ChatPane";
 import GroupChatPane from "@/components/messages/GroupChatPane";
-import { useConversations } from "@/hooks/messages/useMessages";
+import { useChatKind } from "@/hooks/messages/useChatKind";
 import { headingFont } from "@/components/messages/MessageParts";
+import type { MessageFolder } from "@/lib/messages/api";
+
+const FOLDER_SEGMENTS: Record<string, MessageFolder> = { requests: "requests" };
+const folderPath = (f: MessageFolder) => (f === "inbox" ? "/messages" : `/messages/${f}`);
 
 export default function MessagesRoutes() {
   const t = useT();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const { user, loading } = useAuth();
   useEffect(() => { if (!loading && !user) navigate("/login", { replace: true }); }, [loading, user, navigate]);
 
   const withUser = matchPath("/messages/with/:userId", pathname)?.params.userId ?? null;
-  const chatId = withUser ? null : (matchPath("/messages/:conversationId", pathname)?.params.conversationId ?? null);
+  const segment = withUser ? null : (matchPath("/messages/:segment", pathname)?.params.segment ?? null);
+  const folderFromPath = segment ? FOLDER_SEGMENTS[segment] ?? null : null;
+  const chatId = folderFromPath ? null : segment;
+  // a chat remembers the folder it was opened from (Back goes there); a push or a link opens from Chats
+  const openedFrom = (location.state as { folder?: MessageFolder } | null)?.folder;
+  const folder: MessageFolder = folderFromPath ?? (openedFrom === "requests" ? "requests" : "inbox");
   const hasChat = !!(withUser || chatId);
-  const inbox = useConversations("inbox");
-  const isGroup = !!chatId && (inbox.data ?? []).some((c) => c.conversationId === chatId && c.kind === "group");
+  const kind = useChatKind(chatId);
+  const back = () => navigate(folderPath(folder));
 
   return (
     <div className="mx-auto h-[calc(100dvh-7.5rem)] w-full max-w-[1180px] lg:h-[calc(100dvh-6.5rem)] lg:px-4 lg:py-3">
       <div className="flex h-full overflow-hidden bg-background lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl lg:shadow-black/10">
         <section aria-label={t("messages.title", "Messages")} className={`${hasChat ? "hidden lg:block" : "block"} h-full w-full shrink-0 lg:w-[380px] lg:border-r lg:border-border`}>
-          <ConversationList activeId={chatId} onOpen={(id) => navigate(`/messages/${id}`)} />
+          <ConversationList
+            activeId={chatId}
+            folder={folder}
+            onFolder={(f) => navigate(folderPath(f))}
+            onOpen={(id) => navigate(`/messages/${id}`, { state: { folder } })}
+          />
         </section>
         <section className={`${hasChat ? "block" : "hidden lg:block"} h-full min-w-0 flex-1`}>
-          {hasChat ? (
-            isGroup && chatId
-              ? <GroupChatPane key={chatId} conversationId={chatId} onBack={() => navigate("/messages")} />
-              : <ChatPane key={chatId ?? withUser} conversationId={chatId} userId={withUser} onBack={() => navigate("/messages")} />
+          {withUser ? (
+            <ChatPane key={withUser} conversationId={null} userId={withUser} onBack={back} />
+          ) : chatId ? (
+            kind === "group" ? <GroupChatPane key={chatId} conversationId={chatId} onBack={back} />
+              : kind === "direct" ? <ChatPane key={chatId} conversationId={chatId} userId={null} onBack={back} />
+              : <div className="grid h-full place-items-center" data-testid="chat-kind-loading"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} /></div>
           ) : (
             <div className="grid h-full place-items-center bg-gradient-to-b from-background to-muted/30 px-8 text-center">
               <div>

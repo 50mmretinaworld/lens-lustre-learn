@@ -56,11 +56,19 @@ function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: bool
   );
 }
 
-export default function ConversationList({ activeId, onOpen }: { activeId: string | null; onOpen: (conversationId: string) => void }) {
+export default function ConversationList({ activeId, onOpen, folder: folderProp, onFolder }: {
+  activeId: string | null;
+  onOpen: (conversationId: string) => void;
+  /** the messenger page keeps the folder in the address (/messages · /messages/requests); the admin viewer does not */
+  folder?: MessageFolder;
+  onFolder?: (folder: MessageFolder) => void;
+}) {
   const t = useT();
   const { user } = useAuth();
   const viewAs = useViewAs();   // admin viewing a member's box: that member is "me", no unread badges of the admin
-  const [folder, setFolder] = useState<MessageFolder>("inbox");
+  const [ownFolder, setOwnFolder] = useState<MessageFolder>("inbox");
+  const folder = folderProp ?? ownFolder;
+  const setFolder = (f: MessageFolder) => (onFolder ? onFolder(f) : setOwnFolder(f));
   const [q, setQ] = useState("");
   const groupsAllowed = useGroupsAllowed();
   const [newGroup, setNewGroup] = useState(false);
