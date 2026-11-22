@@ -46,6 +46,11 @@ on:
         description: "App Store version (CFBundleShortVersionString). A version Apple already released cannot take a new binary - raise it for every new release."
         required: false
         default: "1.1"
+      testflight_upload:
+        description: "Upload the signed build to TestFlight. Off = build + sign only (a compile check; nothing reaches Apple)."
+        type: boolean
+        required: false
+        default: true
   # push:
   #   branches: [main]
 
@@ -93,32 +98,26 @@ jobs:
           VITE_SUPABASE_URL: https://jtdtehuqtinjxropkkcn.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0ZHRlaHVxdGluanhyb3Bra2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NzI3MjEsImV4cCI6MjA5OTE0ODcyMX0.qY8BI5LXb6uLzTwbpf8AleZ6UZyfeaOA0q4_TC5CEpo
           VITE_SUPABASE_PROJECT_ID: jtdtehuqtinjxropkkcn
+          # iOS "Update available" prompt opens the App Store page, which needs the numeric Apple ID
+          # (App Store Connect → App Information → Apple ID). Repo variable, not a secret. Empty → prompt off on iOS.
+          VITE_IOS_APP_STORE_ID: ${{ vars.IOS_APP_STORE_ID }}
         run: npm run build
 
       - name: Install Capacitor + iOS-safe native plugins (pinned)
         run: |
-          # @capacitor/splash-screen@8.0.2 is still excluded here, but the
-          # original reason recorded for it was WRONG and is corrected for the
-          # record: it was not a stale plugin that "predates breaking API
-          # changes in core 8.5.0". Its failures were the same Swift-version
-          # gate described on the runs-on block above. Checked against the
-          # real .swiftinterface, every API it touches is either ungated
-          # (bridge.viewController, UIColor.capacitor.color(fromHex:) - the
-          # argument label never changed, getBoolean, getInt) or gated by
-          # $NonescapableTypes and therefore restored by Swift 6.2
-          # (CAPPluginCall.reject, PluginConfig.getString). The reported
-          # viewController/UIColor errors were knock-on diagnostics from the
-          # gated calls failing to type-check earlier in the same file.
-          # It stays out of THIS commit only to keep the toolchain fix a
-          # single isolated variable - nothing in src/ imports it, so its
-          # absence costs only the native splash screen. Re-add it as a
-          # follow-up once this pipeline is green; no upstream release is
-          # needed. android-build was never affected (separate Kotlin impl).
+          # Parity with Android (Owner 22 Nov 2026: fill the gaps before the next iOS app):
+          #  - @capacitor/splash-screen@8.0.2 is back. It was left out only to keep the Swift 6.2 toolchain fix
+          #    (macos-15 / Xcode 26) a single variable; its old compile errors were that same Swift gate, not
+          #    a plugin incompatibility. Same version as android-build.yml.
+          #  - @capawesome/capacitor-app-update@8.0.3 (same as Android): on iOS it only CHECKS the App Store
+          #    version and opens the App Store page (no in-app install on iOS) - see src/lib/native/appUpdate.ts.
+          #  - push (@capacitor-firebase/messaging) still needs the APNs key + GoogleService-Info.plist first.
           npm install --no-audit --no-fund \
             @capacitor/core@8.5.0 @capacitor/cli@8.5.0 @capacitor/ios@8.5.0 \
-            @capacitor/share@8.0.1 \
+            @capacitor/share@8.0.1 @capacitor/splash-screen@8.0.2 \
             @capacitor/filesystem@8.1.2 @capacitor/camera@8.2.2 \
-            @capacitor/app@8.1.1 @capacitor/browser@8.0.4
+            @capacitor/app@8.1.1 @capacitor/browser@8.0.4 \
+            @capawesome/capacitor-app-update@8.0.3
 
       - name: Add iOS platform
         run: npx cap add ios
@@ -566,6 +565,7 @@ jobs:
           retention-days: 14
 
       - name: Upload to TestFlight
+        if: ${{ inputs.testflight_upload }}
         env:
           APP_STORE_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
           APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
