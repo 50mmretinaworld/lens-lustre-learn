@@ -313,6 +313,30 @@
   small, label, .text-xs, .text-\[10px\], .text-\[11px\] {
     letter-spacing: normal;
   }
+
+  /* Date / time boxes, everywhere (Owner 22 Nov 2026): the browser's calendar icon was black in dark mode
+     and sat right after the text in the middle of the box. Dark theme → the browser draws its own icon and
+     picker light; the icon always sits at the right edge of the box. */
+  .dark input[type="date"], .dark input[type="datetime-local"], .dark input[type="time"],
+  .dark input[type="month"], .dark input[type="week"] {
+    color-scheme: dark;
+  }
+  input[type="date"]::-webkit-datetime-edit, input[type="datetime-local"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit, input[type="month"]::-webkit-datetime-edit,
+  input[type="week"]::-webkit-datetime-edit {
+    flex: 1 1 auto;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator, input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator, input[type="month"]::-webkit-calendar-picker-indicator,
+  input[type="week"]::-webkit-calendar-picker-indicator {
+    margin-left: auto;
+    cursor: pointer;
+    opacity: 0.8;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
 }
 
 @keyframes kenburns {
