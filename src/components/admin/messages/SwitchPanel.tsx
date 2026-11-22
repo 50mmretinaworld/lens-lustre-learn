@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "@/hooks/core/use-toast";
 import ProfileTypeaheadPicker from "@/components/admin/ProfileTypeaheadPicker";
 import ReasonDialog, { type ReasonRequest } from "./ReasonDialog";
+import DefaultRuleCard, { useDefaultRule } from "./DefaultRuleCard";
 import {
   MODES, adminMessageCall, useRefreshAdminMessages,
   type MessageAdminState, type MessageMode, type MemberRule, type ListedMember,
@@ -49,12 +50,14 @@ function RuleEditor({ target, current, onClose, onSaved }: {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [seen, setSeen] = useState<string | null>(null);
+  const def = useDefaultRule().data;
+  const limitHint = def ? `Default: ${def.daily_limit} a day (${def.new_daily_limit} in the first 7 days)` : "Default limit";
 
   // load the member's current rule when the dialog opens for a new member
   if (target && seen !== target.user_id) {
     setSeen(target.user_id);
-    setText(current?.text_ok ?? true); setPhotos(current?.photos_ok ?? true); setGroups(current?.groups_ok ?? true);
-    setFriends(current?.friends_only ?? false); setLimit(current?.daily_limit != null ? String(current.daily_limit) : "");
+    setText(current?.text_ok ?? def?.text_ok ?? true); setPhotos(current?.photos_ok ?? def?.photos_ok ?? true); setGroups(current?.groups_ok ?? def?.groups_ok ?? true);
+    setFriends(current?.friends_only ?? def?.friends_only ?? false); setLimit(current?.daily_limit != null ? String(current.daily_limit) : "");
     setUntil(current?.blocked_until ? current.blocked_until.slice(0, 10) : ""); setReason("");
   }
   if (!target && seen !== null) setSeen(null);
@@ -91,7 +94,7 @@ function RuleEditor({ target, current, onClose, onSaved }: {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Rules for {target?.name}</DialogTitle>
-          <DialogDescription>These apply on top of the main switch. Leave everything on to give the member normal messaging.</DialogDescription>
+          <DialogDescription>Own rules for this member, used instead of the default rule. "Clear rules" in the list puts them back on the default.</DialogDescription>
         </DialogHeader>
         <div className="divide-y divide-border">
           {row("Can send text", text, setText, "rule-text")}
@@ -101,7 +104,8 @@ function RuleEditor({ target, current, onClose, onSaved }: {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-sm"><span className="font-medium">Messages per day</span>
-            <Input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Normal limit" /></label>
+            <Input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder={limitHint} />
+            <span className="block text-xs text-muted-foreground">All messages this member can send in 24 hours, to everyone together. Empty = the default.</span></label>
           <label className="space-y-1 text-sm"><span className="font-medium">Paused until</span>
             <Input type="date" value={until} onChange={(e) => setUntil(e.target.value)} /></label>
         </div>
@@ -293,7 +297,7 @@ export default function SwitchPanel({ state }: { state: MessageAdminState }) {
     if (rs.length === 0) return;
     const name = rs.length === 1 ? nameOf(rs[0]) : `${rs.length} members`;
     setRequest({
-      title: `Clear the rules for ${name}?`, body: "They go back to normal messaging.", button: "Clear rules",
+      title: `Clear the rules for ${name}?`, body: "They follow the default rule again.", button: "Clear rules",
       doneText: `Rules cleared for ${name}`,
       run: async (reason) => { for (const r of rs) await adminMessageCall("message_admin_clear_member_rule", { _user: r.user_id, _reason: reason }); await refresh(); },
     });
@@ -317,6 +321,8 @@ export default function SwitchPanel({ state }: { state: MessageAdminState }) {
           <Switch id="groups-switch" checked={state.groups_enabled} onCheckedChange={askGroups} />
         </label>
       </section>
+
+      <DefaultRuleCard />
 
       <section aria-label="Member list" className="space-y-2" data-testid="messages-list">
         <h3 className="text-sm font-semibold">{listTitle(state.mode)} <span className="font-normal text-muted-foreground">({state.members.length})</span></h3>

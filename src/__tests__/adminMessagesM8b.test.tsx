@@ -28,6 +28,7 @@ vi.mock("@/integrations/supabase/client", () => ({
         admin_message_member_search: sampleMemberSearch(args ?? {}),
         admin_view_inbox: [],
         message_admin_set_mode: args?._mode,
+        admin_message_default_get: { text_ok: true, photos_ok: true, groups_ok: true, friends_only: false, daily_limit: 500, new_daily_limit: 50, updated_at: null, own_rules: 0, paused: 0 },
       };
       return fn in answers ? Promise.resolve({ data: answers[fn], error: null }) : Promise.resolve({ data: null, error: { message: "unexpected rpc " + fn } });
     },
