@@ -94,7 +94,7 @@ export default function MembersPanel() {
   const rows = res.data?.rows ?? [];
 
   const columns = useMemo<DTColumn<MsgMember>[]>(() => [
-    { key: "member", header: "Member", sortKey: "name", className: "max-w-[320px]", cell: (m) => (
+    { key: "member", header: "Member", sortKey: "name", className: "min-w-[190px] max-w-[230px] px-3", cell: (m) => (
       <div className="flex items-center gap-3">
         <MemberAvatar m={m} />
         <div className="min-w-0">
@@ -102,21 +102,21 @@ export default function MembersPanel() {
           <p className="truncate text-xs text-muted-foreground">{m.email ?? "—"}{m.username ? ` · @${m.username}` : ""}</p>
         </div>
       </div>) },
-    { key: "chats", header: "Chatting with", sortKey: "chats", className: "min-w-[220px] max-w-[300px]", cell: (m) => <ChattingWith m={m} /> },
-    { key: "last", header: "Last message", sortKey: "last", className: "whitespace-nowrap", cell: (m) => <span className="text-sm text-muted-foreground">{when(m.last_message_at)}</span> },
-    { key: "reports", header: "Reports (30 d)", sortKey: "reports", cell: (m) => m.reports_30d > 0
-      ? <Badge variant="destructive"><Flag className="mr-1 h-3 w-3" aria-hidden="true" />{m.reports_30d}</Badge>
+    { key: "chats", header: "Chatting with", sortKey: "chats", className: "min-w-[170px] max-w-[210px] px-3", cell: (m) => <ChattingWith m={m} /> },
+    { key: "last", header: "Last message", sortKey: "last", className: "whitespace-nowrap px-3", cell: (m) => <span className="text-sm text-muted-foreground">{when(m.last_message_at)}</span> },
+    { key: "reports", header: "Reports (30 d)", sortKey: "reports", className: "whitespace-nowrap px-3", cell: (m) => m.reports_30d > 0
+      ? <Badge variant="destructive" className="whitespace-nowrap"><Flag className="mr-1 h-3 w-3" aria-hidden="true" />{m.reports_30d}</Badge>
       : <span className="text-muted-foreground">0</span> },
-    { key: "status", header: "Status", cell: (m) => (
-      <div className="flex flex-wrap gap-1">
-        {m.is_admin && <Badge variant="secondary">Admin</Badge>}
-        {m.listed && <Badge variant="outline">On the list</Badge>}
-        {m.paused && <Badge variant="destructive">Paused</Badge>}
-        {m.has_rules && !m.paused && <Badge variant="outline">Has rules</Badge>}
+    { key: "status", header: "Status", className: "min-w-[110px] px-3", cell: (m) => (
+      <div className="flex flex-col items-start gap-1">
+        {m.is_admin && <Badge variant="secondary" className="whitespace-nowrap">Admin</Badge>}
+        {m.listed && <Badge variant="outline" className="whitespace-nowrap">On the list</Badge>}
+        {m.paused && <Badge variant="destructive" className="whitespace-nowrap">Paused</Badge>}
+        {m.has_rules && !m.paused && <Badge variant="outline" className="whitespace-nowrap">Has rules</Badge>}
       </div>) },
-    { key: "joined", header: "Joined", sortKey: "joined", className: "whitespace-nowrap", cell: (m) => <span className="text-sm text-muted-foreground">{joined(m.joined_at)}</span> },
-    { key: "open", header: "", className: "w-28 text-right", cell: (m) => (
-      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setOpen(m); }} data-testid="open-box"><Eye className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Open box</Button>) },
+    { key: "joined", header: "Joined", sortKey: "joined", className: "whitespace-nowrap px-3", cell: (m) => <span className="text-sm text-muted-foreground">{joined(m.joined_at)}</span> },
+    { key: "open", header: "", className: "whitespace-nowrap px-3 text-right", cell: (m) => (
+      <Button size="sm" variant="outline" className="shrink-0 whitespace-nowrap" onClick={(e) => { e.stopPropagation(); setOpen(m); }} data-testid="open-box"><Eye className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Open box</Button>) },
   ], []);
 
   if (open) return <BoxViewer member={open} onBack={() => setOpen(null)} />;
@@ -167,6 +167,7 @@ export default function MembersPanel() {
         error={res.error ? `Could not load members: ${(res.error as Error).message}` : null}
         emptyText={q ? `No member matches “${q}”.` : "No members here."}
         onRowClick={setOpen}
+        cardsBelow={1280}
         phoneCard={(m) => (
           <div className="flex items-start gap-3">
             <MemberAvatar m={m} size={40} />

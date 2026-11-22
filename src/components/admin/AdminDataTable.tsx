@@ -7,7 +7,7 @@
  * It only DISPLAYS. The page decides what search / sort / tabs / paging mean (SQL for big lists, the array
  * for small ones) and what a bulk action does.
  */
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,8 @@ export interface DataTableProps<T> {
   onRowClick?: (row: T) => void;
   /** phone layout; without it the first two columns are stacked */
   phoneCard?: (row: T) => ReactNode;
+  /** show the card layout below this window width (px) as well, for tables with many columns */
+  cardsBelow?: number;
 }
 
 function SortHead({ col, sort, onSort }: { col: DTColumn<unknown>; sort?: DTSort | null; onSort?: (k: string) => void }) {
@@ -75,7 +77,17 @@ function SortHead({ col, sort, onSort }: { col: DTColumn<unknown>; sort?: DTSort
 }
 
 export default function AdminDataTable<T>(p: DataTableProps<T>) {
-  const isPhone = useIsMobile();
+  const [narrow, setNarrow] = useState(false);
+  const cardsBelow = p.cardsBelow;
+  useEffect(() => {
+    if (!cardsBelow || typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia(`(max-width: ${cardsBelow - 1}px)`);
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [cardsBelow]);
+  const isPhone = useIsMobile() || narrow;
   const searchRef = useRef<HTMLInputElement>(null);
   const selectable = !!p.onSelectedChange;
   const selected = p.selected ?? new Set<string>();
