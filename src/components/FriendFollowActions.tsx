@@ -134,7 +134,11 @@ export const FriendFollowButtons = ({ targetUserId }: Props) => {
   // are linked (you follow them, or friends, or the target is the official account). The server
   // refuses a send anyway; this only decides whether to show the button.
   // Both sides need the chat facility: me (admin switch) AND the member whose profile this is.
-  const canMessage = useMessagingAllowed() && useCanReachMember(targetUserId);
+  // Both hooks run on every render (never after `&&`): a conditional hook crashes the page when the
+  // switch answer arrives late.
+  const messagingAllowed = useMessagingAllowed();
+  const canReach = useCanReachMember(targetUserId);
+  const canMessage = messagingAllowed && canReach;
 
   const requireLogin = () => {
     if (!isLoggedIn) {
