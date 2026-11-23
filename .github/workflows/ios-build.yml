@@ -43,7 +43,7 @@ on:
       marketing_version:
         description: "App Store version (CFBundleShortVersionString). A version Apple already released cannot take a new binary - raise it for every new release."
         required: false
-        default: "1.1"
+        default: "1.2"
       testflight_upload:
         description: "Upload the signed build to TestFlight. Off = build + sign only (a compile check; nothing reaches Apple)."
         type: boolean
@@ -235,7 +235,7 @@ jobs:
       - name: Add privacy purpose strings and build number to Info.plist
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-          MARKETING_VERSION: ${{ inputs.marketing_version || '1.1' }}
+          MARKETING_VERSION: ${{ inputs.marketing_version || '1.2' }}
         run: |
           set -euo pipefail
           # Apple rejected build #15 AFTER upload with:
@@ -747,11 +747,25 @@ jobs:
           # checking it, so a green job did not mean a delivered build.
           # --validate-app runs those same checks synchronously, so this class
           # of rejection now fails the workflow loudly instead of silently.
+          # altool can print "Failed to validate package" and still EXIT 0 (run 45123070543: train 1.1 closed,
+          # yet the step went on to upload). So the output is read too: any validation error stops here.
+          VLOG="$RUNNER_TEMP/altool-validate.log"
+          set +e
           xcrun altool --validate-app \
             --type ios \
             --file "$IPA_PATH" \
             --apiKey "$APP_STORE_KEY_ID" \
-            --apiIssuer "$APP_STORE_ISSUER_ID"
+            --apiIssuer "$APP_STORE_ISSUER_ID" 2>&1 | tee "$VLOG"
+          VCODE=${PIPESTATUS[0]}
+          set -e
+          if [ "$VCODE" -ne 0 ] || grep -qE "Failed to validate|Validation failed|ERROR: " "$VLOG"; then
+            if grep -qE "closed for new build submissions|must contain a higher version" "$VLOG"; then
+              echo "::error::Apple refused version $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' ios/App/App/Info.plist 2>/dev/null || echo '?'): it is already approved/closed. Run again with a higher marketing_version."
+            else
+              echo "::error::App Store validation failed - nothing was uploaded. See the lines above."
+            fi
+            exit 1
+          fi
 
           echo "Validation passed. Uploading: $IPA_PATH"
           xcrun altool --upload-app \
