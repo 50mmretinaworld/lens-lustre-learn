@@ -28,7 +28,7 @@ try {
   const browser = await chromium.launch();
   for (const scene of SCENES) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await page.addInitScript(() => {
+    await page.addInitScript((detail) => {
       const w = window;
       w.__reqs = [];
       let inner = w.fetch;
@@ -38,13 +38,21 @@ try {
           const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
           if (/testprojectref0000x\.supabase\.co/.test(url)) {
             const u = new URL(url);
-            w.__reqs.push(u.pathname.replace("/rest/v1/", "").replace("/functions/v1/", "fn:").replace("/storage/v1/", "storage:") + (u.searchParams.get("select") ? "" : ""));
+            const name = u.pathname.replace("/rest/v1/", "").replace("/functions/v1/", "fn:").replace("/storage/v1/", "storage:");
+            if (detail) {
+              // DETAIL=1: the exact ask (query + body) and the app files that sent it — tells a true repeat from a different read.
+              const body = typeof init?.body === "string" ? init.body.slice(0, 80) : "";
+              const from = (new Error().stack ?? "").split("\n").map((l) => (l.match(/\/src\/([^?:)]+)/) ?? [])[1])
+                .filter((f) => f && !/integrations\/supabase/.test(f)).slice(0, 3).join(" < ");
+              w.__reqs.push(`${name}${decodeURIComponent(u.search).slice(0, 100)} ${body} ← ${from}`);
+            } else w.__reqs.push(name);
           }
           return inner(input, init);
         }; },
         set(v) { inner = v; },
       });
-    });
+    }, process.env.DETAIL === "1");
+    page.on("console", (m) => { if (m.text().startsWith("DBGINIT")) console.log(m.text()); });
     await page.goto(`${BASE}/uiharness.html?scene=${scene}&strict=0`, { waitUntil: "load", timeout: 180000 });
     await page.waitForTimeout(8000);
     const reqs = await page.evaluate(() => window.__reqs);
