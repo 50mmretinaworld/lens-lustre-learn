@@ -19,7 +19,8 @@ export const FEATURE_MODES: ReadonlyArray<{ mode: FeatureMode; label: string }> 
   { mode: "everyone", label: "All members" },
 ];
 
-export const FEATURE_INFO: Record<FeatureKey, { title: string; blurb: string }> = {
+/** modeText: this switch's own words under the Off / Selected / All buttons (default: "Nobody can use it." …). */
+export const FEATURE_INFO: Record<FeatureKey, { title: string; blurb: string; modeText?: Partial<Record<FeatureMode, string>> }> = {
   video_posts: { title: "Video posts", blurb: "Who can add a video to a post." },
   video_ads: { title: "Video ads", blurb: "Whether admins can add a video to an ad." },
   copyright_music_check: {
@@ -66,6 +67,10 @@ export const FEATURE_INFO: Record<FeatureKey, { title: string; blurb: string }> 
   feed_newest_first: {
     title: "Feed order: Newest first",
     blurb: "Who gets the For you feed newest first: every post they may see, the newest at the top, nothing mixed in. Off = everyone keeps the Fair mix (the 3 newest posts first, then posts from less-seen photographers). Works in the installed apps too, no update needed.",
+    modeText: {
+      off: "Everyone gets the Fair mix (today's feed).",
+      everyone: "Every member gets the feed newest first.",
+    },
   },
 };
 
@@ -90,7 +95,7 @@ export interface FeatureState {
 }
 
 const FEATURES = new Set<string>(["video_posts", "video_ads", "copyright_music_check", "personal_feed", "media_ladder_feed", "media_private_photos", "photo_upload_resume",
-  "photo_set_v2", "competition_fullsize_purge", "mention_groups", "mention_all_blocked"]);
+  "photo_set_v2", "competition_fullsize_purge", "mention_groups", "mention_all_blocked", "feed_newest_first"]);
 const MODES = new Set<string>(["off", "selected", "everyone"]);
 
 /** feature_admin_state() → cards. Unknown features / modes are dropped, never guessed. */

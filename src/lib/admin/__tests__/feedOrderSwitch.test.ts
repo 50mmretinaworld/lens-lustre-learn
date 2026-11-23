@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { FEATURE_INFO } from "@/lib/admin/featureSwitches";
+import { FEATURE_INFO, parseFeatureState } from "@/lib/admin/featureSwitches";
 
 const root = process.cwd();
 const read = (p: string) => readFileSync(join(root, p), "utf8");
@@ -10,6 +10,11 @@ describe("Feed order switch (20261123_4600, Owner 2026-11-23 'Admin switch')", (
   it("is named in the Owner's words", () => {
     expect(FEATURE_INFO.feed_newest_first.title).toBe("Feed order: Newest first");
     expect(FEATURE_INFO.feed_newest_first.blurb).toMatch(/Fair mix/);
+  });
+
+  it("the server's row is shown, not dropped as unknown", () => {
+    const s = parseFeatureState([{ feature: "feed_newest_first", mode: "off", members: [], history: [] }]);
+    expect(s.map((x) => x.feature)).toEqual(["feed_newest_first"]);
   });
 
   it("has its own Admin route that renders the switch", () => {

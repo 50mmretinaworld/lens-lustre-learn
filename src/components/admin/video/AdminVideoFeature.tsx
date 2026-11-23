@@ -182,7 +182,7 @@ export default function AdminVideoFeature({ feature }: { feature: FeatureKey }) 
             </div>
           </fieldset>
           <p className="text-xs text-muted-foreground">
-            {mode === "off" ? "Nobody can use it." : mode === "everyone" ? "Every member can use it." : `Only the ${s.members.length} member${s.members.length === 1 ? "" : "s"} listed under Members.`}
+            {info.modeText?.[mode] ?? (mode === "off" ? "Nobody can use it." : mode === "everyone" ? "Every member can use it." : `Only the ${s.members.length} member${s.members.length === 1 ? "" : "s"} listed under Members.`)}
           </p>
           {feature === "copyright_music_check" && s.key_configured !== true && (
             <p role="note" className="flex items-start gap-1.5 rounded-md bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400">
