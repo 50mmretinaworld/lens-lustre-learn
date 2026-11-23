@@ -10,11 +10,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/core/useAuth";
 import { messageKeys } from "@/lib/messages/keys";
 import { useViewAs } from "@/components/messages/viewAs";
+import { useScreenReady } from "@/lib/screenTiming";
 import {
   acceptRequest, declineRequest, fetchConversations, fetchThread, fetchViewInbox, fetchViewThread,
   clearConversation, markConversationRead, newClientMsgId, sendMessage, sendPhotos, setConversationMuted,
   type MessageFolder, type SendResult,
 } from "@/lib/messages/api";
+
+/** Is the member on this page right now? (N5: the shared hooks name the screen by its page.) */
+const onPage = (re: RegExp): boolean => {
+  try { return re.test(window.location.pathname); } catch { return false; }
+};
 
 // The top-bar hook (useMessagingAllowed, first download) and the badge hook are re-exported so the pages import one place.
 export { useMessagingAllowed } from "./useMessagingAllowed";
@@ -23,7 +29,7 @@ export { useUnreadCounts } from "./useUnreadCounts";
 export function useConversations(folder: MessageFolder) {
   const { user, loading } = useAuth();
   const viewAs = useViewAs();   // admin "open a member's message box": the member's list, read-only
-  return useQuery({
+  const q = useQuery({
     queryKey: viewAs ? (["messages", "view-as", viewAs.userId, "conversations", folder] as const) : messageKeys.conversations(user?.id ?? "", folder),
     queryFn: () => (viewAs ? fetchViewInbox(viewAs.userId, folder) : fetchConversations(folder)),
     enabled: !!user && !loading,
@@ -31,12 +37,15 @@ export function useConversations(folder: MessageFolder) {
     // P10: 30 s while the inbox is open: a new chat from someone else appears without a reload.
     refetchInterval: 30_000,
   });
+  // N5: speed per screen — the inbox (its own page, not the list beside an open chat).
+  useScreenReady("messages", folder === "inbox" && !viewAs && q.data !== undefined && onPage(/^\/messages\/?$/));
+  return q;
 }
 
 export function useThread(conversationId: string | null) {
   const { user, loading } = useAuth();
   const viewAs = useViewAs();
-  return useQuery({
+  const q = useQuery({
     queryKey: viewAs ? (["messages", "view-as", viewAs.userId, "thread", conversationId ?? ""] as const) : messageKeys.thread(conversationId ?? ""),
     queryFn: () => (viewAs ? fetchViewThread(viewAs.userId, conversationId as string) : fetchThread(conversationId as string)),
     enabled: !!user && !loading && !!conversationId,
@@ -46,6 +55,9 @@ export function useThread(conversationId: string | null) {
     // reaches a member who is away. Live delivery over a websocket is a later step.
     refetchInterval: 30_000,
   });
+  // N5: speed per screen — one chat open.
+  useScreenReady("chat", !viewAs && !!conversationId && q.data !== undefined && onPage(/^\/messages\/[^/]+/));
+  return q;
 }
 
 function useInvalidateMessages() {

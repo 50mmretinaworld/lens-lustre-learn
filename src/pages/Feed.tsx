@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useScreenReady } from "@/lib/screenTiming";
 import PendingPhotoPosts from "@/components/upload/PendingPhotoPosts";
 import { useQuery } from "@tanstack/react-query";
 
@@ -106,6 +107,7 @@ const Feed = () => {
     isError,
     isFetching,
   } = useFeedQuery(user?.id, feedCategories, navigationType, feedTab);
+  useScreenReady("feed", !loading);                 // N5: speed per screen
   const refreshFeed = useFeedRefresh(feedCategories, feedTab);
 
   /**
