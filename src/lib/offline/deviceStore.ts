@@ -147,6 +147,9 @@ export const GROUP_CAPS: Readonly<Record<string, number>> = {
   "profile-extended": 20,
   "friend-follow": 20,
   "profile-core": 30,
+  // N2 · instant screens: both message boxes + unread + the ~37 most recent chats; a few competition lists.
+  "messages": 40,
+  "competitions": 6,
 };
 /** Never evicted by the shared cap: the saved feed (S7b-3), at most a few chunks. */
 const PROTECTED = new Set<string>(["feed-archive"]);
