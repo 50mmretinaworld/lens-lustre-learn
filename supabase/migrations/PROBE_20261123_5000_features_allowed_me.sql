@@ -14,6 +14,7 @@ DECLARE
   _f text;
   _one boolean;
   _checked integer := 0;
+  _switches text[];
 BEGIN
   IF coalesce(current_setting('p32.lane', true), '') NOT IN ('staging', 'production') THEN
     RAISE EXCEPTION 'PROBE REFUSED — p32.lane is not asserted';
@@ -23,6 +24,9 @@ BEGIN
      OR NOT has_function_privilege('authenticated', 'public.features_allowed_me()', 'EXECUTE') THEN
     RAISE EXCEPTION 'PROBE FAIL F1: grants';
   END IF;
+  -- The switch list is read HERE, as the PROBE's own role: members cannot read feature_access
+  -- (that is the point of the definer functions). Under the member role only the two functions run.
+  SELECT array_agg(feature ORDER BY feature) INTO _switches FROM public.feature_access;
   FOR _m IN
     (SELECT fam.user_id FROM public.feature_access_members fam LIMIT 1)
     UNION ALL
@@ -31,8 +35,18 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub', '', true);
     PERFORM set_config('request.jwt.claims', json_build_object('sub', _m::text, 'role', 'authenticated')::text, true);
     SET LOCAL ROLE authenticated;
-    _all := public.features_allowed_me();
-    FOR _f IN SELECT feature FROM public.feature_access LOOP
+    BEGIN
+      _all := public.features_allowed_me();
+    EXCEPTION WHEN OTHERS THEN
+      RESET ROLE;
+      RAISE EXCEPTION 'PROBE FAIL F2: features_allowed_me() refused for a member: %', SQLERRM;
+    END;
+    IF (SELECT count(*) FROM jsonb_object_keys(_all)) <> coalesce(array_length(_switches, 1), 0) THEN
+      RESET ROLE;
+      RAISE EXCEPTION 'PROBE FAIL F2: batched answer has % switches, feature_access has %',
+        (SELECT count(*) FROM jsonb_object_keys(_all)), coalesce(array_length(_switches, 1), 0);
+    END IF;
+    FOREACH _f IN ARRAY _switches LOOP
       _one := public.feature_allowed_me(_f);
       IF (_all ->> _f)::boolean IS DISTINCT FROM _one THEN
         RESET ROLE;
