@@ -1,4 +1,5 @@
 import { memberPhotoSrc } from "@/lib/photoProtection";
+import { useScreenReady } from "@/lib/screenTiming";
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import UserIdentityBlock from "@/components/UserIdentityBlock";
@@ -251,6 +252,7 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
   // React Query: core profile data (cached + prefetched)
   const { data: coreProfile, isLoading: coreLoading, isError: coreError, error: coreErrorDetail, fetchStatus: coreFetchStatus } = useProfileCore(userId);
   const netState = useNetworkQuality();
+  useScreenReady("profile", !coreLoading && !!coreProfile);   // N5: speed per screen
 
   // React Query: extended data (entries, badges, etc.) — only for authenticated
   const { data: extData } = useProfileExtended(userId, currentUser?.id);

@@ -14,6 +14,7 @@
  * tap.
  */
 import { useMemo } from "react";
+import { useScreenReady } from "@/lib/screenTiming";
 import ActorPhrase from "@/components/notifications/ActorPhrase";
 import CentreNotificationList from "@/components/notifications/CentreNotificationList";
 import { NotificationAvatar as Avatar, NotificationRowThumb as RowThumb } from "@/components/notifications/CentreNotificationRow";
@@ -250,6 +251,7 @@ const Notifications = () => {
 
   const { data, isLoading, isError, error: historyError, fetchStatus, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useNotificationHistory();
+  useScreenReady("notifications", !isLoading);       // N5: speed per screen
   // S7b-4: saved notifications show with no network; with none saved, say
   // "no internet" — never "Nothing here yet" or a load error.
   const netState = useNetworkQuality();
