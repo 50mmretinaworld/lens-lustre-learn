@@ -241,7 +241,7 @@ interface PortfolioImage {
 
 const Index = () => {
   const t = useT();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const qc = useQueryClient();
   const siteLogo = useSiteLogo();
   const { theme } = useTheme();
@@ -441,8 +441,13 @@ const Index = () => {
     }
   }, [_galleryData]);
 
-  // Community data fetch (kept as one-time — not admin-controlled)
+  // Community data fetch (kept as one-time — not admin-controlled).
+  // N3 3c: member names and the member count are for signed-in members only (profiles are
+  // authenticated-only since P32), so a signed-out visitor no longer sends the two reads the
+  // server refuses (401 on every live home page load, 23 Nov). Runs once sign-in is known.
+  const signedIn = !!user;
   useEffect(() => {
+    if (authLoading) return;
     let isActive = true;
     setDataLoading(true);
     const safety = window.setTimeout(() => { if (isActive) setDataLoading(false); }, 3000);
@@ -450,8 +455,12 @@ const Index = () => {
       try {
         const results = await Promise.allSettled([
           supabase.from("posts").select("id, user_id, content, image_url, image_urls, created_at").eq("privacy", "public").order("created_at", { ascending: false }).limit(3),
-          (supabase.from("profiles_public_data" as any) as any).select("id, full_name, avatar_url, custom_url").eq("is_suspended", false).order("created_at", { ascending: false }).limit(5),
-          (supabase.from("profiles_public_data" as any) as any).select("id", { count: "exact", head: true }).eq("is_suspended", false),
+          signedIn
+            ? (supabase.from("profiles_public_data" as any) as any).select("id, full_name, avatar_url, custom_url").eq("is_suspended", false).order("created_at", { ascending: false }).limit(5)
+            : Promise.resolve({ data: null, count: null }),
+          signedIn
+            ? (supabase.from("profiles_public_data" as any) as any).select("id", { count: "exact", head: true }).eq("is_suspended", false)
+            : Promise.resolve({ data: null, count: null }),
           supabase.from("follows").select("id", { count: "exact", head: true }),
           supabase.from("posts").select("id", { count: "exact", head: true }),
         ]);
@@ -558,7 +567,8 @@ const Index = () => {
     };
     fetchData();
     return () => { isActive = false; window.clearTimeout(safety); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when sign-in is known
+  }, [authLoading, signedIn]);
 
 
   return (
