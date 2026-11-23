@@ -38,6 +38,8 @@ BEGIN
   RETURN jsonb_build_object('client_telemetry', _t, 'client_telemetry_quota', _q);
 END;
 $fn$;
+REVOKE ALL ON FUNCTION public.purge_client_telemetry(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.purge_client_telemetry(integer) TO service_role;
 
 -- 2. alarms closed, functions gone
 UPDATE public.ops_alarms SET closed_at = now(), last_seen_at = now()

@@ -34,9 +34,10 @@ BEGIN
   END IF;
 
   -- S2
-  SELECT ur.user_id INTO _admin FROM public.user_roles ur WHERE ur.role = 'admin'::public.app_role LIMIT 1;
+  -- role::text = '…' works whether user_roles.role is app_role (production) or text (staging).
+  SELECT ur.user_id INTO _admin FROM public.user_roles ur WHERE ur.role::text = 'admin' LIMIT 1;
   SELECT p.id INTO _plain FROM public.profiles p
-   WHERE NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = p.id AND ur.role = 'admin'::public.app_role) LIMIT 1;
+   WHERE NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = p.id AND ur.role::text = 'admin') LIMIT 1;
   PERFORM set_config('request.jwt.claim.sub', '', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', _plain::text, 'role', 'authenticated')::text, true);
   SET LOCAL ROLE authenticated;

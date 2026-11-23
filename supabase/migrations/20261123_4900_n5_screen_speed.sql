@@ -171,6 +171,9 @@ BEGIN
   RETURN jsonb_build_object('client_telemetry', _t, 'client_telemetry_quota', _q, 'screen_speed_alarms', _a);
 END;
 $fn$;
+-- Unchanged from 20261028_0001: server-only (the purge-client-telemetry job runs it as service_role).
+REVOKE ALL ON FUNCTION public.purge_client_telemetry(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.purge_client_telemetry(integer) TO service_role;
 
 DO $post$
 DECLARE _bad text := '';
