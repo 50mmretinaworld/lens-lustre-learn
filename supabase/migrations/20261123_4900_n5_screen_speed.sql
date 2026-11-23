@@ -9,8 +9,11 @@
 --   admin_screen_speed(_days)   ADMIN ONLY. Per day × screen × platform: count,
 --                               typical (p50), p75 and slowest-5 % (p95) in ms.
 --                               Admin → App health draws it.
---   n5_screen_speed_alarms()    INTERNAL, pg_cron hourly ('n5-screen-speed'):
---                               over the last 24 h, a screen × platform with at
+--   n5_screen_speed_alarms()    INTERNAL, hourly: NO new cron job (J4 rule: a new
+--                               job goes through the job engine) — the existing
+--                               hourly SQL job purge-client-telemetry calls it at
+--                               its end, guarded so an alarm error never stops
+--                               the purge. Over the last 24 h, a screen × platform with at
 --                               least 30 reports whose p95 is above 6 s, or whose
 --                               p50 is above 2.5 s, opens an alarm through the
 --                               existing ops_alarm_set (→ alarm-relay.yml → an
@@ -42,13 +45,18 @@ BEGIN
      OR to_regclass('public.ops_alarms') IS NULL
      OR to_regprocedure('public.ops_alarm_set(text,boolean,text,jsonb)') IS NULL
      OR to_regprocedure('public.has_role(uuid,public.app_role)') IS NULL
-     OR to_regprocedure('cron.schedule(text,text,text)') IS NULL THEN
-    RAISE EXCEPTION 'N5-4900-PRE-001: a table or function this file builds on is missing';
+     OR to_regprocedure('public.purge_client_telemetry(integer)') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'purge-client-telemetry') THEN
+    RAISE EXCEPTION 'N5-4900-PRE-001: a table, function or the hourly purge job this file builds on is missing';
   END IF;
   IF to_regprocedure('public.admin_screen_speed(integer)') IS NOT NULL
-     OR to_regprocedure('public.n5_screen_speed_alarms()') IS NOT NULL
-     OR EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'n5-screen-speed') THEN
+     OR to_regprocedure('public.n5_screen_speed_alarms()') IS NOT NULL THEN
     RAISE EXCEPTION 'N5-4900-PRE-002: already applied — roll back first';
+  END IF;
+  -- PRE-003 · the purge is exactly the 20261028_0001 body this file extends.
+  IF (SELECT md5(p.prosrc) FROM pg_proc p WHERE p.oid = 'public.purge_client_telemetry(integer)'::regprocedure)
+     IS DISTINCT FROM '950e1ab7a758991de6063ee173bdfc2d' THEN
+    RAISE EXCEPTION 'N5-4900-PRE-003: purge_client_telemetry is not the 20261028_0001 body — inspect before replacing';
   END IF;
 END
 $pre$;
@@ -130,10 +138,39 @@ BEGIN
 END;
 $fn$;
 COMMENT ON FUNCTION public.n5_screen_speed_alarms() IS
-  '20261123_4900 N5: hourly (cron n5-screen-speed) — opens/closes ops alarm screen-speed:<screen>:<platform> when the last 24 h p95 > 6 s or p50 > 2.5 s (>= 30 opens).';
+  '20261123_4900 N5: hourly (called at the end of purge_client_telemetry) — opens/closes ops alarm screen-speed:<screen>:<platform> when the last 24 h p95 > 6 s or p50 > 2.5 s (>= 30 opens).';
 REVOKE ALL ON FUNCTION public.n5_screen_speed_alarms() FROM PUBLIC, anon, authenticated, service_role;
 
-SELECT cron.schedule('n5-screen-speed', '17 * * * *', 'SELECT public.n5_screen_speed_alarms()');
+-- ── 3. hourly, through the existing purge job (no new cron job) ─────────────
+-- Same body as 20261028_0001 plus ONE guarded call at the end.
+CREATE OR REPLACE FUNCTION public.purge_client_telemetry(_batch integer DEFAULT 100000)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ VOLATILE
+ SET search_path TO ''
+AS $fn$
+DECLARE
+  _b integer := GREATEST(1, LEAST(coalesce(_batch, 100000), 1000000));
+  _t integer;
+  _q integer;
+  _a integer;
+BEGIN
+  DELETE FROM public.client_telemetry
+   WHERE id = ANY (ARRAY(SELECT id FROM public.client_telemetry
+                          WHERE created_at < now() - interval '30 days' LIMIT _b));
+  GET DIAGNOSTICS _t = ROW_COUNT;
+  DELETE FROM public.client_telemetry_quota WHERE hour < now() - interval '2 hours';
+  GET DIAGNOSTICS _q = ROW_COUNT;
+  -- 20261123_4900 N5: the screen-speed alarm, hourly. Never stops the purge.
+  BEGIN
+    _a := public.n5_screen_speed_alarms();
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'N5-4900: screen-speed alarm check failed: %', SQLERRM;
+    _a := NULL;
+  END;
+  RETURN jsonb_build_object('client_telemetry', _t, 'client_telemetry_quota', _q, 'screen_speed_alarms', _a);
+END;
+$fn$;
 
 DO $post$
 DECLARE _bad text := '';
@@ -147,11 +184,15 @@ BEGIN
      OR has_function_privilege('anon', 'public.n5_screen_speed_alarms()', 'EXECUTE') THEN
     _bad := _bad || E'\n  wrong EXECUTE grants';
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'n5-screen-speed') THEN
-    _bad := _bad || E'\n  cron job n5-screen-speed missing';
+  IF position('public.n5_screen_speed_alarms()' IN (SELECT p.prosrc FROM pg_proc p WHERE p.oid = 'public.purge_client_telemetry(integer)'::regprocedure)) = 0 THEN
+    _bad := _bad || E'\n  the hourly purge does not call the alarm';
+  END IF;
+  IF has_function_privilege('anon', 'public.purge_client_telemetry(integer)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.purge_client_telemetry(integer)', 'EXECUTE') THEN
+    _bad := _bad || E'\n  purge_client_telemetry grants changed';
   END IF;
   IF _bad <> '' THEN RAISE EXCEPTION 'N5-4900-POST:%', _bad; END IF;
-  RAISE NOTICE 'N5-4900: admin_screen_speed (admin read) + n5_screen_speed_alarms (hourly cron n5-screen-speed) created';
+  RAISE NOTICE 'N5-4900: admin_screen_speed (admin read) + n5_screen_speed_alarms (hourly, inside purge-client-telemetry) created';
 END
 $post$;
 

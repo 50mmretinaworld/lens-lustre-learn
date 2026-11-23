@@ -25,8 +25,8 @@ BEGIN
   IF to_regprocedure('public.admin_screen_speed(integer)') IS NULL OR to_regprocedure('public.n5_screen_speed_alarms()') IS NULL THEN
     RAISE EXCEPTION 'PROBE FAIL S1: 4900 not applied';
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'n5-screen-speed' AND active) THEN
-    RAISE EXCEPTION 'PROBE FAIL S1: hourly job missing or inactive';
+  IF position('public.n5_screen_speed_alarms()' IN (SELECT p.prosrc FROM pg_proc p WHERE p.oid = 'public.purge_client_telemetry(integer)'::regprocedure)) = 0 THEN
+    RAISE EXCEPTION 'PROBE FAIL S1: the hourly purge does not call the alarm';
   END IF;
   IF has_function_privilege('anon', 'public.admin_screen_speed(integer)', 'EXECUTE')
      OR has_function_privilege('authenticated', 'public.n5_screen_speed_alarms()', 'EXECUTE') THEN
