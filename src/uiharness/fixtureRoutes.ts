@@ -410,6 +410,13 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
     const on = (globalThis as { __harnessFeatures?: string[] }).__harnessFeatures ?? [];
     return typeof f === "string" && on.includes(f);
   },
+  // N3 (20261123_5000): every switch in one answer, decided by the same harness list as above.
+  features_allowed_me: () => {
+    const on = (globalThis as { __harnessFeatures?: string[] }).__harnessFeatures ?? [];
+    const all = ["video_posts", "video_ads", "copyright_music_check", "personal_feed", "media_ladder_feed",
+      "media_private_photos", "photo_upload_resume", "photo_set_v2"];
+    return Object.fromEntries(all.map((f) => [f, on.includes(f)]));
+  },
 
   // @all / @followers sample bell rows (?mentionall=1, Owner plan 2026-11-12).
   get_my_notifications_grouped: () => [
