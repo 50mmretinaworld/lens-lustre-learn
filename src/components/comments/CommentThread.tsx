@@ -74,6 +74,7 @@ import RichContentRenderer from "@/components/RichContentRenderer";
 import UserIdentityBlock from "@/components/UserIdentityBlock";
 import { timeAgo } from "@/lib/postUtils";
 import { avatarInitial } from "@/lib/displayName";
+import HideForOfficial from "@/components/messages/HideForOfficial";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -782,9 +783,11 @@ const CommentThread = ({
                           </DropdownMenuItem>
                         )}
                         {onBlockUser && !isOwn && (
-                          <DropdownMenuItem onClick={() => onBlockUser(comment.user_id, comment.author_name)} className="cursor-pointer text-destructive focus:text-destructive">
-                            <Ban className="h-3.5 w-3.5 mr-2" /> Block member
-                          </DropdownMenuItem>
+                          <HideForOfficial userId={comment.user_id}>
+                            <DropdownMenuItem onClick={() => onBlockUser(comment.user_id, comment.author_name)} className="cursor-pointer text-destructive focus:text-destructive">
+                              <Ban className="h-3.5 w-3.5 mr-2" /> Block member
+                            </DropdownMenuItem>
+                          </HideForOfficial>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>

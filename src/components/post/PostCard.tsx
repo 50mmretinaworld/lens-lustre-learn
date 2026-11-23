@@ -38,6 +38,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { avatarInitial, displayName } from "@/lib/displayName";
 import BlockUserDialog from "@/components/moderation/BlockUserDialog";
+import HideForOfficial from "@/components/messages/HideForOfficial";
 import { PostCameraLine } from "@/components/post/CameraDetails";
 import { usePhotoSetV2 } from "@/hooks/core/usePhotoSetV2";
 import { postPhotoCameraKey, usePostPhotoCameraRead } from "@/hooks/feed/usePostPhotoCamera";
@@ -585,20 +586,24 @@ const PostCard = ({
                     </DropdownMenuItem>
                   )}
                   {onMuteAuthor && (
-                    <DropdownMenuItem onClick={() => onMuteAuthor(post)} className="py-2.5" data-testid="post-mute-author">
-                      <VolumeX className="h-4 w-4 mr-2.5" /> Mute {post.author_name?.trim() || "member"}
-                    </DropdownMenuItem>
+                    <HideForOfficial userId={post.user_id}>
+                      <DropdownMenuItem onClick={() => onMuteAuthor(post)} className="py-2.5" data-testid="post-mute-author">
+                        <VolumeX className="h-4 w-4 mr-2.5" /> Mute {post.author_name?.trim() || "member"}
+                      </DropdownMenuItem>
+                    </HideForOfficial>
                   )}
                   <DropdownMenuItem onClick={() => { setReportingOpen(true); setReportReason(""); }} className="py-2.5">
                     <Flag className="h-4 w-4 mr-2.5" /> Report content
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setBlockOpen(true)}
-                    className="py-2.5 text-destructive focus:text-destructive"
-                    data-testid="post-block-user"
-                  >
-                    <Ban className="h-4 w-4 mr-2.5" /> Block {post.author_name?.trim() || "member"}
-                  </DropdownMenuItem>
+                  <HideForOfficial userId={post.user_id}>
+                    <DropdownMenuItem
+                      onClick={() => setBlockOpen(true)}
+                      className="py-2.5 text-destructive focus:text-destructive"
+                      data-testid="post-block-user"
+                    >
+                      <Ban className="h-4 w-4 mr-2.5" /> Block {post.author_name?.trim() || "member"}
+                    </DropdownMenuItem>
+                  </HideForOfficial>
                 </>
               )}
               {/* Owner 13 Nov 2026: admins mark ONE public video post as Trending this week (the database keeps it to one). */}
