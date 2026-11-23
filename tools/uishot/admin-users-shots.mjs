@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * ADMIN → USERS, NOW vs NEW — `node tools/uishot/admin-users-shots.mjs <out-dir> [now|new|all]`
+ * ADMIN → USERS, NOW vs NEW — `node tools/uishot/admin-users-shots.mjs <out-dir> [now|new|apps|all]`
+ * (`apps` = the M34 app-version card, App column, member list and drawer line)
  *
  * Photographs the REAL AdminPanel at /admin/users (scene screen-admin-users,
  * 1,284 synthetic members) in Chromium at desktop 1280 and phone 390.
@@ -15,7 +16,7 @@ import { chromium } from "playwright";
 
 const OUT = process.argv[2];
 const WHICH = process.argv[3] ?? "all";
-if (!OUT) throw new Error("usage: admin-users-shots.mjs <out-dir> [now|new|all]");
+if (!OUT) throw new Error("usage: admin-users-shots.mjs <out-dir> [now|new|apps|all]");
 mkdirSync(OUT, { recursive: true });
 
 const PORT = Number(process.env.SHOT_PORT ?? 5299);
@@ -58,6 +59,15 @@ const SHOTS = [
   ["NEW-phone", "new", PHONE, null, false],
   ["NEW-phone-filters", "new", PHONE, async (p) => { await p.getByTestId("members-filters-open").click(); await p.waitForTimeout(600); }, false],
   ["NEW-phone-drawer", "new", PHONE, async (p) => { await p.getByTestId("member-open").nth(6).click(); await p.waitForTimeout(800); }, false],
+  // M34 app versions (SQL 4400): the versions card, the App column, the member list behind a card row, the drawer line.
+  ["APPS-desktop", "new", DESKTOP, async (p) => { await p.getByTestId("app-versions-card").waitFor(); }, false],
+  ["APPS-desktop-list", "new", DESKTOP, async (p) => { await p.getByTestId("version-row").nth(2).click(); await p.getByTestId("app-version-member").first().waitFor(); await p.waitForTimeout(500); }, false],
+  ["APPS-desktop-older-list", "new", DESKTOP, async (p) => { await p.getByTestId("version-row-older").click(); await p.getByTestId("app-version-member").first().waitFor(); await p.waitForTimeout(500); }, false],
+  ["APPS-desktop-drawer", "new", DESKTOP, async (p) => { await p.getByTestId("member-open").nth(4).click(); await p.waitForTimeout(800); }, false],
+  ["APPS-phone", "new", PHONE, async (p) => { await p.getByTestId("app-versions-card").waitFor(); }, false],
+  ["APPS-phone-cards", "new", PHONE, async (p) => { await p.getByTestId("member-row").first().scrollIntoViewIfNeeded(); await p.mouse.wheel(0, 120); await p.waitForTimeout(500); }, false],
+  ["APPS-phone-list", "new", PHONE, async (p) => { await p.getByTestId("version-row").first().click(); await p.getByTestId("app-version-member").first().waitFor(); await p.waitForTimeout(500); }, false],
+  ["APPS-phone-drawer", "new", PHONE, async (p) => { await p.getByTestId("member-open").nth(4).click(); await p.waitForTimeout(800); }, false],
 ].filter(([name]) => WHICH === "all" || name.toLowerCase().startsWith(WHICH));
 
 let failed = false;

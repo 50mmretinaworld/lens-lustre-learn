@@ -18,6 +18,8 @@ import type { AdminMember } from "@/hooks/admin/useAdminMembers";
 import type { PendingAccountAction } from "@/components/admin/AccountActionDialog";
 import { AccountHistoryList } from "@/components/admin/AccountActionDialog";
 import { MemberAvatar, StatusChip, STATUS_META, fmtDate, statusDetail, type MemberLabels } from "./memberUi";
+import type { AppLine } from "@/hooks/admin/useAppVersions";
+import { AppLineView } from "./AppVersionUi";
 
 export interface MemberActions {
   setRole: (m: AdminMember, role: string, on: boolean) => void;
@@ -36,8 +38,8 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 );
 
 export function MemberDrawer({
-  member, online, labels, actions, onClose,
-}: { member: AdminMember | null; online: boolean; labels: MemberLabels; actions: MemberActions; onClose: () => void }) {
+  member, online, labels, actions, onClose, app = null,
+}: { member: AdminMember | null; online: boolean; labels: MemberLabels; actions: MemberActions; onClose: () => void; app?: AppLine | null }) {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
@@ -95,6 +97,7 @@ export function MemberDrawer({
                   {m.last_platform === "app" ? <><Smartphone className="h-3.5 w-3.5" />App</> : m.last_platform === "web" ? <><Globe className="h-3.5 w-3.5" />Website</> : <span className="text-muted-foreground">Unknown</span>}
                 </dd>
               </div>
+              {app && <div><dt className="text-xs text-muted-foreground">App</dt><dd data-testid="drawer-app"><AppLineView line={app} /></dd></div>}
               <div><dt className="text-xs text-muted-foreground">Member ID</dt><dd className="truncate font-mono text-xs" title={m.id}>{m.id.slice(0, 8)}…</dd></div>
             </dl>
 

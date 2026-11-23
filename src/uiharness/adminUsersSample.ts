@@ -35,7 +35,8 @@ export interface SampleMember {
   review_reason: string | null;
 }
 
-const NOW = Date.parse("2026-11-16T09:00:00.000Z");
+// Times are relative to the moment the picture is taken, so "5 min ago" reads as 5 min ago (there is no fake clock).
+const NOW = Date.now();
 const iso = (msAgo: number) => new Date(NOW - msAgo).toISOString();
 const H = 3_600_000;
 const D = 24 * H;
@@ -213,6 +214,94 @@ export const sampleRoleDefinitions = [
   { role_key: "student", label: "Student", icon: "🎓", pill_class: "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-300", show_inline: true, sort_order: 5 },
   { role_key: "user", label: "User", icon: "", pill_class: "bg-muted text-muted-foreground border-border", show_inline: false, sort_order: 6 },
 ];
+// ── M34 app versions (SQL 4400): admin_member_apps · admin_app_versions · admin_app_version_members ──
+// Android 1.2.56 newest, then 1.2.55 / 1.2.54 / 1.2.52 / 1.2.50, older Android app without a version (token only, or
+// only profiles.last_platform = 'app'), iPhone 1.1, website only — answered with the same rule as member_app_rows.
+
+type SampleApp = { os: "android" | "ios"; version: string | null; seen_at: string; push: "on" | "off" } | null;
+const HAND_APP: Record<number, [("android" | "ios"), string | null]> = {
+  0: ["android", "1.2.56"], 3: ["ios", "1.1"], 4: ["android", "1.2.52"], 6: ["android", null], 7: ["android", "1.2.55"],
+};
+const SPREAD: ([("android" | "ios"), string | null] | "profile-only")[] = [
+  ["android", "1.2.56"], ["android", "1.2.56"], ["android", "1.2.56"], ["android", "1.2.56"], ["android", "1.2.56"],
+  ["android", "1.2.56"], ["android", "1.2.56"], ["android", "1.2.55"], ["android", "1.2.55"], ["android", "1.2.55"],
+  ["android", "1.2.54"], ["android", "1.2.54"], ["android", "1.2.52"], ["android", "1.2.50"], ["ios", "1.1"],
+  ["ios", "1.1"], ["android", null], ["android", null], "profile-only", ["android", "1.2.56"],
+];
+
+let appCache: Map<string, SampleApp> | null = null;
+/** Which app each sample member is on (null = no app record). */
+export function sampleApps(): Map<string, SampleApp> {
+  if (appCache) return appCache;
+  const out = new Map<string, SampleApp>();
+  sampleMembers().forEach((m, i) => {
+    if (m.last_platform !== "app") { out.set(m.id, null); return; }
+    const pick = i < HAND.length ? HAND_APP[i] ?? "profile-only" : SPREAD[Math.floor(i / 3) % SPREAD.length];
+    if (pick === "profile-only") { out.set(m.id, null); return; }
+    out.set(m.id, { os: pick[0], version: pick[1], seen_at: m.last_active_at ?? m.created_at, push: i % 7 === 3 ? "off" : "on" });
+  });
+  appCache = out;
+  return out;
+}
+
+export function sampleMemberApps(b: Record<string, unknown>) {
+  const ids = Array.isArray(b._ids) ? (b._ids as unknown[]).filter((x): x is string => typeof x === "string") : [];
+  const apps = sampleApps();
+  return ids.flatMap((id) => {
+    const a = apps.get(id);
+    return a ? [{ user_id: id, os: a.os, app_version: a.version, seen_at: a.seen_at, push: a.push }] : [];
+  });
+}
+
+const week = (iso: string | null) => !!iso && NOW - Date.parse(iso) < 7 * D;
+
+export function sampleAppVersions() {
+  const apps = sampleApps();
+  const v = new Map<string, { os: string; version: string; members: number; active_7d: number; last_seen: string }>();
+  let older = 0, older7 = 0, web = 0, web7 = 0, none = 0;
+  for (const m of sampleMembers()) {
+    const a = apps.get(m.id);
+    if (a && a.version) {
+      const k = `${a.os}|${a.version}`;
+      const row = v.get(k) ?? { os: a.os, version: a.version, members: 0, active_7d: 0, last_seen: a.seen_at };
+      row.members++; if (week(a.seen_at)) row.active_7d++;
+      if (a.seen_at > row.last_seen) row.last_seen = a.seen_at;
+      v.set(k, row);
+    } else if (a || m.last_platform === "app") {
+      older++; if (week(a ? a.seen_at : m.last_active_at)) older7++;
+    } else if (m.last_platform === "web") {
+      web++; if (week(m.last_active_at)) web7++;
+    } else none++;
+  }
+  return {
+    checked_at: new Date(NOW).toISOString(),
+    versions: [...v.values()].sort((x, y) => x.os.localeCompare(y.os) || y.members - x.members),
+    older_app: { members: older, active_7d: older7 },
+    website_only: { members: web, active_7d: web7 },
+    not_recorded: none,
+    total: sampleMembers().length,
+  };
+}
+
+export function sampleAppVersionMembers(b: Record<string, unknown>) {
+  const os = str(b._os);
+  const version = str(b._version) || null;
+  const apps = sampleApps();
+  const picked = sampleMembers().flatMap((m) => {
+    const a = apps.get(m.id);
+    const hit = os === "android" || os === "ios" ? !!a && a.os === os && a.version === version
+      : os === "older" ? (!!a && a.version === null) || (!a && m.last_platform === "app")
+      : os === "web" ? !a && m.last_platform === "web" : false;
+    return hit ? [{ m, os: a?.os ?? null, version: a?.version ?? null, seen: a ? a.seen_at : m.last_active_at }] : [];
+  }).sort((x, y) => (y.seen ?? "").localeCompare(x.seen ?? ""));
+  const limit = Math.min(Math.max(Number(b._limit ?? 100) || 100, 1), 200);
+  const offset = Math.max(Number(b._offset ?? 0) || 0, 0);
+  return picked.slice(offset, offset + limit).map((p) => ({
+    id: p.m.id, full_name: p.m.full_name, avatar_url: p.m.avatar_url, custom_url: p.m.custom_url,
+    os: p.os, app_version: p.version, seen_at: p.seen, total_count: picked.length,
+  }));
+}
+
 export const sampleBadgeDefinitions = [
   { type_key: "featured", label: "Featured", icon: "⭐", badge_class: "bg-amber-500/15 text-amber-700 border-amber-500/30", ribbon_class: "bg-gradient-to-r from-amber-500 to-yellow-400", is_active: true, sort_order: 1 },
   { type_key: "top_contributor", label: "Top contributor", icon: "🏅", badge_class: "bg-orange-500/15 text-orange-700 border-orange-500/30", ribbon_class: "bg-gradient-to-r from-orange-500 to-red-400", is_active: true, sort_order: 2 },

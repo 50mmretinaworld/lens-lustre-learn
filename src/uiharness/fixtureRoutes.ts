@@ -30,6 +30,7 @@ import type { FakeRoute } from "./fakeBackend";
 import {
   adminUsersSampleOn, sampleSearchV3, samplePlatformCounts, sampleSearchV4, sampleFacets,
   sampleUserRoles, sampleUserBadges, sampleProfiles, sampleRoleDefinitions, sampleBadgeDefinitions,
+  sampleMemberApps, sampleAppVersions, sampleAppVersionMembers,
 } from "./adminUsersSample";
 import { adminPushSampleOn, sampleAudience, sampleBroadcasts, sampleSendResult } from "./adminPushSample";
 import { adminJobsSampleOn, sampleJobsOverview, sampleJobsList } from "./adminJobsSample";
@@ -325,6 +326,10 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_user_platform_counts: (b) => (adminUsersSampleOn() ? samplePlatformCounts(b) : []),
   admin_search_users_v4: (b) => (adminUsersSampleOn() ? sampleSearchV4(b) : []),
   admin_user_facets: (b) => (adminUsersSampleOn() ? sampleFacets(b) : []),
+  // M34 app versions (SQL 4400): the App column, the versions card and the members behind a card row.
+  admin_member_apps: (b) => (adminUsersSampleOn() ? sampleMemberApps(b) : []),
+  admin_app_versions: () => (adminUsersSampleOn() ? sampleAppVersions() : null),
+  admin_app_version_members: (b) => (adminUsersSampleOn() ? sampleAppVersionMembers(b) : []),
   // PN3 push centre (screen-admin-push). Writes answer as the SQL would.
   admin_push_audience: (b) => (adminPushSampleOn() ? sampleAudience(b) : []),
   admin_push_broadcasts: (b) => (adminPushSampleOn() ? sampleBroadcasts(b) : []),

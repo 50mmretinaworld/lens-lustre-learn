@@ -11,6 +11,9 @@
  *   (MemberDrawer). Phone width: cards + a Filters sheet.
  * - Under review / active / delete = the A4 actions (AccountActionDialog),
  *   the same ones Account Review uses.
+ * - App versions (SQL 4400, Owner 2026-11-23): a card of Android / iPhone
+ *   builds with counts (tap → who), an App column and the drawer line —
+ *   hidden on a database without the M34 functions (AppVersionUi).
  * - A database without admin_search_users_v4 gets the previous list
  *   (AdminUsers) instead of a broken page.
  */
@@ -51,6 +54,8 @@ import {
 } from "@/hooks/admin/useAdminMembers";
 import { MemberAvatar, RolePills, StatusChip, STATUS_META, fmtDate, statusDetail, useMemberLabels } from "./memberUi";
 import { MemberDrawer, type MemberActions } from "./MemberDrawer";
+import { appLineOf, newestOf, useAppVersionSummary, useMemberApps, type AppGroup } from "@/hooks/admin/useAppVersions";
+import { AppLineView, AppVersionMembersDialog, AppVersionsCard } from "./AppVersionUi";
 
 const AdminUsersPrevious = lazy(() => import("@/components/admin/AdminUsers"));
 
@@ -75,16 +80,24 @@ const SORT_OPTIONS: { key: MemberSort; label: string }[] = [
   { key: "name_asc", label: "Name A–Z" }, { key: "name_desc", label: "Name Z–A" },
 ];
 const OPTIONAL_COLUMNS = [
-  { key: "roles", label: "Roles & badges" }, { key: "active", label: "Last active" }, { key: "joined", label: "Joined" },
+  { key: "roles", label: "Roles & badges" }, { key: "app", label: "App" }, { key: "active", label: "Last active" }, { key: "joined", label: "Joined" },
 ] as const;
 type ColumnKey = (typeof OPTIONAL_COLUMNS)[number]["key"];
 const COLS_KEY = "admin-members-columns";
+/** The columns that existed when the choice was saved — a column added later starts shown. */
+const COLS_KNOWN_KEY = "admin-members-columns-known";
 const ALL = "__all";
 
 function loadColumns(): Set<ColumnKey> {
   try {
     const raw = localStorage.getItem(COLS_KEY);
-    if (raw) return new Set(JSON.parse(raw) as ColumnKey[]);
+    if (raw) {
+      const saved = new Set(JSON.parse(raw) as ColumnKey[]);
+      const knownRaw = localStorage.getItem(COLS_KNOWN_KEY);
+      const known = new Set<string>(knownRaw ? (JSON.parse(knownRaw) as string[]) : ["roles", "active", "joined"]);
+      OPTIONAL_COLUMNS.forEach((c) => { if (!known.has(c.key)) saved.add(c.key); });
+      return saved;
+    }
   } catch { /* private mode */ }
   return new Set(OPTIONAL_COLUMNS.map((c) => c.key));
 }
@@ -225,6 +238,14 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
   const pageCount = Math.max(1, Math.ceil(total / f.pageSize));
   const openMember = rows.find((r) => r.id === openId) ?? null;
 
+  // Which app each member on screen uses (SQL 4400). `null` = this database has no M34 → card and column hide.
+  const versions = useAppVersionSummary();
+  const apps = useMemberApps(rows.map((r) => r.id));
+  const appOn = versions.data !== null && apps.data !== null && !apps.isError;
+  const newest = newestOf(versions.data, apps.data);
+  const appLine = (m: AdminMember) => appLineOf(m, apps.data?.get(m.id), newest);
+  const [versionGroup, setVersionGroup] = useState<AppGroup | null>(null);
+
   const set = (patch: Partial<MemberFilters>) => setF((prev) => ({ ...prev, page: 0, ...patch }));
 
   // Search as you type, 300 ms after the last key.
@@ -263,7 +284,10 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
   const toggleCol = (k: ColumnKey) => setCols((prev) => {
     const next = new Set(prev);
     if (next.has(k)) next.delete(k); else next.add(k);
-    try { localStorage.setItem(COLS_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
+    try {
+      localStorage.setItem(COLS_KEY, JSON.stringify([...next]));
+      localStorage.setItem(COLS_KNOWN_KEY, JSON.stringify(OPTIONAL_COLUMNS.map((c) => c.key)));
+    } catch { /* private mode */ }
     return next;
   });
 
@@ -382,6 +406,8 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
         )}
       </div>
 
+      {versions.data && <AppVersionsCard summary={versions.data} onOpen={setVersionGroup} />}
+
       {/* Status tabs */}
       <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Status">
         {STATUS_TABS.map((t) => {
@@ -470,6 +496,12 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                         <span className={online.has(m.id) ? "text-emerald-600" : undefined}>{online.has(m.id) ? "Active now" : formatLastSeen(m.last_active_at) || "Never"}</span>
                       </span>
                     </span>
+                    {appOn && (() => {
+                      // The line above already says "Website" / "Unknown"; only an app adds something here.
+                      const line = appLine(m);
+                      return line.kind === "app" || line.kind === "older"
+                        ? <span className="block" data-testid="member-app"><AppLineView line={line} inline /></span> : null;
+                    })()}
                     {(m.roles.some((r) => r !== "user") || m.badges.length > 0) && <RolePills m={m} labels={labels} max={3} />}
                   </span>
                 </button>
@@ -489,6 +521,7 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                 <SortHead label="Member" asc="name_asc" desc="name_desc" sort={f.sort} onSort={(s) => set({ sort: s })} />
                 <TableHead>Status</TableHead>
                 {cols.has("roles") && <TableHead>Roles &amp; badges</TableHead>}
+                {appOn && cols.has("app") && <TableHead>App</TableHead>}
                 {cols.has("active") && <SortHead label="Last active" asc="active_asc" desc="active_desc" sort={f.sort} onSort={(s) => set({ sort: s })} />}
                 {cols.has("joined") && <SortHead label="Joined" asc="joined_asc" desc="joined_desc" sort={f.sort} onSort={(s) => set({ sort: s })} />}
                 <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
@@ -523,6 +556,7 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                       {detail && <div className="mt-0.5 text-[11px] text-muted-foreground">{detail}</div>}
                     </TableCell>
                     {cols.has("roles") && <TableCell className="max-w-[220px]"><RolePills m={m} labels={labels} max={2} /></TableCell>}
+                    {appOn && cols.has("app") && <TableCell className="whitespace-nowrap" data-testid="member-app"><AppLineView line={appLine(m)} /></TableCell>}
                     {cols.has("active") && <TableCell className="whitespace-nowrap"><ActiveCell m={m} online={online.has(m.id)} /></TableCell>}
                     {cols.has("joined") && <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{fmtDate(m.created_at)}</TableCell>}
                     <TableCell onClick={(e) => e.stopPropagation()}><RowMenu m={m} open={(x) => setOpenId(x.id)} actions={actions} /></TableCell>
@@ -585,7 +619,9 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
         </SheetContent>
       </Sheet>
 
-      <MemberDrawer member={openMember} online={!!openMember && online.has(openMember.id)} labels={labels} actions={actions} onClose={() => setOpenId(null)} />
+      <MemberDrawer member={openMember} online={!!openMember && online.has(openMember.id)} labels={labels} actions={actions} onClose={() => setOpenId(null)}
+        app={openMember && appOn ? appLine(openMember) : null} />
+      <AppVersionMembersDialog group={versionGroup} newest={newest} onClose={() => setVersionGroup(null)} />
       <SuspendDialog
         targets={suspendTargets}
         onClose={() => setSuspendTargets([])}
