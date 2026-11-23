@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useScreenReady } from "@/lib/screenTiming";
 import { fadeUp } from "@/lib/motionVariants";
 import PageSEO from "@/components/PageSEO";
 import CoverImage from "@/components/CoverImage";
@@ -22,6 +23,7 @@ const Competitions = () => {
   const [filter, setFilter] = useState<PhaseFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { data: competitions = [], isLoading: loading } = useCompetitions(filter === "all" ? undefined : filter);
+  useScreenReady("competitions", !loading);         // N5: speed per screen
 
   const filterLabels: Record<string, string> = {
     all: t("comp.filterAll"),
