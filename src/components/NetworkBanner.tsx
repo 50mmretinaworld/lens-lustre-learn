@@ -16,6 +16,9 @@ export default function NetworkBanner() {
   const t = useT();
   const waiting = useOutboxPendingCount();
   if (net.online && !net.slow) return null;
+  // "observed" = slow reads on a browser that cannot measure the link (iOS / Safari): lighter images, but no bar —
+  // a slow server looks the same, and the bar must never blame the member's internet for it (Owner 23 Nov 2026).
+  if (net.online && net.reason === "observed") return null;
   const offline = !net.online;
   return (
     <div
@@ -23,6 +26,7 @@ export default function NetworkBanner() {
       aria-live="polite"
       data-testid="network-banner"
       data-state={offline ? "offline" : "slow"}
+      data-reason={net.reason ?? ""}
       className={`w-full px-4 py-1.5 text-center text-xs font-medium ${offline ? "bg-muted text-foreground" : "bg-muted/70 text-muted-foreground"}`}
     >
       {offline

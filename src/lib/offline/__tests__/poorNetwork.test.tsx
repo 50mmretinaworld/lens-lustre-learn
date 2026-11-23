@@ -64,9 +64,17 @@ describe("networkQuality", () => {
     for (let i = 0; i < 6; i++) noteOutcome(150, false);
     expect(getNetState().slow).toBe(false);
   });
-  it("observed: two timeouts in the window -> slow", () => {
+  it("two timeouts in the window -> slow (timeouts), whatever the browser says", () => {
     noteOutcome(25_000, true); noteOutcome(25_000, true);
-    expect(getNetState().reason).toBe("observed");
+    expect(getNetState().reason).toBe("timeouts");
+    setConnection({ effectiveType: "4g", downlink: 10, rtt: 50 }); resetNetState();
+    noteOutcome(25_000, true); noteOutcome(25_000, true);
+    expect(getNetState().reason).toBe("timeouts");
+  });
+  it("Owner 23 Nov: the browser measures a good link -> slow SERVER reads never make it 'slow'", () => {
+    setConnection({ effectiveType: "4g", downlink: 10, rtt: 50 }); resetNetState();
+    for (let i = 0; i < 6; i++) noteOutcome(3000, false);
+    expect(getNetState()).toEqual({ online: true, slow: false, reason: null });
   });
 });
 
@@ -88,6 +96,17 @@ describe("NetworkBanner", () => {
     render(<NetworkBanner />);
     await act(async () => { noteOutcome(25_000, true); noteOutcome(25_000, true); });
     expect(screen.getByTestId("network-banner").getAttribute("data-state")).toBe("slow");
+  });
+  it("Owner 23 Nov: slow reads on a browser that cannot measure the link -> no bar (lighter images only)", async () => {
+    const { container } = render(<NetworkBanner />);
+    await act(async () => { for (let i = 0; i < 6; i++) noteOutcome(3000, false); });
+    expect(getNetState().reason).toBe("observed");
+    expect(container.innerHTML).toBe("");
+  });
+  it("a browser-declared weak link shows the slow line", () => {
+    setConnection({ effectiveType: "3g" }); resetNetState();
+    render(<NetworkBanner />);
+    expect(screen.getByTestId("network-banner").getAttribute("data-reason")).toBe("declared");
   });
 });
 

@@ -18,7 +18,19 @@
  * client imports must not import the client back.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-export type NetState = { online: boolean; slow: boolean; reason: "offline" | "declared" | "observed" | null };
+/**
+ * reason:
+ *   "offline"  — no network at all.
+ *   "declared" — the browser measured the INTERNET as weak (Chromium / Android WebView).
+ *   "timeouts" — reads keep hitting our 25 s timeout: something is badly wrong either way.
+ *   "observed" — reads are slow, but this browser cannot say why (iOS / Safari / Firefox). Lighter images only; the
+ *                status bar does NOT claim "slow connection" for it, because a slow SERVER looks exactly the same.
+ *
+ * Owner 23 Nov 2026 ("high speed internet but always showing this, app and web"): measured from the Owner's PC the
+ * network round trip to our server is ~60 ms while a one-row read takes 250–1000 ms — the server, not the internet.
+ * So where the browser reports the link itself (NetInfo), ITS answer decides; read times are ignored there.
+ */
+export type NetState = { online: boolean; slow: boolean; reason: "offline" | "declared" | "timeouts" | "observed" | null };
 
 export const WINDOW = 6;
 /**
@@ -62,9 +74,12 @@ function compute(): NetState {
     return { online: true, slow: true, reason: "declared" };
   }
   const failures = outcomes.filter((o) => o.failed).length;
+  if (failures >= TIMEOUTS_FOR_SLOW) return { online: true, slow: true, reason: "timeouts" };
+  // The browser measures the link itself and calls it good: slow reads are the server, not the internet.
+  if (c && typeof c.effectiveType === "string") return { online: true, slow: false, reason: null };
   const times = outcomes.filter((o) => !o.failed).map((o) => o.ms).sort((a, b) => a - b);
   const median = times.length ? times[Math.floor(times.length / 2)] : 0;
-  if (failures >= TIMEOUTS_FOR_SLOW || (outcomes.length >= 3 && median > SLOW_MEDIAN_MS)) {
+  if (outcomes.length >= 3 && median > SLOW_MEDIAN_MS) {
     return { online: true, slow: true, reason: "observed" };
   }
   return { online: true, slow: false, reason: null };
