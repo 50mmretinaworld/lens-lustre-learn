@@ -47,7 +47,8 @@ describe("site_settings guard — the real tree", () => {
   });
 
   it("goes red when a real call site loses its key filter (fail-first on real code)", () => {
-    const path = "src/components/SiteFooter.tsx";
+    // N3 3a moved SiteFooter to the shared reader; the admin page builder still reads directly (it needs the live value).
+    const path = "src/components/admin/AdminMenuBuilder.tsx";
     const real = readFileSync(path, "utf8");
     expect(scanText(real, path)).toEqual([]);
     const mutated = real.replace(/\.eq\("key",\s*"managed_pages"\)/, "");
