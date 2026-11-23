@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/queryKeys";
+import { getSiteSetting, invalidateSiteSetting } from "@/lib/siteSettingsCache";
 import { safeRandomUUID } from "@/lib/safeUuid";
 
 export interface MenuItem {
@@ -69,14 +70,10 @@ export function buildMenuTree(items: MenuItem[]): MenuTree[] {
 }
 
 async function fetchMenuItems(): Promise<MenuItem[]> {
-  const { data } = await supabase
-    .from("site_settings")
-    .select("value")
-    .eq("key", "navigation_menu")
-    .maybeSingle();
-
-  if (data?.value && Array.isArray(data.value)) {
-    return data.value as unknown as MenuItem[];
+  // N3 · the ONE settings reader (edge copy first, batched): no separate round trip to the database.
+  const value = await getSiteSetting("navigation_menu");
+  if (value && Array.isArray(value)) {
+    return value as unknown as MenuItem[];
   }
 
   // Initialize with system pages
@@ -112,6 +109,7 @@ export function useNavigationMenu() {
       updated_by: userId,
     });
     if (!error) {
+      invalidateSiteSetting("navigation_menu");   // the shared reader must not serve the old menu
       queryClient.setQueryData(queryKeys.navigationMenu(), items);
     }
     return error;
