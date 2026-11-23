@@ -988,8 +988,8 @@ jobs:
           # Owner-approved changes: the story caption (2 lines + more / Show less, #1111), member tags read from the
           # member's profile everywhere (#1110/#1114), and photography suggestions under the comment box (#1115).
           # Owner 18 Nov: "all approved go ahead", "build the App". No switch changed.
-          sed -i 's/versionName "1.0"/versionName "1.2.55"/' android/app/build.gradle
-          echo "versionCode=${VC} versionName=1.2.55 (1.2.54 is spent - on Play)"
+          sed -i 's/versionName "1.0"/versionName "1.2.56"/' android/app/build.gradle
+          echo "versionCode=${VC} versionName=1.2.56 (1.2.55 is spent - built, not uploaded)"
           grep -E "versionCode|versionName" android/app/build.gradle
           cat android/variables.gradle
           # S11: prove both edits landed — exactly one versionCode, the derived
