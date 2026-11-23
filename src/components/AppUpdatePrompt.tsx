@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, X } from "lucide-react";
 import {
+  appStoreName,
   appUpdateSupported,
   checkForAppUpdate,
   startAppUpdate,
@@ -93,7 +94,7 @@ const AppUpdatePrompt = () => {
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                 A new version{version ? ` (${version})` : ""} of 50mm Retina World is ready
-                {immediateAllowed ? " — install it without leaving the app." : " on Google Play."}
+                {immediateAllowed ? " — install it without leaving the app." : ` on ${appStoreName()}.`}
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <button
