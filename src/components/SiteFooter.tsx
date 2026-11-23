@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getSiteSetting } from "@/lib/siteSettingsCache";
 import { useCookieConsent } from "@/hooks/core/useCookieConsent";
 import { Cookie } from "lucide-react";
 import { isNativeIOSApp } from "@/lib/native/authDeepLink";
@@ -22,13 +22,10 @@ const SiteFooter = () => {
   const { data: footerPages = [] } = useQuery<FooterPage[]>({
     queryKey: ["footer-pages"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", "managed_pages")
-        .maybeSingle();
-      if (!data?.value || !Array.isArray(data.value)) return [];
-      return (data.value as unknown as FooterPage[]).filter(
+      // N3 · the ONE settings reader (edge copy first, batched): no separate round trip to the database.
+      const value = await getSiteSetting("managed_pages");
+      if (!value || !Array.isArray(value)) return [];
+      return (value as unknown as FooterPage[]).filter(
         (p) => p.is_published && (p.nav_placement === "footer" || p.nav_placement === "both")
       );
     },

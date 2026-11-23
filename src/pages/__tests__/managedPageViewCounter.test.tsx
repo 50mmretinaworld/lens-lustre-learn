@@ -64,6 +64,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 vi.mock("@/components/PageSEO", () => ({ default: () => null }));
+// N3 3a: the page reads managed_pages through the ONE settings reader.
+vi.mock("@/lib/siteSettingsCache", () => ({ getSiteSetting: () => Promise.resolve([PAGE]) }));
 
 const renderPage = () => {
   const client = new QueryClient({

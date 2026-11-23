@@ -1,6 +1,7 @@
 import { memberPhotoSrc } from "@/lib/photoProtection";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -52,8 +53,23 @@ function BarTile({ b }: { b: StoryBarUser }) {
 const FeedStoriesBar = () => {
   const { user } = useAuth();
   const { data: me } = useProfileCore(user?.id);
-  const [bar, setBar] = useState<StoryBarUser[]>([]);
-  const [ownStories, setOwnStories] = useState<StoryRow[]>([]);
+  // N2 · instant screens: the row is ONE React Query entry, kept on the device (queryPersistence.ts
+  // "feed-stories-bar"), so it shows at once on the next open and survives a poor network. A failed
+  // refresh keeps the last row instead of blanking it (the old code turned every error into []).
+  const storiesQ = useQuery({
+    queryKey: ["feed-stories-bar", user?.id ?? ""] as const,
+    enabled: !!user,
+    staleTime: 30_000,
+    queryFn: async (): Promise<{ bar: StoryBarUser[]; own: StoryRow[] }> => {
+      const [b, own] = await Promise.all([
+        timedRpc("rpc.get_feed_stories_bar", "src/components/feed/FeedStoriesBar.tsx", () => fetchStoryBar()),
+        fetchUserStories((user as { id: string }).id),
+      ]);
+      return { bar: b, own };
+    },
+  });
+  const bar: StoryBarUser[] = storiesQ.data?.bar ?? [];
+  const ownStories: StoryRow[] = storiesQ.data?.own ?? [];
   const [uploading, setUploading] = useState(false);
   const [open, setOpen] = useState<{ people: StoryPerson[]; start: number; storyId?: string } | null>(null);
   const [params, setParams] = useSearchParams();
@@ -68,19 +84,8 @@ const FeedStoriesBar = () => {
   }, [routeStory, navigate, setParams]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const loadBar = useCallback(async () => {
-    if (!user) return;
-    const [b, own] = await Promise.all([
-      timedRpc("rpc.get_feed_stories_bar", "src/components/feed/FeedStoriesBar.tsx", () => fetchStoryBar()).catch(() => []),
-      fetchUserStories(user.id).catch(() => []),
-    ]);
-    setBar(b);
-    setOwnStories(own);
-  }, [user]);
-
-  useEffect(() => {
-    void loadBar();
-  }, [loadBar]);
+  const { refetch: refetchBar } = storiesQ;
+  const loadBar = useCallback(async () => { await refetchBar(); }, [refetchBar]);
 
   // A bell / push link: /feed?story=<id> opens that story in the viewer.
   useEffect(() => {
