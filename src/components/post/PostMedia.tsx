@@ -23,7 +23,7 @@ import { feedPhotoFit, frameAspectFor, frameAspectForUrls, parseImageDims } from
 import { FEED_COPY_WAIT_MS, feedCopyFor, useFeedCopiesVersion } from "@/lib/photoFeedCopies";
 import { photoBlurFor, usePhotoBlurVersion } from "@/lib/photoBlur";
 import { hasLadderMarker, isSaveTargetCreditedUrl, photoSetBlurUrl, photoSetCleanUrl, photoSetMarker, rungPath, rungPlan, rungWidthFor } from "@/lib/imageLadder";
-import { useNetworkQuality } from "@/hooks/core/useNetworkQuality";
+import { feedSizesFor, usePhotoTier } from "@/lib/net/photoTier";
 import { useDataSaver } from "@/hooks/core/useDataSaver";
 import { feedPhotoSet, memberPhotoSrc, saveAsPhotoUrl } from "@/lib/photoProtection";
 import { useOldPhotoCreditVersion } from "@/lib/photoOldCredit";
@@ -421,7 +421,9 @@ const ProgressiveImage = ({
   const [failed, setFailed] = useState(false);
   const [backdropFailed, setBackdropFailed] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
-  const slowLink = useNetworkQuality().slow;
+  // N4: small / medium / large from the measured speed (src/lib/net/photoTier.ts).
+  const tier = usePhotoTier();
+  const slowLink = tier === "small";
   const transformable = isTransformable(src);
   /**
    * PHOTO SPEED (Owner, 5 Nov 2026: "photo must come in less than 1 sec"). An
@@ -650,7 +652,7 @@ const ProgressiveImage = ({
         {...saveProps}
         src={failed ? failSrc : sharpSrc}
         srcSet={failed ? undefined : srcSet}
-        sizes={!failed && srcSet ? (slowLink || saving ? SLOW_FEED_SIZES : FEED_SIZES) : undefined}
+        sizes={!failed && srcSet ? (saving ? SLOW_FEED_SIZES : feedSizesFor(tier, FEED_SIZES, SLOW_FEED_SIZES)) : undefined}
         alt=""
         className={`absolute inset-0 w-full h-full ${fitClass} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"} ${className ?? ""}`}
         loading="lazy"
@@ -723,10 +725,10 @@ const SingleImagePost = ({ src, thumb, frameAspect, fit, onNaturalSize, onDouble
 };
 
 /* ── Preload helper ── */
-function preloadImage(url: string | null | undefined) { if (!url) return; const img = new Image(); img.src = url; }
+export function preloadImage(url: string | null | undefined) { if (!url) return; const img = new Image(); img.src = url; }
 
 /** A photo's small (~600) copy — what an album preloads for the next slide. Never an original. */
-function feedPreviewUrl(url: string | undefined, thumb: string | null | undefined): string | null {
+export function feedPreviewUrl(url: string | undefined, thumb: string | null | undefined): string | null {
   if (!url) return null;
   if (photoSetMarker(url)) return memberPhotoSrc(url, 600);
   if (isTransformable(url)) return buildRenderUrl(url, 480);

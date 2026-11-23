@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { feedPreviewUrl, preloadImage } from "@/components/post/PostMedia";
+import { usePhotoTier } from "@/lib/net/photoTier";
 import PendingPhotoPosts from "@/components/upload/PendingPhotoPosts";
 import { useQuery } from "@tanstack/react-query";
 
@@ -150,6 +152,21 @@ const Feed = () => {
     // S12-F5: and the posts hidden / authors muted from the ⋯ menu (Undo brings them back).
     return all.filter((p) => !blockedIds.has(p.user_id) && !isHidden(p));
   }, [data?.pages, blockedIds, isHidden]);
+
+  // N4c · LOAD AHEAD: when a new page of posts arrives (load-more), fetch the small preview copy of its
+  // first photos now, so they are already there when the member scrolls to them. Never an original;
+  // fewer on a slow link. The first page is drawn at once anyway, so it is skipped.
+  const photoTier = usePhotoTier();
+  const preloadedUpTo = useRef(0);
+  useEffect(() => {
+    const from = preloadedUpTo.current;
+    preloadedUpTo.current = posts.length;
+    if (from === 0 || posts.length <= from) return;
+    const ahead = photoTier === "small" ? 2 : 5;
+    for (const p of posts.slice(from, from + ahead) as Array<{ image_urls?: string[]; thumbnail_urls?: (string | null)[] }>) {
+      preloadImage(feedPreviewUrl(p.image_urls?.[0], p.thumbnail_urls?.[0]));
+    }
+  }, [posts, photoTier]);
   const relevantUserIds = useMemo(() => getNetworkIds(data?.pages), [data?.pages]);
 
   /**
