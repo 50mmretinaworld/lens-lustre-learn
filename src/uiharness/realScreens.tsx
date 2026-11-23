@@ -486,6 +486,16 @@ export const A11Y_ONLY_SCREENS: Record<string, () => JSX.Element> = {
     return screen(<AdminPanel />, "/admin/users", "/admin/*");
   },
   /**
+   * Feed order switch (20261123_4600) · Admin → Feed → Feed Order, the REAL
+   * AdminPanel route; feature_admin_state answers the row the migration makes.
+   */
+  "screen-admin-feed-order": () => {
+    (globalThis as { __harnessRoles?: string[] }).__harnessRoles = ["admin"];
+    // AdminPanel's header counters (nothing open, nothing unread).
+    (globalThis as { __harnessAdminCounters?: boolean }).__harnessAdminCounters = true;
+    return screen(<AdminPanel />, "/admin/feed_order", "/admin/*");
+  },
+  /**
    * PN3 · Admin → Push Notification, the REAL AdminPanel route with the push
    * centre sample (adminPushSample.ts) — shaped like production 16 Nov 2026.
    * The members sample answers the role/badge lists and the member search.
