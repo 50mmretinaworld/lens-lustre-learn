@@ -103,7 +103,7 @@ const VALID_ROUTES = new Set([
   "comments", "keyword_blocklist", "reports", "post_reports",
   "wallet", "gifts", "transactions", "orders",
   "seo", "advertisements", "features", "push_notification", "performance", "announcements", "newsletter_faq", "analytics",
-  "video_posts", "video_ads", "video_music_check", "video_conversion", "personal_feed", "upload_resume",
+  "video_posts", "video_ads", "video_music_check", "video_conversion", "personal_feed", "feed_order", "upload_resume",
   "new_photos", "competition_fullsize", "mention_groups", "mention_all_blocked",
   "page_management", "menu_builder", "redirects",
   "settings", "auth_pages", "email_templates", "database",
@@ -200,6 +200,7 @@ const tabGroups = [
   /* S12-F3: the personal feed's switch (Off / Selected members / All members). */
   { label: "Feed", items: [
     ["personal_feed", "Personal Feed", Sparkles],
+    ["feed_order", "Feed Order", Sparkles],
   ] as const },
   /* Smart photo plan: the Owner's two switches (photo_set_v2, competition_fullsize_purge). */
   { label: "Photos", items: [
@@ -338,6 +339,7 @@ const AdminPanel = () => {
       {currentRoute === "video_music_check" && <LazyTab><AdminVideoFeature feature="copyright_music_check" /></LazyTab>}
       {currentRoute === "video_conversion" && <LazyTab><AdminVideoConversion /></LazyTab>}
       {currentRoute === "personal_feed" && <LazyTab><div className="space-y-4"><AdminVideoFeature feature="personal_feed" /><AdminFeedMix /></div></LazyTab>}
+      {currentRoute === "feed_order" && <LazyTab><AdminVideoFeature feature="feed_newest_first" /></LazyTab>}
       {currentRoute === "upload_resume" && <LazyTab><AdminVideoFeature feature="photo_upload_resume" /></LazyTab>}
       {currentRoute === "new_photos" && <LazyTab><AdminVideoFeature feature="photo_set_v2" /></LazyTab>}
       {currentRoute === "competition_fullsize" && <LazyTab><AdminVideoFeature feature="competition_fullsize_purge" /></LazyTab>}
