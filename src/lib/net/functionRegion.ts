@@ -12,36 +12,17 @@
  * `x-region` header (what functions-js sends for its `region` option) is not
  * in our functions' CORS allow-list, so a browser preflight would refuse it.
  *
+ * supabase-js always hands its fetch a string URL (functions, REST, auth), so
+ * only strings are rewritten; a URL or Request object passes through as is.
+ * Kept tiny on purpose: it sits in the entry bundle (P13 ceiling).
+ *
  * Imports NOTHING: src/integrations/supabase/client.ts uses it, and an import
  * cycle there breaks the app shell.
  */
-const DEFAULT_REGION = "ap-northeast-2";
+export const FUNCTION_REGION = "ap-northeast-2";
 
-export const FUNCTION_REGION: string =
-  (import.meta.env?.VITE_SUPABASE_FUNCTION_REGION as string | undefined)?.trim() || DEFAULT_REGION;
-
-const FUNCTIONS_PATH = "/functions/v1/";
-
-/** Adds forceFunctionRegion to an edge function URL; any other URL comes back unchanged. */
-export function pinFunctionRegion(url: string): string {
-  if (!url.includes(FUNCTIONS_PATH) || url.includes("forceFunctionRegion=")) return url;
-  try {
-    const u = new URL(url);
-    if (!u.pathname.includes(FUNCTIONS_PATH)) return url;
-    u.searchParams.set("forceFunctionRegion", FUNCTION_REGION);
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
-
-/** Same as pinFunctionRegion for a fetch input (string, URL or Request). */
-export function pinFunctionRegionInput(input: RequestInfo | URL): RequestInfo | URL {
-  if (typeof input === "string") return pinFunctionRegion(input);
-  if (input instanceof URL) {
-    const pinned = pinFunctionRegion(input.href);
-    return pinned === input.href ? input : new URL(pinned);
-  }
-  const pinned = pinFunctionRegion(input.url);
-  return pinned === input.url ? input : new Request(pinned, input);
+/** Adds forceFunctionRegion to an edge function URL; anything else comes back unchanged. */
+export function pinFunctionRegion<T>(input: T): T {
+  if (typeof input !== "string" || !input.includes("/functions/v1/") || input.includes("forceFunctionRegion=")) return input;
+  return (input + (input.includes("?") ? "&" : "?") + "forceFunctionRegion=" + FUNCTION_REGION) as T;
 }

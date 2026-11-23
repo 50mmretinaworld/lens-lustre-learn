@@ -1,12 +1,10 @@
-// @vitest-environment node
-// (jsdom's Request cannot copy its own AbortSignal; the helper has no DOM use.)
 import { describe, it, expect } from "vitest";
-import { pinFunctionRegion, pinFunctionRegionInput, FUNCTION_REGION } from "@/lib/net/functionRegion";
+import { pinFunctionRegion, FUNCTION_REGION } from "@/lib/net/functionRegion";
 
 const BASE = "https://abcdefghijklmnopqrst.supabase.co";
 
 describe("N1 · edge functions run next to the database", () => {
-  it("defaults to the database region (Seoul)", () => {
+  it("pins to the database region (Seoul)", () => {
     expect(FUNCTION_REGION).toBe("ap-northeast-2");
   });
 
@@ -36,13 +34,8 @@ describe("N1 · edge functions run next to the database", () => {
     expect(pinFunctionRegion(once)).toBe(once);
   });
 
-  it("handles URL and Request inputs, and never sends an x-region header", () => {
-    const u = pinFunctionRegionInput(new URL(`${BASE}/functions/v1/x`)) as URL;
-    expect(u.searchParams.get("forceFunctionRegion")).toBe("ap-northeast-2");
-    const r = pinFunctionRegionInput(new Request(`${BASE}/functions/v1/x`, { method: "POST", headers: { apikey: "k" } })) as Request;
-    expect(new URL(r.url).searchParams.get("forceFunctionRegion")).toBe("ap-northeast-2");
-    expect(r.method).toBe("POST");
-    expect(r.headers.get("apikey")).toBe("k");
-    expect(r.headers.has("x-region")).toBe(false);
+  it("passes URL and Request objects through unchanged", () => {
+    const u = new URL(`${BASE}/functions/v1/x`);
+    expect(pinFunctionRegion(u)).toBe(u);
   });
 });
