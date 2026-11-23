@@ -72,7 +72,7 @@ async function appId() {
 }
 
 async function ensurePush(bid) {
-  const caps = await call("GET", `/bundleIds/${bid.id}/bundleIdCapabilities?limit=50`);
+  const caps = await call("GET", `/bundleIds/${bid.id}/bundleIdCapabilities`);   // this relationship refuses ?limit
   if ((caps.data || []).some((c) => c.attributes?.capabilityType === "PUSH_NOTIFICATIONS")) {
     console.log("Push Notifications capability: already on");
     return;
