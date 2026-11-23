@@ -21,8 +21,11 @@ const DashboardContext = createContext<DashboardContextValue>({
 });
 
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
-  const query = useDashboardInit(user?.id);
+  const { user, loading } = useAuth();
+  // N3 (Owner 23 Nov: "build like Meta"): ask once sign-in is known. It used to ask as "no user" while the
+  // session was still being read and AGAIN as the member — two 0.5–1 s calls per page load. The bootstrap
+  // gate (dashboardInitGate) already holds the leaf reads until this first answer, so nothing races ahead.
+  const query = useDashboardInit(user?.id, !loading);
 
   return (
     <DashboardContext.Provider

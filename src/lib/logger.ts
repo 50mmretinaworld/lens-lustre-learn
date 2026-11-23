@@ -202,6 +202,10 @@ let ambientUserId: string | null = null;
 export function setLogUser(userId: string | null): void {
   ambientUserId = userId ?? null;
 }
+/** Who the auth hook last said is signed in (null = signed out, or not known yet). */
+export function getLogUser(): string | null {
+  return ambientUserId;
+}
 
 function appBuild(): string | null {
   try {
