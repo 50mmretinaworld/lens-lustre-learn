@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useScreenReady } from "@/lib/screenTiming";
 import { feedPreviewUrl, preloadImage } from "@/components/post/PostMedia";
 import { usePhotoTier } from "@/lib/net/photoTier";
 import PendingPhotoPosts from "@/components/upload/PendingPhotoPosts";
@@ -108,6 +109,7 @@ const Feed = () => {
     isError,
     isFetching,
   } = useFeedQuery(user?.id, feedCategories, navigationType, feedTab);
+  useScreenReady("feed", !loading);                 // N5: speed per screen
   const refreshFeed = useFeedRefresh(feedCategories, feedTab);
 
   /**

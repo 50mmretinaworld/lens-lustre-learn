@@ -34,7 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { QueryClient } from "@tanstack/react-query";
 import { profilesPublic } from "@/lib/profilesPublic";
 
-import { logger, timedRpc } from "@/lib/logger";
+import { getLogUser, logger, timedRpc } from "@/lib/logger";
 
 const FILE = "src/lib/profileMapCache.ts";
 
@@ -311,6 +311,25 @@ async function rawFetchProfileMap(
 ): Promise<{ map: ProfileMap; found: Set<string>; failed: boolean }> {
   if (sortedIds.length === 0) return { map: new Map(), found: new Set(), failed: false };
 
+  /**
+   * N3 (Owner 23 Nov: "build like Meta"): a signed-in member reads name AND online dot in ONE request
+   * (same table, same ids) — 3 requests per lookup instead of 4. If that read is refused (the session
+   * ended a moment ago) the name-only read with its retries answers, so names never go missing.
+   * Signed out or not known yet: exactly the two reads as before.
+   */
+  if (getLogUser()) {
+    const both = await Promise.resolve(
+      profilesPublic().select("id, full_name, avatar_url, custom_url, last_active_at").in("id", sortedIds),
+    ).catch((err: unknown) => ({ data: null, error: err }));
+    if (!both.error) {
+      const [badgesRes, rolesRes] = await Promise.all([
+        supabase.from("user_badges").select("user_id, badge_type").in("user_id", sortedIds),
+        timedRpc("rpc.get_public_roles_for_users", FILE, () => supabase.rpc("get_public_roles_for_users", { _user_ids: sortedIds } as any)),
+      ]);
+      return assembleProfileMap(sortedIds, both, badgesRes, rolesRes, both);
+    }
+  }
+
   const [profilesRes, badgesRes, rolesRes, presenceRes] = await Promise.all([
     /**
      * ⚠ THIS ONE RETRIES. THE OTHER THREE DO NOT, AND THAT ASYMMETRY IS THE FIX.
@@ -341,7 +360,14 @@ async function rawFetchProfileMap(
     // returns an error we ignore -> no dots for logged-out visitors, by design.
     profilesPublic().select("id, last_active_at").in("id", sortedIds),
   ]);
+  return assembleProfileMap(sortedIds, profilesRes, badgesRes, rolesRes, presenceRes);
+}
 
+type Res = { data: unknown; error: unknown };
+/** One assembly for both paths: names + badges + roles + online dot, a placeholder for every id not found. */
+function assembleProfileMap(
+  sortedIds: string[], profilesRes: Res, badgesRes: Res, rolesRes: Res, presenceRes: Res,
+): { map: ProfileMap; found: Set<string>; failed: boolean } {
   const presenceMap = new Map<string, string | null>();
   ((presenceRes.data as any[]) || []).forEach((p: any) => {
     presenceMap.set(p.id, p.last_active_at ?? null);

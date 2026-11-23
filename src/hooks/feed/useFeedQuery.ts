@@ -404,6 +404,18 @@ async function fetchBroadcastPage(
  * deals them — the pill must not promise what a refresh will not bring. null
  * when the read fails: the session simply shows no "new posts" pill.
  */
+/** N3 3b · this device's last "personal feed?" answer per member (undefined = never asked here). */
+const PERSONAL_KEY = "feed-personal:";
+function rememberedPersonalFeed(userId: string): boolean | undefined {
+  try {
+    const v = localStorage.getItem(PERSONAL_KEY + userId);
+    return v === "1" ? true : v === "0" ? false : undefined;
+  } catch { return undefined; }
+}
+function rememberPersonalFeed(userId: string, personal: boolean): void {
+  try { localStorage.setItem(PERSONAL_KEY + userId, personal ? "1" : "0"); } catch { /* no memory: next open asks first */ }
+}
+
 async function fetchWatermark(userId: string, categories: string[] | null): Promise<string | null> {
   try {
     let q = supabase.from("posts").select("created_at").neq("user_id", userId).neq("privacy", "private").order("created_at", { ascending: false }).limit(1);
@@ -1024,10 +1036,35 @@ export function useFeedQuery(userId: string | undefined, categories?: string[] |
          * The network list is fetched ONLY to label `is_suggested`. The watermark
          * rides the same round trip, and is read BEFORE the page is dealt.
          */
-        const fresh = isFirstPage
-          ? await Promise.all([fetchRelevantUsers(userId!), fetchWatermark(userId!, cats), timeline ? Promise.resolve(false) : fetchFeatureAllowed("personal_feed")])
-              .then(([ids, wm, personal]) => ({ networkIds: ids, watermark: wm, seed: newFeedSessionSeed(), personal }))
+        // N3 3b · ONE ROUND TRIP, NOT TWO (Owner 23 Nov: "build like Meta"). Page 0 used to wait for its three
+        // side reads before asking for the page. Only one of them changes WHICH posts come back — "personal
+        // feed?" — and that is taken from this device's last answer (checked again alongside; a change applies
+        // from the next refresh). The network list (labels) and the watermark (new-posts pill) arrive with the
+        // page; if they fail, the page still shows (no labels / no pill), as a failed watermark always did.
+        // First open on a device (no answer yet): the old order, once.
+        const sideReads = isFirstPage
+          ? Promise.all([fetchRelevantUsers(userId!), fetchWatermark(userId!, cats), timeline ? Promise.resolve(false) : fetchFeatureAllowed("personal_feed")])
           : null;
+        const knownPersonal = isFirstPage && !timeline ? rememberedPersonalFeed(userId!) : undefined;
+        const fastStart = !!sideReads && (!!timeline || knownPersonal !== undefined);
+        const fresh: { networkIds: string[]; watermark: string | null; seed: string; personal: boolean } | null = !sideReads
+          ? null
+          : fastStart
+            ? { networkIds: [], watermark: null, seed: newFeedSessionSeed(), personal: timeline ? false : (knownPersonal as boolean) }
+            : await sideReads.then(([ids, wm, personal]) => {
+                if (!timeline) rememberPersonalFeed(userId!, personal);
+                return { networkIds: ids, watermark: wm, seed: newFeedSessionSeed(), personal };
+              });
+        /** Fast start: the side reads, awaited AFTER the page call (never blocking it; a failure = no labels / no pill). */
+        const finishSideReads = async () => {
+          if (!fastStart || !sideReads || !fresh) return;
+          try {
+            const [ids, wm, personal] = await sideReads;
+            fresh.networkIds = ids;
+            fresh.watermark = wm;
+            if (!timeline) rememberPersonalFeed(userId!, personal);
+          } catch { /* labels and the pill are extras; the page stands */ }
+        };
         const commitSession = () => {
           if (!fresh) return;
           // A live page 0 starts a live session: later pages come from the server.
@@ -1040,10 +1077,10 @@ export function useFeedQuery(userId: string | undefined, categories?: string[] |
           personalRef.current = fresh.personal;
         };
 
-        const networkIds = fresh ? fresh.networkIds : networkIdsRef.current;
+        let networkIds = fresh ? fresh.networkIds : networkIdsRef.current;
         const excludeIds = fresh ? [] : excludeByPageRef.current.get(pageIndex) ?? [];
         const sessionSeed = fresh ? fresh.seed : sessionSeedRef.current ?? (sessionSeedRef.current = newFeedSessionSeed());
-        const watermark = fresh ? fresh.watermark : sessionWatermarkRef.current;
+        let watermark = fresh ? fresh.watermark : sessionWatermarkRef.current;
         // S12-F3: decided once per session (page 0), so every page of one deal
         // comes from the same function.
         const personal = fresh ? fresh.personal : personalRef.current;
@@ -1076,6 +1113,13 @@ export function useFeedQuery(userId: string | undefined, categories?: string[] |
         const { rows: rawPosts, degraded, personal: servedPersonal } = served ?? (timeline
           ? { rows: await fetchTimelinePage(timeline, excludeIds, cats), degraded: false, personal: false }
           : await fetchBroadcastPage(excludeIds, newestFirst, cats, sessionSeed, personal));
+
+        // N3 3b: the side reads that rode along with the page call.
+        if (fastStart && fresh) {
+          await finishSideReads();
+          networkIds = fresh.networkIds;
+          watermark = fresh.watermark;
+        }
 
         if (rawPosts.length === 0) {
           // Everything visible has been delivered this session — feed end.

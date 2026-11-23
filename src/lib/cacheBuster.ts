@@ -15,7 +15,7 @@
  * Safe to call once on app start; failures are swallowed so the app
  * never gets blocked by a cache-bust attempt.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { getSiteSetting } from "@/lib/siteSettingsCache";
 
 const LOCAL_KEY = "lov:cache_buster_version";
 const QUERY_KEY = "cb";
@@ -42,13 +42,8 @@ export function stripCacheBusterParam(): void {
 
 export async function runCacheBuster(): Promise<void> {
   try {
-    const { data } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "cache_buster")
-      .maybeSingle();
-
-    const value = (data?.value ?? null) as CacheBusterValue;
+    // N3 · the ONE settings reader (edge copy first, batched): no separate round trip to the database.
+    const value = (await getSiteSetting("cache_buster", { maxAgeMs: 60_000 })) as CacheBusterValue;
     if (!value || !value.enabled) return;
 
     const serverVersion = Number(value.version ?? 0);

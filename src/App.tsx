@@ -7,6 +7,7 @@ import { isNativeCapacitorApp, isNativeIOSApp } from "@/lib/native/authDeepLink"
 import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/core/useAuth";
 import OfflineDeviceStoreBridge from "@/components/OfflineDeviceStoreBridge";
+import { ScreenClock } from "@/lib/screenTiming";
 import OutboxBridge from "@/components/OutboxBridge";
 import { shouldRetry, retryDelay } from "@/lib/offline/retryPolicy";
 import { ThemeProvider } from "@/hooks/core/useTheme";
@@ -373,6 +374,8 @@ const App = () => {
       <Sonner />
       <AppUpdatePrompt />
       <BrowserRouter>
+        {/* N5: speed per screen — every page change restarts the one screen clock. */}
+        <ScreenClock />
         <DynamicFavicon />
         <AuthProvider>
           <ThemeProvider>
