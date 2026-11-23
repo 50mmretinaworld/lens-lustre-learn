@@ -24,6 +24,15 @@
  *   counts             ["friend-follow", member, <own id as viewer>]
  *   notifications      ["notifications" | "notification-history", <own id only>]
  *   the feed's ads     ["ad-zone", zone]  (ads bug 2, 2026-10-29)
+ * N2 · instant screens (Owner 23 Nov: "build like Meta"), the same rule — saved copy first, then fresh:
+ *   message boxes      ["messages", "conversations", <own id>, folder]
+ *   unread counts      ["messages", "unread", <own id>]
+ *   each chat          ["messages", "thread", conversationId]   (the newest page; the server only ever
+ *                      answers a member's own chats, and the copy is this member's, wiped on sign-out)
+ *   stories row        ["feed-stories-bar", <own id>]
+ *   trending           ["trending-week"]
+ *   competitions       ["competitions", filter] · ["sidebar-competitions"]
+ *   NEVER an admin's read-only view of someone else's box (["messages", "view-as", …]).
  * Everything is stored per signed-in member and wiped on sign-out (G6).
  * Nothing else is persisted: admin data, search, drafts and anything not
  * named here stay in memory only.
@@ -52,6 +61,16 @@ export function isPersisted(key: QueryKey, userId: string | null): boolean {
     // Ads bug 2: the feed's ad zone (flag, config, picture library) — the
     // same for every member, kept per member like everything here.
     case "ad-zone": return key.length === 2 && typeof arg === "string" && arg.length > 0;
+    // N2 · instant screens.
+    case "messages":
+      if (arg === "conversations") return key[2] === userId && typeof key[3] === "string";
+      if (arg === "unread") return key[2] === userId && key.length === 3;
+      if (arg === "thread") return key.length === 3 && typeof key[2] === "string" && key[2].length > 0;
+      return false;                                    // "view-as" (admin), "allowed" (own memory), anything new
+    case "feed-stories-bar": return arg === userId && key.length === 2;
+    case "trending-week": return key.length === 1;
+    case "competitions": return key.length === 2 && typeof arg === "string";
+    case "sidebar-competitions": return key.length === 1;
     default: return false;
   }
 }
