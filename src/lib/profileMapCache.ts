@@ -356,11 +356,31 @@ async function rawFetchProfileMap(
     // F2: anon-safe RPC; returns only registered_photographer/student/content_editor
     timedRpc("rpc.get_public_roles_for_users", FILE, () => supabase.rpc("get_public_roles_for_users", { _user_ids: sortedIds } as any)),
     // Presence (online dot). last_active_at is readable ONLY by authenticated users
-    // (and null for users who hid their active status), so for anon this query
-    // returns an error we ignore -> no dots for logged-out visitors, by design.
-    profilesPublic().select("id, last_active_at").in("id", sortedIds),
+    // (and null for users who hid their active status) -> no dots for logged-out visitors, by design.
+    // N3 (24 Nov, measured live: 2 refused 401 reads on every signed-out home visit): with no session
+    // stored on this device the server WILL refuse it, so it is not sent at all.
+    mayHaveSession()
+      ? profilesPublic().select("id, last_active_at").in("id", sortedIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   return assembleProfileMap(sortedIds, profilesRes, badgesRes, rolesRes, presenceRes);
+}
+
+/**
+ * False ONLY when this device certainly has no sign-in: the auth hook has not reported a member AND no
+ * Supabase session is stored (supabase-js keeps it in localStorage as `sb-<project>-auth-token`, see
+ * integrations/supabase/client.ts). Unreadable storage counts as "maybe" — the read is sent as before.
+ */
+function mayHaveSession(): boolean {
+  if (getLogUser()) return true;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      if (/^sb-.+-auth-token$/.test(localStorage.key(i) ?? "")) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 type Res = { data: unknown; error: unknown };

@@ -73,9 +73,13 @@ const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")
 beforeEach(() => {
   clearProfileEntityCache();
   resetCalls();
+  // These tests read the online dot, which only a device WITH a session asks for (N3, 24 Nov):
+  // a session is stored, the auth hook has not reported yet → the four reads.
+  localStorage.setItem("sb-testprojectref0000x-auth-token", "{}");
 });
 afterEach(() => {
   vi.useRealTimers();
+  localStorage.clear();
 });
 
 describe("one round trip per batch, not per caller", () => {
