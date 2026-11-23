@@ -60,6 +60,7 @@ const AdminPerformance = lazy(() => import("@/components/admin/AdminPerformance"
 const AdminAnnouncements = lazy(() => import("@/components/admin/AdminAnnouncements"));
 const AdminHealth = lazy(() => import("@/components/admin/AdminHealth"));
 const AdminAppHealth = lazy(() => import("@/components/admin/AdminAppHealth"));
+const AdminScreenSpeed = lazy(() => import("@/components/admin/AdminScreenSpeed"));
 const AdminFirstPostRate = lazy(() => import("@/components/admin/AdminFirstPostRate"));
 // The structured application log (owner's logging standard, 2026-08-06).
 const AdminAppEvents = lazy(() => import("@/components/admin/AdminAppEvents"));
@@ -363,7 +364,7 @@ const AdminPanel = () => {
       {currentRoute === "database" && <LazyTab><DatabaseModule /></LazyTab>}
 
       {/* Overview */}
-      {currentRoute === "health" && <LazyTab><div className="space-y-4"><AdminAppHealth /><AdminFirstPostRate /><AdminHealth user={user} /></div></LazyTab>}
+      {currentRoute === "health" && <LazyTab><div className="space-y-4"><AdminAppHealth /><AdminScreenSpeed /><AdminFirstPostRate /><AdminHealth user={user} /></div></LazyTab>}
       {currentRoute === "app_events" && (
         <LazyTab>
           <div className="space-y-4">
