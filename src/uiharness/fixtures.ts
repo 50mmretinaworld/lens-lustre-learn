@@ -521,7 +521,10 @@ export const adCreatives: unknown[] = [];
 export const dashboardInit = {
   settings: {},
   profiles: profilesPublicData,
-  roles: userRoles,
+  // { member id: [roles] } — exactly what dashboard-init sends. It was the user_roles ROWS, which made
+  // preSeedCaches throw (seedAdminIds), so every harness scene called dashboard-init twice (retry) and
+  // re-read user_roles / is_banned itself (N3 request count, 23 Nov).
+  roles: Object.fromEntries(userRoles.map((r) => [r.user_id, userRoles.filter((x) => x.user_id === r.user_id).map((x) => x.role)])),
   badges: [],
   user_meta: { is_banned: false, notification_sound_enabled: true },
   sidebar: {

@@ -11,7 +11,7 @@
 import { useContext } from "react";
 import { QueryClient, QueryClientContext, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/core/useAuth";
-import { FEATURE_REFRESH_MS, featureAllowedKey, fetchFeatureAllowed } from "@/hooks/core/useFeatureAllowed";
+import { FEATURE_REFRESH_MS, featureAllowedKey, featuresAllowedQuery, fetchFeatureAllowed } from "@/hooks/core/useFeatureAllowed";
 
 /** Never fetches: every query on it is disabled. Only stands in when no provider exists. */
 const INERT = new QueryClient({ defaultOptions: { queries: { enabled: false } } });
@@ -21,20 +21,23 @@ export function usePhotoSetV2(): boolean {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const live = !!client && !!userId;
-  const q = useQuery(
+  // N3: the SAME all-switches query as useFeatureAllowed (one poll serves every switch).
+  const q = useQuery(featuresAllowedQuery(userId, live), client ?? INERT);
+  // A lane without the batched function: the old per-switch ask.
+  const single = useQuery(
     {
       queryKey: featureAllowedKey("photo_set_v2", userId),
-      enabled: live,
+      enabled: live && q.isSuccess && q.data === null,
       staleTime: FEATURE_REFRESH_MS,
-      // P10: the SAME poll as useFeatureAllowed (same query key, so react-query
-      // runs one of them, not two): R-103 "switch changes apply within 60 s, no
-      // app release"; paused in the background.
+      // P10: R-103 "changes apply within 60 s" — runs ONLY on a lane without features_allowed_me
+      // (enabled above), so it replaces the batched poll there; never both.
       refetchInterval: live ? FEATURE_REFRESH_MS : false,
-      refetchOnWindowFocus: true,
       retry: false,
       queryFn: () => fetchFeatureAllowed("photo_set_v2"),
     },
     client ?? INERT,
   );
-  return live && q.data === true;
+  if (!live) return false;
+  // Batched answer not in yet, or a lane without it: the per-switch answer (already cached, or fetched).
+  return q.data === undefined || q.data === null ? single.data === true : q.data.photo_set_v2 === true;
 }
