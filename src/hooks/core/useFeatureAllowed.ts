@@ -113,6 +113,7 @@ export function useFeatureAllowed(feature: FeatureName): boolean {
     retry: false,
     queryFn: () => fetchOne(feature),
   });
-  if (q.data === null) return single.data === true;
-  return q.data?.[feature] === true;
+  // Batched answer not in yet, or a lane without it: the per-switch answer (already cached, or fetched).
+  if (q.data === undefined || q.data === null) return single.data === true;
+  return q.data[feature] === true;
 }

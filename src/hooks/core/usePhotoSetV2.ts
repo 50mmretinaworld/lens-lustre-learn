@@ -36,5 +36,6 @@ export function usePhotoSetV2(): boolean {
     client ?? INERT,
   );
   if (!live) return false;
-  return q.data === null ? single.data === true : q.data?.photo_set_v2 === true;
+  // Batched answer not in yet, or a lane without it: the per-switch answer (already cached, or fetched).
+  return q.data === undefined || q.data === null ? single.data === true : q.data.photo_set_v2 === true;
 }
