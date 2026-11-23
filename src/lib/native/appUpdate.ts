@@ -23,8 +23,14 @@ type AppUpdatePlugin = {
     availableVersionName?: string;
   }>;
   performImmediateUpdate: () => Promise<{ code?: number }>;
-  openAppStore: () => Promise<void>;
+  // iOS: appId (the numeric Apple ID) is REQUIRED by the plugin; Android ignores it.
+  openAppStore: (options?: { appId?: string }) => Promise<void>;
 };
+
+// iOS has no in-app update: the prompt opens the App Store page instead, which needs the app's numeric Apple ID
+// (App Store Connect → App Information → Apple ID). ios-build.yml passes it from the repo variable IOS_APP_STORE_ID.
+// Without it the iOS prompt stays off (it could not open the store).
+const IOS_APP_STORE_ID: string = (import.meta.env.VITE_IOS_APP_STORE_ID ?? "").trim();
 
 type CapGlobal = {
   isNativePlatform?: () => boolean;
@@ -38,9 +44,17 @@ const cap = (): CapGlobal | undefined =>
 const plugin = (): AppUpdatePlugin | undefined =>
   cap()?.Plugins?.AppUpdate as AppUpdatePlugin | undefined;
 
-/** True only inside the installed Android app with the plugin present. */
-export const appUpdateSupported = (): boolean =>
-  !!cap()?.isNativePlatform?.() && cap()?.getPlatform?.() === "android" && !!plugin();
+const isIos = (): boolean => cap()?.getPlatform?.() === "ios";
+
+/** True only inside the installed Android app, or the iOS app when its Apple ID is known, with the plugin present. */
+export const appUpdateSupported = (): boolean => {
+  if (!cap()?.isNativePlatform?.() || !plugin()) return false;
+  const platform = cap()?.getPlatform?.();
+  return platform === "android" || (platform === "ios" && /^\d+$/.test(IOS_APP_STORE_ID));
+};
+
+/** The store the update comes from, for the prompt's wording. */
+export const appStoreName = (): string => (isIos() ? "the App Store" : "Google Play");
 
 export interface UpdateStatus {
   available: boolean;
@@ -55,7 +69,7 @@ export async function checkForAppUpdate(): Promise<UpdateStatus | null> {
     const info = await plugin()!.getAppUpdateInfo();
     return {
       available: info.updateAvailability === 2, // UPDATE_AVAILABLE
-      immediateAllowed: !!info.immediateUpdateAllowed,
+      immediateAllowed: !isIos() && !!info.immediateUpdateAllowed,
       availableVersion: info.availableVersionName ?? info.availableVersionCode,
     };
   } catch (err) {
@@ -84,7 +98,7 @@ export async function startAppUpdate(immediateAllowed: boolean): Promise<void> {
   const p = plugin();
   if (!p) return;
   try {
-    if (immediateAllowed) {
+    if (immediateAllowed && !isIos()) {
       await p.performImmediateUpdate();
       return;
     }
@@ -103,7 +117,7 @@ export async function startAppUpdate(immediateAllowed: boolean): Promise<void> {
     });
   }
   try {
-    await p.openAppStore();
+    await (isIos() ? p.openAppStore({ appId: IOS_APP_STORE_ID }) : p.openAppStore());
   } catch (err) {
     logger.error({
       code: "SYS-9010",
