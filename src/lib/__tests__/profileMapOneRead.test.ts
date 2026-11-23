@@ -61,9 +61,23 @@ describe("profile lookup: name + online dot in one read when signed in (N3)", ()
     expect(map.get("u1")?.full_name).toBe("Mira Sen");
   });
 
-  it("signed out → the two reads as before", async () => {
+  it("signed out, no session on the device → ONE read (the name); the online-dot read the server refuses is not sent", async () => {
+    localStorage.clear();
     const { fetchProfileMapDirect } = await load(null);
-    await fetchProfileMapDirect(["u1"]);
-    expect(reads()).toBe(2);
+    const map = await fetchProfileMapDirect(["u1"]);
+    expect(reads()).toBe(1);
+    expect(asks.some((a) => a.select === "id, last_active_at")).toBe(false);
+    expect(map.get("u1")?.full_name).toBe("Mira Sen");
+  });
+
+  it("a session is stored but the auth hook has not reported yet → the two reads as before (dots not lost)", async () => {
+    localStorage.setItem("sb-testprojectref0000x-auth-token", "{}");
+    try {
+      const { fetchProfileMapDirect } = await load(null);
+      await fetchProfileMapDirect(["u1"]);
+      expect(reads()).toBe(2);
+    } finally {
+      localStorage.clear();
+    }
   });
 });
