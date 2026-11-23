@@ -18,15 +18,13 @@ name: iOS Build
 # Bundle ID: com.fiftymmretina.app (must match capacitor.config.ts appId and
 # the App ID used to generate the provisioning profile).
 #
-# SCOPE NOTE: this first iOS build wires up the core, iOS-safe plugins only
-# (share, filesystem, camera, app, browser). Firebase push
-# (@capacitor-firebase/messaging) and Play-style in-app updates
-# (@capawesome/capacitor-app-update) are Android-specific setups — push needs
-# an APNs key + proper iOS setup, and in-app updates don't work that way on
-# iOS at all. Add push as a deliberate follow-up, not by just flipping it on.
-# splash-screen is temporarily excluded too - see the note on the plugin
-# install step below (it is NOT an upstream incompatibility; it can be
-# restored as a follow-up now that the toolchain is fixed).
+# SCOPE (parity with Android, Owner 22-23 Nov 2026): share, filesystem, camera, app, browser, splash-screen,
+# app-update (App Store check + open the App Store page) and - when GoogleService-Info.plist is committed at the
+# repo root - Firebase push (@capacitor-firebase/messaging, step "Wire push into the iOS project").
+# Apple-side setup runs through the App Store Connect API with the saved key (tools/ios/asc-setup.mjs): the Apple
+# ID, the Push capability on the App ID, and the App Store profile. Two things have no API and stay manual: the
+# APNs key itself (developer.apple.com → Keys) and uploading it to Firebase (Cloud Messaging settings).
+# testflight_upload=false builds and signs without uploading (a compile check).
 #
 # NODE 22, NOT 20 - matches android-build.yml. @capacitor/cli 8.5.0 requires it.
 #
@@ -90,6 +88,39 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      # PUSH SWITCH + APPLE ID. Push (Firebase Cloud Messaging, same plugin as Android) is wired in ONLY when the
+      # iPhone Firebase file GoogleService-Info.plist is committed at the repo root (Android's google-services.json
+      # sits beside it). Firebase also needs the APNs key uploaded in its console (Owner step, no API for that).
+      # The Apple ID (for the App Store "Update available" prompt) is read from App Store Connect with the saved key.
+      - name: Push switch + Apple ID (App Store Connect API)
+        id: apple
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          APP_STORE_KEY_BASE64: ${{ secrets.APP_STORE_KEY_BASE64 }}
+          FALLBACK_APP_STORE_ID: ${{ vars.IOS_APP_STORE_ID }}
+        run: |
+          set -euo pipefail
+          if [ -f GoogleService-Info.plist ]; then
+            GOT=$(/usr/libexec/PlistBuddy -c "Print :BUNDLE_ID" GoogleService-Info.plist 2>/dev/null || true)
+            if [ "$GOT" != "$BUNDLE_ID" ]; then
+              echo "::error::GoogleService-Info.plist is for bundle '$GOT', this app is '$BUNDLE_ID'. Download the iOS app's file from Firebase again."
+              exit 1
+            fi
+            echo "push=true" >> "$GITHUB_OUTPUT"
+            echo "Push: ON (GoogleService-Info.plist for $GOT)"
+          else
+            echo "push=false" >> "$GITHUB_OUTPUT"
+            echo "Push: OFF (no GoogleService-Info.plist at the repo root)"
+          fi
+          export ASC_KEY_PATH="$RUNNER_TEMP/asc_api_key.p8"
+          echo -n "$APP_STORE_KEY_BASE64" | base64 --decode -o "$ASC_KEY_PATH"
+          ID=$(node tools/ios/asc-setup.mjs app-id || true)
+          [ -n "$ID" ] || ID="${FALLBACK_APP_STORE_ID:-}"
+          echo "Apple ID for the App Store page: ${ID:-<none - update prompt stays off on iOS>}"
+          echo "app_store_id=$ID" >> "$GITHUB_OUTPUT"
+          echo "asc_key_path=$ASC_KEY_PATH" >> "$GITHUB_OUTPUT"
+
       - name: App Store review compliance gate (docs/IOS_APP_STORE_RULES.md)
         run: npx vitest run src/__tests__/appStoreReviewCompliance.test.ts src/components/__tests__/AppleIosNoTracking.test.tsx
 
@@ -98,9 +129,9 @@ jobs:
           VITE_SUPABASE_URL: https://jtdtehuqtinjxropkkcn.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0ZHRlaHVxdGluanhyb3Bra2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NzI3MjEsImV4cCI6MjA5OTE0ODcyMX0.qY8BI5LXb6uLzTwbpf8AleZ6UZyfeaOA0q4_TC5CEpo
           VITE_SUPABASE_PROJECT_ID: jtdtehuqtinjxropkkcn
-          # iOS "Update available" prompt opens the App Store page, which needs the numeric Apple ID
-          # (App Store Connect → App Information → Apple ID). Repo variable, not a secret. Empty → prompt off on iOS.
-          VITE_IOS_APP_STORE_ID: ${{ vars.IOS_APP_STORE_ID }}
+          # iOS "Update available" prompt opens the App Store page, which needs the numeric Apple ID — read from
+          # App Store Connect in the step above (repo variable IOS_APP_STORE_ID as fallback). Empty → prompt off on iOS.
+          VITE_IOS_APP_STORE_ID: ${{ steps.apple.outputs.app_store_id }}
         run: npm run build
 
       - name: Install Capacitor + iOS-safe native plugins (pinned)
@@ -111,13 +142,17 @@ jobs:
           #    a plugin incompatibility. Same version as android-build.yml.
           #  - @capawesome/capacitor-app-update@8.0.3 (same as Android): on iOS it only CHECKS the App Store
           #    version and opens the App Store page (no in-app install on iOS) - see src/lib/native/appUpdate.ts.
-          #  - push (@capacitor-firebase/messaging) still needs the APNs key + GoogleService-Info.plist first.
+          #  - @capacitor-firebase/messaging@8.4.0 (same as Android) only when the push switch is ON (step "apple").
+          #    It starts Firebase itself (FirebaseApp.configure) and registers with APNs; the token hand-off lines
+          #    go into AppDelegate.swift in "Wire push into the iOS project" below.
+          PUSH_PLUGIN=""
+          if [ "${{ steps.apple.outputs.push }}" = "true" ]; then PUSH_PLUGIN="@capacitor-firebase/messaging@8.4.0"; fi
           npm install --no-audit --no-fund \
             @capacitor/core@8.5.0 @capacitor/cli@8.5.0 @capacitor/ios@8.5.0 \
             @capacitor/share@8.0.1 @capacitor/splash-screen@8.0.2 \
             @capacitor/filesystem@8.1.2 @capacitor/camera@8.2.2 \
             @capacitor/app@8.1.1 @capacitor/browser@8.0.4 \
-            @capawesome/capacitor-app-update@8.0.3
+            @capawesome/capacitor-app-update@8.0.3 $PUSH_PLUGIN
 
       - name: Add iOS platform
         run: npx cap add ios
@@ -261,6 +296,76 @@ jobs:
           echo "CFBundleShortVersionString = $(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")"
           echo "CFBundleVersion (build number) = $(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST")"
 
+      - name: Wire push into the iOS project
+        if: steps.apple.outputs.push == 'true'
+        run: |
+          set -euo pipefail
+          # ios/ is regenerated every run, so each piece is written here (same reason as the Info.plist step above).
+          # 1. Firebase config file, inside the App target's bundle resources.
+          cp GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
+          if ! ruby -e 'require "xcodeproj"' 2>/dev/null; then sudo gem install xcodeproj --no-document; fi
+          ruby -e '
+            require "xcodeproj"
+            project = Xcodeproj::Project.open("ios/App/App.xcodeproj")
+            target = project.targets.find { |t| t.name == "App" } or abort("::error::No App target")
+            group = project.main_group.find_subpath("App", false) or abort("::error::No App group")
+            ref = group.files.find { |f| f.path == "GoogleService-Info.plist" } || group.new_reference("GoogleService-Info.plist")
+            target.resources_build_phase.add_file_reference(ref, true)
+            project.save
+            ok = target.resources_build_phase.files_references.any? { |r| r && r.path == "GoogleService-Info.plist" }
+            abort("::error::GoogleService-Info.plist is not in the App target resources") unless ok
+            puts "GoogleService-Info.plist added to App target resources."
+          '
+          # 2. Push entitlement (App Store builds use the production APNs environment). Set on the App target in
+          #    "Configure manual signing" (CODE_SIGN_ENTITLEMENTS); the profile from App Store Connect carries it too.
+          cat > ios/App/App/App.entitlements <<'ENT'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>aps-environment</key>
+            <string>production</string>
+          </dict>
+          </plist>
+          ENT
+          plutil -lint ios/App/App/App.entitlements
+          # 3. Background mode "remote-notification" (the plugin's setup asks for it).
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$PLIST" >/dev/null 2>&1 || /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" "$PLIST"
+          if ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$PLIST" | grep -q "remote-notification"; then
+            /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" "$PLIST"
+          fi
+          /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$PLIST"
+          # 4. AppDelegate: hand the APNs token (and silent pushes) to the plugin — the three methods from the
+          #    @capacitor-firebase/messaging README, added once before the class's closing brace.
+          ruby -e '
+            path = "ios/App/App/AppDelegate.swift"
+            src = File.read(path)
+            if src.include?("capacitorDidRegisterForRemoteNotifications")
+              puts "AppDelegate already forwards push tokens."
+              exit 0
+            end
+            add = <<~SWIFT
+
+              // Push (Firebase Cloud Messaging) — added by ios-build.yml "Wire push into the iOS project".
+              func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+                  NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+              }
+
+              func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+                  NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+              }
+
+              func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+                  NotificationCenter.default.post(name: Notification.Name.init("didReceiveRemoteNotification"), object: completionHandler, userInfo: userInfo)
+              }
+            SWIFT
+            idx = src.rindex("}") or abort("::error::AppDelegate.swift has no closing brace")
+            File.write(path, src[0...idx] + add.gsub(/^/, "    ") + "\n}\n")
+            puts "AppDelegate.swift: push token forwarding added."
+          '
+          grep -c "capacitorDidRegisterForRemoteNotifications" ios/App/App/AppDelegate.swift
+
       - name: Import Distribution Certificate + Provisioning Profile
         id: cert
         env:
@@ -320,8 +425,42 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
 
+      # The App Store profile is made by App Store Connect itself (tools/ios/asc-setup.mjs) for THIS certificate,
+      # with Push turned on for the App ID when the push switch is ON — no hand-made profile to download and paste.
+      # Push ON: this must succeed. Push OFF: if Apple refuses, the saved BUILD_PROVISION_PROFILE_BASE64 is used as before.
+      - name: App Store profile from App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ steps.apple.outputs.asc_key_path }}
+          BUILD_CERTIFICATE_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_PASSWORD }}
+          PUSH: ${{ steps.apple.outputs.push }}
+        run: |
+          set -uo pipefail
+          CERT_PATH="$RUNNER_TEMP/distribution.p12"
+          serial() { openssl pkcs12 -in "$CERT_PATH" -nokeys -clcerts -passin env:BUILD_CERTIFICATE_PASSWORD "$@" 2>/dev/null | openssl x509 -noout -serial 2>/dev/null; }
+          SERIAL=$(serial || true); [ -n "$SERIAL" ] || SERIAL=$(serial -legacy || true)
+          if [ -z "$SERIAL" ]; then
+            if [ "$PUSH" = "true" ]; then echo "::error::Could not read the Distribution certificate serial"; exit 1; fi
+            echo "::warning::Could not read the certificate serial - using the saved profile."; exit 0
+          fi
+          echo "Distribution certificate $SERIAL"
+          MODE=""; [ "$PUSH" = "true" ] && MODE="push"
+          OUT="$RUNNER_TEMP/asc.mobileprovision"
+          if node tools/ios/asc-setup.mjs profile "$SERIAL" "$OUT" $MODE; then
+            cp "$OUT" "$RUNNER_TEMP/profile.mobileprovision"
+            cp "$OUT" ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+            echo "Using the App Store Connect profile."
+          elif [ "$PUSH" = "true" ]; then
+            exit 1
+          else
+            echo "::warning::App Store Connect refused - using the saved BUILD_PROVISION_PROFILE_BASE64 profile."
+          fi
+
       - name: Read provisioning profile UUID and Team ID
         id: profile
+        env:
+          PUSH: ${{ steps.apple.outputs.push }}
         run: |
           set -euo pipefail
           PROFILE="$RUNNER_TEMP/profile.mobileprovision"
@@ -365,6 +504,16 @@ jobs:
             exit 1
           fi
 
+          # GUARD (push): the profile must carry the push entitlement, or Apple strips push from the signed app.
+          if [ "$PUSH" = "true" ]; then
+            APS=$(extract Entitlements.aps-environment)
+            if [ -z "$APS" ]; then
+              echo "::error::Push is ON but the provisioning profile has no aps-environment entitlement."
+              exit 1
+            fi
+            echo "Profile push environment: $APS"
+          fi
+
           echo "uuid=$UUID" >> "$GITHUB_OUTPUT"
           echo "team_id=$TEAM_ID" >> "$GITHUB_OUTPUT"
 
@@ -401,6 +550,7 @@ jobs:
           TEAM_ID: ${{ steps.profile.outputs.team_id }}
           PROFILE_UUID: ${{ steps.profile.outputs.uuid }}
           SIGN_IDENTITY: ${{ steps.cert.outputs.sign_identity }}
+          PUSH: ${{ steps.apple.outputs.push }}
         run: |
           set -euo pipefail
           # THE point of this step: xcodebuild CLI settings (KEY=VALUE) are
@@ -440,6 +590,7 @@ jobs:
               config.build_settings["PROVISIONING_PROFILE_SPECIFIER"] = ENV["PROFILE_UUID"]
               config.build_settings["CODE_SIGN_IDENTITY"] = ENV["SIGN_IDENTITY"]
               config.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = ENV["BUNDLE_ID"]
+              config.build_settings["CODE_SIGN_ENTITLEMENTS"] = "App/App.entitlements" if ENV["PUSH"] == "true"
             end
             project.save
             puts "Signing configured on App target only (#{target.build_configurations.size} configurations)."
@@ -512,6 +663,16 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination 'generic/platform=iOS' \
             clean archive
+
+      - name: Verify push entitlement in the signed app
+        if: steps.apple.outputs.push == 'true'
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          ENTS=$(codesign -d --entitlements - --xml "$APP" 2>/dev/null || codesign -d --entitlements :- "$APP" 2>/dev/null || true)
+          echo "$ENTS" | grep -q "aps-environment" || { echo "::error::The signed app has no aps-environment entitlement - push would never arrive."; exit 1; }
+          test -f "$APP/GoogleService-Info.plist" || { echo "::error::GoogleService-Info.plist is not inside the app bundle."; exit 1; }
+          echo "Signed app carries aps-environment and GoogleService-Info.plist."
 
       - name: Export IPA
         env:
