@@ -10,11 +10,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useT } from "@/i18n/I18nContext";
 import { useBlockedUsers } from "@/hooks/core/useBlockedUsers";
 import { useConversationActions } from "@/hooks/messages/useMessages";
+import HideForOfficial from "@/components/messages/HideForOfficial";
 
-export default function ChatMenu({ conversationId, otherId, muted, onSearch, onReport, canBlock = true }: {
+/** With the official 50mm Retina World account only "Search in this chat" is offered: no Mute, Delete chat or Block (Owner 22 Nov 2026). */
+export default function ChatMenu({ conversationId, otherId, muted, onSearch, onReport }: {
   conversationId: string; otherId: string | null; muted: boolean; onSearch: () => void; onReport?: () => void;
-  /** false for the official 50mm Retina World account: it can never be blocked (Owner 22 Nov 2026) */
-  canBlock?: boolean;
 }) {
   const t = useT();
   const navigate = useNavigate();
@@ -31,6 +31,7 @@ export default function ChatMenu({ conversationId, otherId, muted, onSearch, onR
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[210px]">
         <DropdownMenuItem className={item} onSelect={onSearch} data-testid="chat-menu-search"><Search className="h-4 w-4" />{t("messages.searchChat", "Search in this chat")}</DropdownMenuItem>
+        <HideForOfficial userId={otherId}>
         <DropdownMenuItem className={item} onSelect={() => mute.mutate({ id: conversationId, muted: !muted })} data-testid="chat-menu-mute">
           {muted ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}{muted ? t("messages.unmute", "Unmute notifications") : t("messages.mute", "Mute notifications")}
         </DropdownMenuItem>
@@ -44,7 +45,7 @@ export default function ChatMenu({ conversationId, otherId, muted, onSearch, onR
             }
           }}
         ><Trash2 className="h-4 w-4" />{t("messages.deleteChat", "Delete chat for me")}</DropdownMenuItem>
-        {otherId && canBlock && (
+        {otherId && (
           <DropdownMenuItem
             className={`${item} ${blocked ? "" : "text-destructive focus:text-destructive"}`}
             data-testid="chat-menu-block"
@@ -56,6 +57,7 @@ export default function ChatMenu({ conversationId, otherId, muted, onSearch, onR
             {blocked ? <UserCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}{blocked ? t("messages.unblock", "Unblock this member") : t("messages.block", "Block this member")}
           </DropdownMenuItem>
         )}
+        </HideForOfficial>
       </DropdownMenuContent>
     </DropdownMenu>
   );

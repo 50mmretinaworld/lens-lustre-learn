@@ -255,7 +255,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         onBack={onBack}
         actions={convId && !viewAs ? (
           <>
-            <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} onReport={official ? undefined : () => setReporting(true)} canBlock={!official} />
+            <ChatMenu conversationId={convId} otherId={otherId} muted={!!entry?.muted} onSearch={() => setSearching(true)} onReport={official ? undefined : () => setReporting(true)} />
             {!official && <ReportChat conversationId={convId} open={reporting} onOpenChange={setReporting} />}
           </>
         ) : undefined}

@@ -3,7 +3,7 @@
  *  · ONE row of three equal buttons that always fits the phone: Add Friend · Chat · Follow.
  *    After following, the SAME third button becomes ☆ Favourite (★ when on) — one button, two jobs.
  *  · Everything else — Unfollow, Unfriend, Unmute, Block — lives under ⋮ (a dangerous action is never a main button).
- *  · The official 50mm Retina World account can never be blocked, and has no friend button.
+ *  · The official 50mm Retina World account can never be blocked or unfollowed, and has no friend button.
  * Buttons are flex-1 basis-0 min-w-0 with truncating labels: the row can never be wider than the screen (it was, and the
  * whole page slid sideways).
  */
@@ -115,7 +115,7 @@ export function VisitorMenu({ targetUserId, displayName, children, triggerClassN
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           {children}
-          {isFollowing && (
+          {isFollowing && !isTargetAdmin && (
             <DropdownMenuItem className={item} onSelect={() => { if (window.confirm(t("fr.unfollowConfirm", "Unfollow {name}?").replace("{name}", displayName))) void toggleFollow(); }} data-testid="menu-unfollow">
               <UserMinus className="h-4 w-4" />{t("fr.unfollow", "Unfollow")}
             </DropdownMenuItem>
