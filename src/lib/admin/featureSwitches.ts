@@ -10,7 +10,7 @@
  * audit row); a page that hides a control is never the enforcement.
  */
 export type FeatureKey = "video_posts" | "video_ads" | "copyright_music_check" | "personal_feed" | "media_ladder_feed" | "media_private_photos" | "photo_upload_resume"
-  | "photo_set_v2" | "competition_fullsize_purge" | "mention_groups" | "mention_all_blocked";
+  | "photo_set_v2" | "competition_fullsize_purge" | "mention_groups" | "mention_all_blocked" | "feed_newest_first";
 export type FeatureMode = "off" | "selected" | "everyone";
 
 export const FEATURE_MODES: ReadonlyArray<{ mode: FeatureMode; label: string }> = [
@@ -61,6 +61,11 @@ export const FEATURE_INFO: Record<FeatureKey, { title: string; blurb: string }> 
   mention_all_blocked: {
     title: "Take @all away from a member",
     blurb: "Choose \"Selected members\" and add a member: that member keeps the blue tick but can no longer use @all. Off = nobody is blocked. Do not choose \"All members\" — that blocks @all for everyone.",
+  },
+  // Feed order (20261123_4600, Owner 2026-11-23 "Admin switch"): the server decides in get_feed_page.
+  feed_newest_first: {
+    title: "Feed order: Newest first",
+    blurb: "Who gets the For you feed newest first: every post they may see, the newest at the top, nothing mixed in. Off = everyone keeps the Fair mix (the 3 newest posts first, then posts from less-seen photographers). Works in the installed apps too, no update needed.",
   },
 };
 
