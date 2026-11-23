@@ -5,6 +5,8 @@ import type { Database } from './types';
 // src/lib/sessionLossRecorder.ts. A logger import here would close a cycle.
 import { noteRequest } from '@/lib/sessionLossRecorder';
 import { noteOutcome } from '@/lib/offline/networkQuality';
+// N1: edge functions run in the database's region (imports nothing).
+import { pinFunctionRegionInput } from '@/lib/net/functionRegion';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -46,7 +48,10 @@ function isUpload(input: RequestInfo | URL, init?: RequestInit): boolean {
   return /\/storage\/v1\/object\//.test(urlOf(input));
 }
 
-const timeoutFetch: typeof fetch = (input, init) => {
+const timeoutFetch: typeof fetch = (rawInput, init) => {
+  // N1: an edge function call runs next to the database (Seoul), not at the
+  // nearest edge (Mumbai) — see src/lib/net/functionRegion.ts for the numbers.
+  const input = pinFunctionRegionInput(rawInput);
   // Never bound an upload — a slow photo post must not become a failed post.
   if (isUpload(input, init)) return fetch(input, init);
 
