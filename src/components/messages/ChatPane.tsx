@@ -18,6 +18,7 @@ import {
 import { fetchPerson, fetchThread, fetchViewThread, MessageSendError, type MessagePerson, type ThreadMessage } from "@/lib/messages/api";
 import { EMOJI_SETS } from "@/lib/messages/emoji";
 import { groupChat } from "@/lib/messages/format";
+import { mergeNewest, mergeOlder } from "@/lib/messages/history";
 import { suggestReplies } from "@/lib/messages/suggest";
 import { prepareAndUploadPhoto } from "@/lib/messages/photoUpload";
 import { useChatLive } from "@/hooks/messages/useChatLive";
@@ -56,25 +57,55 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
   const thread = useThread(convId);
   // OLDER MESSAGES (Owner 22 Nov 2026): the chat used to show only its newest 50. Scrolling to the top — or tapping a quote
   // whose original is older — now loads the page before, 50 at a time, until the start of the chat.
-  const [older, setOlder] = useState<ThreadMessage[]>([]);          // oldest first, all before the newest page
+  // ONE LIST (Owner 23 Nov: "200 sent, only a few showing, scrolling does not show them"): every page is merged into
+  // one oldest-first list (src/lib/messages/history.ts). A fresh newest page that no longer reaches back to what the
+  // screen holds leaves a hole; it is closed by loading the pages before it (kept open across refreshes until closed).
+  const PAGE = 50;
+  const [history, setHistory] = useState<ThreadMessage[]>([]);
+  const historyRef = useRef<ThreadMessage[]>([]);
+  const putHistory = (h: ThreadMessage[]) => { historyRef.current = h; setHistory(h); };
+  const openGap = useRef<{ before: number; heldMax: number } | null>(null);
   const [noMore, setNoMore] = useState(false);
   const loadingOlder = useRef(false);
-  useEffect(() => { setOlder([]); setNoMore(false); }, [convId]);
-  const oldestFirst = useMemo(() => {
-    const latest = [...(thread.data ?? [])].reverse();
-    if (older.length === 0) return latest;
-    const seen = new Set(latest.map((x) => x.id));
-    return [...older.filter((x) => !seen.has(x.id)), ...latest];
-  }, [thread.data, older]);
-  const PAGE = 50;
+  useEffect(() => { putHistory([]); openGap.current = null; setNoMore(false); }, [convId]);
+  const fetchBefore = (id: number) =>
+    (viewAs ? fetchViewThread(viewAs.userId, convId as string, id, PAGE) : fetchThread(convId as string, id, PAGE)).then((p) => [...p].reverse());
+  useEffect(() => {
+    if (!convId || !thread.data) return;
+    const prev = historyRef.current;
+    const page = [...thread.data].reverse();
+    const { merged, gapBefore } = mergeNewest(prev, page, page.length >= PAGE);
+    putHistory(merged);
+    if (gapBefore !== null && !openGap.current) {
+      openGap.current = { before: gapBefore, heldMax: prev.filter((m) => m.id < gapBefore).at(-1)?.id ?? 0 };
+    }
+    if (!openGap.current) return;
+    let cancelled = false;
+    void (async () => {
+      for (let i = 0; i < 20 && !cancelled && openGap.current; i++) {
+        const gap = openGap.current;
+        let rows: ThreadMessage[];
+        try { rows = await fetchBefore(gap.before); } catch { return; }   // poor network: retried on the next refresh
+        if (cancelled) return;
+        putHistory(mergeOlder(historyRef.current, rows));
+        if (rows.length < PAGE || rows[0].id <= gap.heldMax) { openGap.current = null; return; }
+        openGap.current = { ...gap, before: rows[0].id };
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when a fresh newest page arrives
+  }, [thread.data, convId]);
+  const oldestFirst = useMemo(
+    () => (history.length ? history : [...(thread.data ?? [])].reverse()),
+    [history, thread.data],
+  );
   const loadOlder = async (): Promise<boolean> => {
     if (!convId || noMore || loadingOlder.current || oldestFirst.length < PAGE) return false;
     loadingOlder.current = true;
     try {
-      const firstId = oldestFirst[0].id;
-      const page = viewAs ? await fetchViewThread(viewAs.userId, convId, firstId, PAGE) : await fetchThread(convId, firstId, PAGE);
+      const page = await fetchBefore(oldestFirst[0].id);
       if (page.length < PAGE) setNoMore(true);
-      if (page.length > 0) setOlder((o) => [...[...page].reverse(), ...o]);
+      if (page.length > 0) putHistory(mergeOlder(historyRef.current.length ? historyRef.current : oldestFirst, page));
       return page.length > 0;
     } catch {
       return false;
@@ -138,7 +169,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
     if (noMore) { pendingJump.current = null; return; }
     void loadOlder();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when a page has been added
-  }, [older, noMore]);
+  }, [history, noMore]);
   /** Scrolled to the top: the page before, keeping the reader's place. */
   const scrollRef = useRef<HTMLDivElement>(null);
   const onThreadScroll = () => {
