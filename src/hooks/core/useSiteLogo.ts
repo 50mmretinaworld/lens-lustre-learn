@@ -1,20 +1,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getSiteSetting } from "@/lib/siteSettingsCache";
 import { queryKeys } from "@/lib/queryKeys";
 import { awaitDashboardBootstrap } from "@/lib/dashboardInitGate";
 
 const FALLBACK = "/images/logo-fallback.webp";
 
-async function fetchSiteLogo(): Promise<string> {
+async function fetchSiteLogo(fresh = false): Promise<string> {
   try {
-    const { data } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "site_logo")
-      .maybeSingle();
-    if (data?.value) {
+    // N3 · the ONE settings reader (edge copy first, batched with the other keys asked at start).
+    const value = await getSiteSetting("site_logo", fresh ? { maxAgeMs: 0 } : undefined);
+    if (value) {
       let url = "";
-      const v = data.value as unknown;
+      const v = value as unknown;
       if (typeof v === "string") {
         const trimmed = v.replace(/^"+|"+$/g, "");
         url = trimmed;
@@ -38,7 +35,7 @@ export function useSiteLogo() {
       await awaitDashboardBootstrap();
       const seeded = qc.getQueryData<string>(queryKeys.siteLogo());
       if (seeded) return seeded;
-      return fetchSiteLogo();
+      return fetchSiteLogo(false);
     },
     staleTime: 60 * 60 * 1000, // 1 hour
   });
@@ -58,9 +55,9 @@ export async function getSiteLogoUrl(): Promise<string> {
   if (_qc) {
     return _qc.fetchQuery({
       queryKey: queryKeys.siteLogo(),
-      queryFn: fetchSiteLogo,
+      queryFn: () => fetchSiteLogo(true),
       staleTime: 0,
     });
   }
-  return fetchSiteLogo();
+  return fetchSiteLogo(true);
 }

@@ -5,6 +5,7 @@ import { isNativeIOSApp } from "@/lib/native/authDeepLink";
 import DOMPurify from "dompurify";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getSiteSetting } from "@/lib/siteSettingsCache";
 import PageSEO from "@/components/PageSEO";
 import { Loader2 } from "lucide-react";
 
@@ -88,13 +89,10 @@ const ManagedPageView = () => {
   const { data: page, isLoading } = useQuery<ManagedPage | null>({
     queryKey: ["managed-page", slug],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", "managed_pages")
-        .maybeSingle();
-      if (!data?.value || !Array.isArray(data.value)) return null;
-      const pages = data.value as unknown as ManagedPage[];
+      // N3 · the ONE settings reader (edge copy first, batched): no separate round trip to the database.
+      const value = await getSiteSetting("managed_pages");
+      if (!value || !Array.isArray(value)) return null;
+      const pages = value as unknown as ManagedPage[];
       const found = pages.find((p) => p.slug === slug && p.is_published) ?? null;
       // Fire-and-forget view count increment using the full payload we just fetched.
       if (found) incrementViewCount(found.id);
