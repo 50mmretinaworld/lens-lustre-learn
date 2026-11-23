@@ -68,6 +68,8 @@ export const queryKeys = {
   adminBroadcastAudience: (audience: string) => ["admin-broadcast-audience", audience] as const,
   /** Admin → Users table — rpc admin_search_users_v4 + admin_user_facets (useAdminMembers). */
   adminMembers: () => ["admin-members"] as const,
+  /** M34: which app (Android / iPhone version) members use — useAppVersions. One prefix, one invalidate. */
+  adminAppVersions: () => ["admin-app-versions"] as const,
   adminPush: () => ["admin-push"] as const,
   /** The set of admin user ids — who gets the brand name and the brand tick. */
   adminIds: () => ["admin-ids"] as const,
