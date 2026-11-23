@@ -29,6 +29,8 @@ export function usePhotoSetV2(): boolean {
       queryKey: featureAllowedKey("photo_set_v2", userId),
       enabled: live && q.isSuccess && q.data === null,
       staleTime: FEATURE_REFRESH_MS,
+      // P10: R-103 "changes apply within 60 s" — runs ONLY on a lane without features_allowed_me
+      // (enabled above), so it replaces the batched poll there; never both.
       refetchInterval: live ? FEATURE_REFRESH_MS : false,
       retry: false,
       queryFn: () => fetchFeatureAllowed("photo_set_v2"),
