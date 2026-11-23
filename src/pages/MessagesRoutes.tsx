@@ -44,7 +44,7 @@ export default function MessagesRoutes() {
 
   return (
     // a chat fills the phone screen (no app bar, no tab bar — lib/appBar); the list sits between the two bars
-    <div className={`mx-auto ${hasChat ? "h-[100dvh]" : "h-[calc(100dvh-7.5rem)]"} w-full max-w-[1100px] lg:h-[calc(100dvh-6.5rem)] lg:px-4 lg:py-3`}>
+    <div className={`mx-auto ${hasChat ? "h-app" : "h-[calc(100dvh_-_7.5rem_-_var(--banner-h))]"} w-full max-w-[1100px] lg:h-[calc(100dvh_-_6.5rem_-_var(--banner-h))] lg:px-4 lg:py-3`}>
       <div className="flex h-full overflow-hidden bg-background lg:rounded-2xl lg:border lg:border-border">
         <section aria-label={t("messages.title", "Messages")} className={`${hasChat ? "hidden lg:block" : "block"} h-full w-full shrink-0 lg:w-[340px] lg:border-r lg:border-border`}>
           <ConversationList

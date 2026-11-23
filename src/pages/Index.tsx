@@ -566,7 +566,7 @@ const Index = () => {
       <PageSEO jsonLd={{ type: "WebSite" }} />
 
       {/* Hero */}
-      <section className="relative h-screen-safe flex items-end pb-32 md:pb-28 overflow-hidden bg-background" aria-label={t("home.aria.hero", "Featured photography")}>
+      <section className="relative h-app flex items-end pb-32 md:pb-28 overflow-hidden bg-background" aria-label={t("home.aria.hero", "Featured photography")}>
         {/* Pre-render all slides, only toggle opacity — avoids mount/unmount flicker */}
         {heroSlides.map((slide, i) => {
           const isCurrent = i === currentSlide;

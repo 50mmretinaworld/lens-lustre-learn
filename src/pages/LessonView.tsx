@@ -190,7 +190,7 @@ const LessonView = () => {
   )?.id || null;
 
   return (
-    <main className="h-[calc(100vh-80px)] flex flex-col overflow-hidden bg-background text-foreground">
+    <main className="h-[calc(100dvh_-_80px_-_var(--banner-h))] flex flex-col overflow-hidden bg-background text-foreground">
       <LearningTopBar
         courseTitle={course.title}
         courseSlug={slug || ""}
