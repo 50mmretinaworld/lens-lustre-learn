@@ -24,7 +24,7 @@ export default function TopBanners({ signedIn }: { signedIn: boolean }) {
     if (!el) return;
     const publish = () => root.style.setProperty(BANNER_HEIGHT_VAR, `${Math.round(el.getBoundingClientRect().height)}px`);
     publish();
-    if (typeof ResizeObserver === "undefined") return () => root.style.setProperty(BANNER_HEIGHT_VAR, "0px");
+    // ResizeObserver: every browser and WebView the app supports has it (Chrome 64+, Safari 13.1+).
     const ro = new ResizeObserver(publish);
     ro.observe(el);
     return () => {
