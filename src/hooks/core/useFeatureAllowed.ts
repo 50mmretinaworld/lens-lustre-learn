@@ -109,6 +109,8 @@ export function useFeatureAllowed(feature: FeatureName): boolean {
     queryKey: featureAllowedKey(feature, userId),
     enabled: !!userId && q.isSuccess && q.data === null,
     staleTime: FEATURE_REFRESH_MS,
+    // P10: R-103 "changes apply within 60 s" — runs ONLY on a lane without features_allowed_me
+    // (enabled above), so it replaces the batched poll there; never both.
     refetchInterval: FEATURE_REFRESH_MS,
     retry: false,
     queryFn: () => fetchOne(feature),
