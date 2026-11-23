@@ -28,7 +28,7 @@ import { MemberAvatar, StatusPill } from "./memberBits";
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
 const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
 
-const ICON: Record<FeatureKey, typeof Film> = { video_posts: Film, video_ads: Clapperboard, copyright_music_check: Music2, personal_feed: Sparkles, media_ladder_feed: Sparkles, media_private_photos: Sparkles, photo_upload_resume: CloudUpload, photo_set_v2: Sparkles, competition_fullsize_purge: Trash2, mention_groups: Sparkles, mention_all_blocked: Sparkles };
+const ICON: Record<FeatureKey, typeof Film> = { video_posts: Film, video_ads: Clapperboard, copyright_music_check: Music2, personal_feed: Sparkles, media_ladder_feed: Sparkles, media_private_photos: Sparkles, photo_upload_resume: CloudUpload, photo_set_v2: Sparkles, competition_fullsize_purge: Trash2, mention_groups: Sparkles, mention_all_blocked: Sparkles, feed_newest_first: Sparkles };
 const MEMBERS_PAGE = 25;
 
 /** A few live numbers for the page (admins read videos/post_videos/ad_videos through RLS). Silent on any error. */
@@ -182,7 +182,7 @@ export default function AdminVideoFeature({ feature }: { feature: FeatureKey }) 
             </div>
           </fieldset>
           <p className="text-xs text-muted-foreground">
-            {mode === "off" ? "Nobody can use it." : mode === "everyone" ? "Every member can use it." : `Only the ${s.members.length} member${s.members.length === 1 ? "" : "s"} listed under Members.`}
+            {info.modeText?.[mode] ?? (mode === "off" ? "Nobody can use it." : mode === "everyone" ? "Every member can use it." : `Only the ${s.members.length} member${s.members.length === 1 ? "" : "s"} listed under Members.`)}
           </p>
           {feature === "copyright_music_check" && s.key_configured !== true && (
             <p role="note" className="flex items-start gap-1.5 rounded-md bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400">

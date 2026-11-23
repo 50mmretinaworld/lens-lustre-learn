@@ -1094,7 +1094,10 @@ export function useFeedQuery(userId: string | undefined, categories?: string[] |
         // S12-F3: the personal feed already applied max 2 per author and max 3
         // per category in a row (and placed "caught up"); its order is final.
         // S12-F5: Following / Favourites are time order — never reordered.
-        const ordered = servedPersonal || timeline ? enriched : reorderNoBackToBack(enriched, prevAuthor);
+        // 20261123_4600: feed order "Newest first" (Admin switch) — the server
+        // sends every row as 'chronological'; strict time order, never reordered.
+        const newestFirstServed = rawPosts.length > 0 && rawPosts.every((p: { feed_tier?: string }) => p.feed_tier === "chronological");
+        const ordered = servedPersonal || timeline || newestFirstServed ? enriched : reorderNoBackToBack(enriched, prevAuthor);
 
         // Record state snapshots for the NEXT page.
         excludeByPageRef.current.set(

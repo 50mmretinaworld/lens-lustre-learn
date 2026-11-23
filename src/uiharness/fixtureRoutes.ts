@@ -325,6 +325,20 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_user_platform_counts: (b) => (adminUsersSampleOn() ? samplePlatformCounts(b) : []),
   admin_search_users_v4: (b) => (adminUsersSampleOn() ? sampleSearchV4(b) : []),
   admin_user_facets: (b) => (adminUsersSampleOn() ? sampleFacets(b) : []),
+  // Feed order switch (screen-admin-feed-order, 20261123_4600): the row as the
+  // migration creates it (Off). ?mode=selected shows two members on the list.
+  feature_admin_state: () => {
+    const q = typeof location !== "undefined" ? new URLSearchParams(location.search).get("mode") : null;
+    const mode = q === "selected" ? "selected" : q === "everyone" ? "everyone" : "off";
+    const members = mode === "selected" ? [
+      { user_id: "00000000-0000-4000-8000-0000000000a1", full_name: "Asha Rao", username: "asha.rao", avatar_url: null, added_at: "2026-11-23T09:05:00Z", note: null },
+      { user_id: "00000000-0000-4000-8000-0000000000a2", full_name: "Vikram Sen", username: "vikram", avatar_url: null, added_at: "2026-11-23T09:06:00Z", note: null },
+    ] : [];
+    return [{
+      feature: "feed_newest_first", mode, note: null, updated_at: "2026-11-23T09:00:00Z", key_configured: null, members,
+      history: [{ at: "2026-11-23T09:00:00Z", actor: null, action: "mode", old: null, new: "off", user_id: null, note: "20261123_4600: switch created, Off (feed order = Fair mix for everyone)" }],
+    }];
+  },
   // PN3 push centre (screen-admin-push). Writes answer as the SQL would.
   admin_push_audience: (b) => (adminPushSampleOn() ? sampleAudience(b) : []),
   admin_push_broadcasts: (b) => (adminPushSampleOn() ? sampleBroadcasts(b) : []),
@@ -702,7 +716,8 @@ export const fixtureRoutes: FakeRoute[] = [
     // ?stories=1: the story authors have profiles with a handle, so tapping a name in the viewer has somewhere to go.
     if (table === "profiles_public_data" && storySampleOn()) return countable([...profilesPublicData, ...sampleStoryProfiles()], method);
     // Admin → Messages sample: AdminPanel's own header counters (nothing open, nothing unread).
-    if (adminMessagesSampleOn() && (table === "support_tickets" || table === "admin_notifications")) return countable([], method);
+    if ((adminMessagesSampleOn() || (globalThis as { __harnessAdminCounters?: boolean }).__harnessAdminCounters)
+        && (table === "support_tickets" || table === "admin_notifications")) return countable([], method);
     // the Broadcast composer names roles in its audience list (the same role / badge definitions Admin → Users uses)
     if (adminMessagesSampleOn() && table === "role_display_config") return countable(sampleRoleDefinitions as unknown[], method);
     if (adminMessagesSampleOn() && table === "badge_definitions") return countable(sampleBadgeDefinitions as unknown[], method);
