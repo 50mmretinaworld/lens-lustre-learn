@@ -274,7 +274,7 @@ const Login = () => {
   }
 
   return (
-    <main className="h-screen h-[100dvh] bg-background text-foreground flex overflow-hidden">
+    <main className="h-app bg-background text-foreground flex overflow-hidden">
       {/* Left — Image */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
         {cfg.background_image ? (

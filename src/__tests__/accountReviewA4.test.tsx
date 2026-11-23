@@ -32,9 +32,12 @@ describe("A4 under-review banner", () => {
     expect(screen.getByRole("link").getAttribute("href")).toBe("mailto:support@50mmretina.com");
   });
 
-  it("is mounted once, in Layout", () => {
+  it("is mounted once, in TopBanners, which Layout mounts once", () => {
     const layout = readFileSync(join(__dirname, "../components/Layout.tsx"), "utf8");
-    expect(layout.match(/<AccountStateBanner \/>/g)?.length).toBe(1);
+    const bars = readFileSync(join(__dirname, "../components/TopBanners.tsx"), "utf8");
+    expect(bars.match(/<AccountStateBanner \/>/g)?.length).toBe(1);
+    expect(layout.match(/<TopBanners /g)?.length).toBe(1);
+    expect(layout).not.toMatch(/<AccountStateBanner/);
   });
 });
 

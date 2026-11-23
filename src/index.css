@@ -345,9 +345,21 @@
 }
 
 
+/* Full screen for FIXED overlays only (they sit above the page, so the status bars do not push them). */
 .h-screen-safe {
   height: 100vh;
   height: 100dvh;
+}
+
+/* THE full-height rule for anything IN the page: the screen minus the status bars above it (TopBanners publishes
+   --banner-h; 0px when no bar shows). Owner 23 Nov 2026: the slow-connection bar pushed the chat's message box off
+   screen. src/__tests__/viewportHeightBudget.test.ts keeps every in-page full-height container on this rule. */
+:root {
+  --banner-h: 0px;
+}
+.h-app {
+  height: calc(100vh - var(--banner-h));
+  height: calc(100dvh - var(--banner-h));
 }
 
 /* Enforce full-bleed containers site-wide */

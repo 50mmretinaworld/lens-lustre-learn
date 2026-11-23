@@ -78,6 +78,10 @@ try {
       await page.addInitScript((mode) => { try { localStorage.setItem("theme", mode); } catch { /* */ } }, DARK ? "dark" : "light");
       // the Favourites switch on, so a profile shows Follow → Favourite as members on that switch see it
       if (name.startsWith("profile-")) await page.addInitScript(() => { globalThis.__harnessFeatures = ["personal_feed"]; globalThis.__harnessLongBio = true; });
+      // SHOT_SLOW=1: the browser reports a 3g link, so the "Slow connection" bar shows (status bars vs full-height screens)
+      if (process.env.SHOT_SLOW === "1") await page.addInitScript(() => {
+        try { Object.defineProperty(navigator, "connection", { configurable: true, value: { effectiveType: "3g", downlink: 0.4, rtt: 900, saveData: false, addEventListener() {}, removeEventListener() {} } }); } catch { /* */ }
+      });
       await page.goto(`${BASE}/uiharness.html?scene=${scene}&strict=0`, { waitUntil: "load", timeout: 180000 });
       // the harness page starts with class="dark"; light mode = the same page without it
       if (!DARK) await page.evaluate(() => document.documentElement.classList.remove("dark"));
