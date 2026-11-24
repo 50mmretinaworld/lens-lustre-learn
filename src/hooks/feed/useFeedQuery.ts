@@ -6,7 +6,10 @@ import { persistFeedPage, getCachedFeed } from "@/lib/feedCache";
 import { feedArchiveEpoch, readFeedPage, recordFeedPage } from "@/lib/offline/feedArchive";
 import { isNetworkError } from "@/lib/offline/retryPolicy";
 import { feedSessionFor, startFeedSessionOver } from "@/lib/feedSessions";
-import { fetchProfileMap } from "@/lib/profileMapCache";
+import { fetchProfileMap, seedProfileMap } from "@/lib/profileMapCache";
+import { answered, fetchFeedExtras } from "@/lib/feed/feedExtras";
+import { seedContributorScores } from "@/lib/contributorScore";
+import { seedOldPhotoCredit } from "@/lib/photoOldCredit";
 import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 import { authorIdentity } from "@/lib/feed/authorIdentity";
 import { queryKeys } from "@/lib/queryKeys";
@@ -464,21 +467,40 @@ async function enrichPosts(
   const rpcHasIdentity = "author_name" in first;
   const rpcHasThumbs = "thumbnail_urls" in first;
 
+  /**
+   * N6-2 (20261124_5300): ONE request for everything below — names (authors AND tagged people), badges, roles,
+   * reactions, friendships, view counts, tags, photos, videos, contributor scores and old-photo credits. Every part
+   * is optional: a part the answer lacks is read exactly as before, so the worst case is today's behaviour
+   * (src/lib/feed/feedExtras.ts).
+   */
+  const extras = await fetchFeedExtras(postIds, authorIds, currentUserId);
+  if (extras.profile_ids && extras.profiles && extras.badges && extras.roles) {
+    seedProfileMap(extras.profile_ids, extras.profiles, extras.badges, extras.roles);
+  }
+  if (extras.scores) seedContributorScores(authorIds, extras.scores);
+  if (extras.credits) seedOldPhotoCredit(postIds, extras.credits);
+
   // 3 queries instead of 4: merge reaction queries into ONE, filter user reactions client-side
   // Plus one small query for friendship state, so the "Add friend" button is
   // never offered for someone a friendship row already exists with.
   const [profileMapRes, allReactionsRes, adminIds, friendshipsRes, viewCountsRes, thumbsRes, tagsRes, attachments] =
     await Promise.all([
       fetchProfileMap(authorIds),
-      supabase.from("post_reactions").select("post_id, reaction_type, user_id").in("post_id", postIds),
+      extras.reactions
+        ? answered(extras.reactions as never)
+        : supabase.from("post_reactions").select("post_id, reaction_type, user_id").in("post_id", postIds),
       getAdminIds(),
-      supabase
-        .from("friendships")
-        .select("requester_id, addressee_id, status")
-        .or(`requester_id.eq.${currentUserId},addressee_id.eq.${currentUserId}`),
+      extras.friendships
+        ? answered(extras.friendships as never)
+        : supabase
+          .from("friendships")
+          .select("requester_id, addressee_id, status")
+          .or(`requester_id.eq.${currentUserId},addressee_id.eq.${currentUserId}`),
       // REAL view counts (distinct viewers from feed_events, author excluded).
       // Replaces the simulated 2K-100K figures removed on 2026-07-31.
-      timedRpc("rpc.get_post_view_counts", FILE, () => supabase.rpc("get_post_view_counts" as never, { _post_ids: postIds } as never)),
+      extras.view_counts
+        ? answered(extras.view_counts as never)
+        : timedRpc("rpc.get_post_view_counts", FILE, () => supabase.rpc("get_post_view_counts" as never, { _post_ids: postIds } as never)),
       // STORED thumbnails (posts.thumbnail_urls). The broadcast-feed RPC does
       // not return this column and is flagged do-not-touch, so it is
       // batch-fetched here — one query per page, rides the same Promise.all.
@@ -503,11 +525,13 @@ async function enrichPosts(
       // a Remove control on the post itself — see PostCard's menu.
       // `declined` and `removed` are refusals and are NEVER selected, by anyone.
       // One query per page, rides the same Promise.all.
-      supabase
-        .from("post_tags")
-        .select("post_id, tagged_user_id, status")
-        .in("post_id", postIds)
-        .in("status", ["pending", "approved"]),
+      extras.tags
+        ? answered(extras.tags as never)
+        : supabase
+          .from("post_tags")
+          .select("post_id, tagged_user_id, status")
+          .in("post_id", postIds)
+          .in("status", ["pending", "approved"]),
       /**
        * ITEM E — THE SANCTIONED MEDIA READ PATH.
        *
@@ -526,7 +550,7 @@ async function enrichPosts(
        * VID-1 §4.4 — and which of these posts are VIDEO posts, in the same
        * call (postAttachments.ts: the one place every surface reads both).
        */
-      fetchPostAttachments(postIds),
+      fetchPostAttachments(postIds, { media: extras.media, videos: extras.videos }),
     ]);
 
   /**

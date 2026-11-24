@@ -339,7 +339,7 @@ describe("there is exactly one media reader, and every surface uses it", () => {
 
   it("the feed resolves media inside its existing Promise.all, costing no extra round trip", () => {
     const code = strip(read("src/hooks/feed/useFeedQuery.ts"));
-    const at = code.indexOf("fetchPostAttachments(postIds)");
+    const at = code.indexOf("fetchPostAttachments(postIds"); // N6-2: a 2nd argument may carry the one extras answer
     expect(at, "the feed no longer batches the page's post ids into one call").toBeGreaterThan(0);
     // The call must sit INSIDE a Promise.all array: the nearest `Promise.all([`
     // before it must be nearer than the nearest `]);` before it. If the array

@@ -26,7 +26,7 @@ import { unreadSampleOn, sampleUnreadGroups } from "./storySample";
 const reviewSampleOn = () => typeof location !== "undefined" && new URLSearchParams(location.search).get("review") === "1";
 import { tagRenameOn, sampleTagProfiles, storySampleOn, sampleBar, sampleHighlights, sampleUserStories, sampleComments, sampleViewers, sampleOlderComments } from "./storySample";
 import { sampleHashtagInfo, sampleHashtagPosts } from "./hashtagSample";
-import type { FakeRoute } from "./fakeBackend";
+import { answerInside, type FakeRoute } from "./fakeBackend";
 import {
   adminUsersSampleOn, sampleSearchV3, samplePlatformCounts, sampleSearchV4, sampleFacets,
   sampleUserRoles, sampleUserBadges, sampleProfiles, sampleRoleDefinitions, sampleBadgeDefinitions,
@@ -445,6 +445,37 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
         }) ?? [],
       },
       gift_unread: [],
+    };
+  },
+
+  // N6-2 (20261124_5300): a feed page's one extras answer, composed from the SAME answers the separate reads get in
+  // this scene (answerInside runs the scene's own routes first, then these fixtures), so a scene looks exactly as
+  // before and the request count shows the saving.
+  get_feed_extras: (body) => {
+    const b = (body ?? {}) as { _post_ids?: string[]; _author_ids?: string[]; _credits?: boolean };
+    const posts = b._post_ids ?? [];
+    const authors = b._author_ids ?? [];
+    const inList = (ids: string[]) => `in.(${ids.join(",")})`;
+    const arr = (v: unknown) => (Array.isArray(v) ? (v as Array<Record<string, unknown>>) : []);
+    const get = (table: string, q: Record<string, string>) =>
+      arr(answerInside({ method: "GET", path: `/rest/v1/${table}`, params: new URLSearchParams(q), body: undefined }));
+    const rpc = (fn: string, a: Record<string, unknown>) =>
+      arr(answerInside({ method: "POST", path: `/rest/v1/rpc/${fn}`, params: new URLSearchParams(), body: a }));
+    const tags = get("post_tags", { select: "post_id,tagged_user_id,status", post_id: inList(posts), status: "in.(pending,approved)" });
+    const people = [...new Set([...authors, ...tags.map((t) => String(t.tagged_user_id))])].sort();
+    return {
+      tags,
+      profile_ids: people,
+      profiles: get("profiles_public_data", { select: "id,full_name,avatar_url,custom_url,last_active_at", id: inList(people) }),
+      badges: get("user_badges", { select: "user_id,badge_type", user_id: inList(people) }),
+      roles: rpc("get_public_roles_for_users", { _user_ids: people }),
+      reactions: get("post_reactions", { select: "post_id,reaction_type,user_id", post_id: inList(posts) }),
+      friendships: get("friendships", { select: "requester_id,addressee_id,status" }),
+      view_counts: rpc("get_post_view_counts", { _post_ids: posts }),
+      media: rpc("post_media_for", { _post_ids: posts }),
+      videos: get("post_videos", { select: "post_id,video_id", post_id: inList(posts) }),
+      scores: rpc("get_contributor_scores", { _user_ids: authors }),
+      ...(b._credits === false ? {} : { credits: rpc("post_photo_credit_for", { p_post_ids: posts }) }),
     };
   },
 

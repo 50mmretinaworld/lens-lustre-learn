@@ -435,6 +435,25 @@ function assembleProfileMap(
 }
 
 /**
+ * N6-2 (20261124_5300): the feed's one extras answer already holds these members' names, badges, roles and online
+ * dot — the same rows the signed-in lookup above reads. They go into the same entity cache, so the fetchProfileMap
+ * that follows is answered without a request. Ids with no row are cached as the same short-lived placeholder a
+ * lookup would cache. An id whose lookup is already on its way is left to that lookup.
+ */
+export function seedProfileMap(ids: string[], profiles: unknown[], badges: unknown[], roles: unknown[]): void {
+  const sorted = dedupeAndSort(ids.filter(Boolean));
+  if (sorted.length === 0) return;
+  const { map, found } = assembleProfileMap(
+    sorted, { data: profiles, error: null }, { data: badges, error: null }, { data: roles, error: null }, { data: profiles, error: null },
+  );
+  const now = Date.now();
+  for (const id of sorted) {
+    if (inFlight.has(id)) continue;
+    entityCache.set(id, { entry: map.get(id) ?? placeholder(id), at: now, negative: !found.has(id) });
+  }
+}
+
+/**
  * Direct fetch (no QueryClient indirection). Safe to use inside useQuery queryFn.
  */
 export async function fetchProfileMapDirect(ids: string[]): Promise<ProfileMap> {

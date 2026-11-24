@@ -220,6 +220,20 @@ export interface InstallOptions {
 }
 
 let installed = false;
+let installedRoutes: FakeRoute[] = [];
+
+/**
+ * N6-2: answer a request through the SAME installed routes (a scene's own routes first, then the fixtures) without
+ * going over fetch — so a fixture that composes several reads into one (get_feed_extras) hands out exactly what the
+ * separate reads would get in that scene. `undefined` when no route answers.
+ */
+export function answerInside(req: FakeRequest): unknown {
+  for (const route of installedRoutes) {
+    const reply = route(req);
+    if (reply) return reply.body;
+  }
+  return undefined;
+}
 
 export function installFakeBackend(opts: InstallOptions = {}): void {
   if (installed) return;
@@ -228,6 +242,7 @@ export function installFakeBackend(opts: InstallOptions = {}): void {
   const base = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "https://example.supabase.co";
   const ref = projectRefFrom(base);
   const routes = opts.routes ?? [];
+  installedRoutes = routes;
   seedSession(ref, opts.signedIn !== false);
   seedMemberDecisions(HARNESS_USER_ID, opts.consented !== false);
 
