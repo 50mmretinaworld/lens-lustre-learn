@@ -255,22 +255,29 @@ const AdminPanel = () => {
 
   // Extract current route from URL — /admin/users → "users"
   const rawRoute = location.pathname.split("/")[2] || "";
+  /**
+   * BARE /admin IS THE ADMIN HOME (Owner 24 Nov 2026: "when click admin, /admin must open with all menus closed —
+   * why does Health open?"). It used to forward to the first menu item (Site Health), which opened that group and
+   * loaded the heaviest page on every visit. Now /admin stays /admin: no section, every menu group closed.
+   */
+  const atHome = rawRoute === "";
   const currentRoute: AdminTab =
     VALID_ROUTES.has(rawRoute) && canAccessTab(adminSubRoles, rawRoute as AdminTab)
       ? (rawRoute as AdminTab)
       : defaultRoute;
 
-  // Redirect to first accessible route if invalid, unauthorized, or bare /admin
+  // Redirect to the first accessible route only when the address names a section that is invalid or not allowed.
   useEffect(() => {
     if (
       !authLoading &&
       !rolesLoading &&
       hasAdminPanelAccess &&
-      (!rawRoute || !VALID_ROUTES.has(rawRoute) || !canAccessTab(adminSubRoles, rawRoute as AdminTab))
+      !atHome &&
+      (!VALID_ROUTES.has(rawRoute) || !canAccessTab(adminSubRoles, rawRoute as AdminTab))
     ) {
       navigate(`/admin/${defaultRoute}`, { replace: true });
     }
-  }, [rawRoute, authLoading, rolesLoading, hasAdminPanelAccess, adminSubRoles, defaultRoute, navigate]);
+  }, [rawRoute, atHome, authLoading, rolesLoading, hasAdminPanelAccess, adminSubRoles, defaultRoute, navigate]);
 
   // The old Marketing → Features link now lives under Video Feature.
   useEffect(() => {
@@ -283,6 +290,19 @@ const AdminPanel = () => {
 
   if (authLoading || rolesLoading) return <BrandLoader fullScreen />;
   if (!hasAdminPanelAccess) return null;
+
+  if (atHome) {
+    // The admin home: no section selected, so the menu shows every group closed; nothing heavy loads.
+    return (
+      <AdminLayout currentRoute="" tabGroups={tabGroups} adminSubRoles={adminSubRoles}>
+        <div className="flex flex-col items-center justify-center py-20 text-center" data-testid="admin-home">
+          <Shield className="mb-4 h-10 w-10 text-muted-foreground/40" />
+          <h1 className="text-lg font-semibold">Admin</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a section from the menu.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout currentRoute={currentRoute} tabGroups={tabGroups} adminSubRoles={adminSubRoles}>
