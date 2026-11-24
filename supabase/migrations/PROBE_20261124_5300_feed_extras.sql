@@ -44,8 +44,8 @@ BEGIN
   END IF;
 
   _parts := ARRAY['tags','profile_ids','profiles','badges','roles','reactions','friendships','view_counts','media','scores'];
-  IF _has_vid THEN _parts := _parts || 'videos'; END IF;
-  IF _has_cred THEN _parts := _parts || 'credits'; END IF;
+  IF _has_vid THEN _parts := array_append(_parts, 'videos'); END IF;
+  IF _has_cred THEN _parts := array_append(_parts, 'credits'); END IF;
 
   -- A3: signed out / nothing / too many
   PERFORM set_config('request.jwt.claim.sub', '', true);
