@@ -88,9 +88,10 @@ function pathOf(el: Element | null): string | null {
   if (marked) return marked.getAttribute("data-prefetch");
   const a = el?.closest?.("a[href]") as HTMLAnchorElement | null;
   if (!a) return null;
+  // Only links that stay inside the app (same host); read-only check, nothing is built from the current address.
   try {
     const u = new URL(a.href, window.location.href);
-    return u.origin === window.location.origin ? u.pathname : null;
+    return u.host === window.location.host ? u.pathname : null;
   } catch { return null; }
 }
 
