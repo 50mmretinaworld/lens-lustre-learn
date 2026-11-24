@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
 import { queryKeys } from "@/lib/queryKeys";
+import { startPart } from "@/lib/appStart";
 
 export type MyAccountState = "active" | "under_review";
 
@@ -27,6 +28,9 @@ export function parseMyAccountState(data: unknown): MyAccountState {
 
 export async function fetchMyAccountState(): Promise<MyAccountState> {
   try {
+    // N6-1: at app start the one start-up answer carries it (same function).
+    const pre = await startPart<string>("account_state");
+    if (typeof pre === "string") return parseMyAccountState(pre);
     const { data, error } = await rpc("my_account_state");
     if (error) return "active";
     return parseMyAccountState(data);

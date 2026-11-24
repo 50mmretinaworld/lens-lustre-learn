@@ -8,6 +8,7 @@
  * React Query keeps the last real answer when a fetch throws.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { startPart } from "@/lib/appStart";
 
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 
@@ -17,7 +18,12 @@ async function askBool(fn: string, args?: Record<string, unknown>): Promise<bool
   return data === true;
 }
 
-export const fetchMessagingAllowed = (): Promise<boolean> => askBool("message_allowed_me");
+export const fetchMessagingAllowed = async (): Promise<boolean> => {
+  // N6-1: at app start the one start-up answer carries it (same function, same rule).
+  const pre = await startPart<boolean>("message_allowed");
+  if (typeof pre === "boolean") return pre;
+  return askBool("message_allowed_me");
+};
 
 /** May the caller start a chat with THIS member? Yes only when that member has the chat facility too (the server decides). */
 export const fetchCanReachMember = (userId: string): Promise<boolean> => askBool("message_can_reach", { _user: userId });

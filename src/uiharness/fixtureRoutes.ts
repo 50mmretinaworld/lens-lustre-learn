@@ -419,6 +419,36 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
       "media_private_photos", "photo_upload_resume", "photo_set_v2"];
     return Object.fromEntries(all.map((f) => [f, on.includes(f)]));
   },
+  // N6-1 (20261124_5200): the one start-up answer, built from the SAME harness answers the separate reads get, so a
+  // scene looks exactly as before and the request count shows the saving. The empty-by-design tables stay empty.
+  get_app_start: (body, params) => {
+    const call = (fn: string, b: Record<string, unknown> = {}) => RPCS[fn]?.(b, params);
+    const me = (profiles as unknown as Array<Record<string, unknown>>).find((p) => p.id === HARNESS_USER_ID);
+    return {
+      features: call("features_allowed_me"),
+      message_allowed: call("message_allowed_me"),
+      account_state: call("my_account_state"),
+      admin_ids: call("get_public_role_user_ids", { _role: "admin" }),
+      me: me ? { is_banned: me.is_banned ?? false, privacy_settings: me.privacy_settings ?? null } : null,
+      blocked: [],
+      categories: (categories as unknown as Array<Record<string, unknown>>)
+        .filter((c) => c.is_active !== false)
+        .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+        .map(({ slug, name, icon_name, sort_order, is_active }) => ({ slug, name, icon_name, sort_order, is_active })),
+      trending: call("get_trending_week"),
+      stories_bar: call("get_feed_stories_bar"),
+      my_stories: call("get_user_stories", { _user_id: HARNESS_USER_ID }),
+      drafts: [],
+      bell: {
+        friend_requests: [],
+        gifts: [],
+        groups: call("get_my_unread_notifications_grouped", {
+          _limit: body._bell_limit, _exclude_types: body._bell_exclude,
+        }) ?? [],
+      },
+      gift_unread: [],
+    };
+  },
 
   // @all / @followers sample bell rows (?mentionall=1, Owner plan 2026-11-12).
   get_my_notifications_grouped: () => [
