@@ -48,22 +48,6 @@ const lazyRetry = (factory: () => Promise<any>, key: string) =>
       },
       async (err) => {
         /**
-         * FIRST: THE SAME FILE AT A FRESH ADDRESS. Owner 24 Nov 2026 — after a deploy Cloudflare had stored an empty
-         * 500 for the home page's file (and 8 others) under its normal address, while the file itself was fine;
-         * every desktop visitor got "Something went wrong" until the cache was purged. A query string is a different
-         * cache entry, so one retry at `?r=<now>` loads the real file. Only for our own /assets/ files (the browser
-         * names the failed file in the error: Chrome/Edge/Android WebView; Safari does not, and falls through).
-         */
-        const failed = /(https?:\/\/[^\s'"]+\/assets\/[^\s'"?]+\.js)/.exec(String((err as Error)?.message ?? ""))?.[1];
-        if (failed) {
-          try {
-            const u = new URL(failed);
-            if (u.host === window.location.host) {
-              return await import(/* @vite-ignore */ `${u.pathname}?r=${Date.now()}`);
-            }
-          } catch { /* not recovered: the reload below */ }
-        }
-        /**
          * ROOT CAUSE, finally evidenced 2026-08-05 from the owner's console:
          *
          *   Failed to load module script: Expected a JavaScript-or-Wasm module
