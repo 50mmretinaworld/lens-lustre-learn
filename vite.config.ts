@@ -101,6 +101,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
+        /**
+         * EVERY FILE NAME CHANGES ONCE (live incident 24 Nov 2026). Before the root fix in functions/assets/[[path]].ts,
+         * an empty 500 for some /assets/ files went out stamped "immutable, 1 year" — Cloudflare kept it (purged) AND
+         * every browser that opened the site in that hour kept it, and a browser cache cannot be purged from here.
+         * Base-36 fingerprints give every code file a new address, so no browser is ever sent to a stored error.
+         * Names keep the `<name>-<8 chars>.js` shape every check reads. Leave this setting as it is from now on.
+         */
+        hashCharacters: "base36",
         manualChunks: {
           "vendor-framer-motion": ["framer-motion"],
           "vendor-react-markdown": ["react-markdown"],
