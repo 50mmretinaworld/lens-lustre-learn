@@ -89,7 +89,7 @@ export const POST_MEDIA_ID_BATCH = 50;
 
 
 /** One row of `post_media_for`. Deliberately NOT the whole table. */
-interface PostMediaForRow {
+export interface PostMediaForRow {
   post_id: string;
   ord: number;
   object_path: string | null;
@@ -174,9 +174,16 @@ export async function fetchPostMediaMap(postIds: readonly string[]): Promise<Pos
       return data ?? [];
     }),
   );
+  return postMediaMapFromRows(rowsPerBatch.flat(), map);
+}
 
+/**
+ * post_media_for rows → the map. Shared by the read above and by the feed's one extras answer (N6-2, 20261124_5300),
+ * which carries the very same rows.
+ */
+export function postMediaMapFromRows(allRows: readonly PostMediaForRow[], map: PostMediaMap = new Map()): PostMediaMap {
   const byPost = new Map<string, PostMediaForRow[]>();
-  for (const row of rowsPerBatch.flat()) {
+  for (const row of allRows) {
     if (!row?.post_id) continue;
     const list = byPost.get(row.post_id) ?? [];
     list.push(row);

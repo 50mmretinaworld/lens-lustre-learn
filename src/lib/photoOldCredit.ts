@@ -85,6 +85,21 @@ async function flush(): Promise<void> {
 }
 
 /**
+ * N6-2 (20261124_5300): the feed's one extras answer already holds these posts' credited copies (the same
+ * post_photo_credit_for rows). They go into the same store and the posts count as asked, so the cards ask nothing.
+ */
+export function seedOldPhotoCredit(postIds: readonly string[], rows: unknown[]): void {
+  let added = 0;
+  for (const r of rows as Record<string, unknown>[]) {
+    if (!r || typeof r.src_url !== "string" || typeof r.credited_url !== "string") continue;
+    if (!/^https:\/\//.test(r.credited_url) || photoSetMarker(r.src_url)) continue;
+    if (credited.get(r.src_url) !== r.credited_url) { credited.set(r.src_url, r.credited_url); added++; }
+  }
+  for (const id of postIds) if (id) asked.add(id);
+  if (added) emit();
+}
+
+/**
  * Ask once per post (per page load) for its old photos' credited copies. Call
  * from the card that shows the post — web only (the app has no save).
  */
