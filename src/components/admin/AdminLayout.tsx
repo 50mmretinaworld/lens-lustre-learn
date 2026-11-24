@@ -232,8 +232,8 @@ const AdminLayout = ({ currentRoute, tabGroups, children, adminSubRoles }: Admin
             </button>
           </div>
 
-          {/* Route access guard */}
-          {!canAccessTab(adminSubRoles, currentRoute as AdminTab) ? (
+          {/* Route access guard ("" = the admin home: no section, nothing to guard) */}
+          {currentRoute !== "" && !canAccessTab(adminSubRoles, currentRoute as AdminTab) ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Shield className="h-10 w-10 text-muted-foreground/30 mb-4" />
               <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
