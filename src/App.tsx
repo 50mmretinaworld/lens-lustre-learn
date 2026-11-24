@@ -247,6 +247,10 @@ import { setSiteLogoQueryClient } from "@/hooks/core/useSiteLogo";
 import { setProfileBatchQueryClient } from "@/lib/profileBatch";
 import { setProfileMapQueryClient } from "@/lib/profileMapCache";
 import { setLiveAdminSyncQueryClient } from "@/lib/liveAdminSync";
+// N6-4: the next screen starts loading on touch / hover (src/lib/prefetchNext.ts)
+import { installPrefetchNext, setPrefetchQueryClient } from "@/lib/prefetchNext";
+setPrefetchQueryClient(queryClient);
+installPrefetchNext();
 setSiteLogoQueryClient(queryClient);
 setProfileBatchQueryClient(queryClient);
 setProfileMapQueryClient(queryClient);
