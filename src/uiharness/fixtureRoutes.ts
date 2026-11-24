@@ -445,6 +445,14 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
         }) ?? [],
       },
       gift_unread: [],
+      // N6-3 (20261124_5210): the member's own profile — the same answer the separate read gets in this scene
+      my_profile: (() => {
+        const rows = answerInside({
+          method: "GET", path: "/rest/v1/profiles_public_data", body: undefined,
+          params: new URLSearchParams({ select: "full_name,avatar_url,bio,portfolio_url,photography_interests,created_at,facebook_url,instagram_url,twitter_url,youtube_url,website_url,pronouns,current_city,workplace,education,custom_url", id: `eq.${HARNESS_USER_ID}` }),
+        });
+        return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+      })(),
     };
   },
 

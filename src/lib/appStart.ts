@@ -18,7 +18,7 @@ import { getLogUser } from "@/lib/logger";
 
 export type StartPart =
   | "features" | "message_allowed" | "account_state" | "admin_ids" | "me" | "blocked" | "categories"
-  | "trending" | "stories_bar" | "my_stories" | "drafts" | "bell" | "gift_unread";
+  | "trending" | "stories_bar" | "my_stories" | "drafts" | "bell" | "gift_unread" | "my_profile";
 
 /** The bell's own constants, sent with the request so the start-up answer is the same read the bell makes. */
 export const START_BELL_LIMIT = 20;
@@ -59,8 +59,26 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
  * `reader` names who takes it when one part serves two readers ("me": the banned flag and the online-dot privacy):
  * each reader gets it once.
  */
+/**
+ * N6-3: the member whose session is SAVED on this device (supabase-js keeps it as `sb-<project>-auth-token`). Readers
+ * that run before the auth hook has reported the member (measured: the admin list on Notifications and the wall)
+ * used to miss the start-up answer and ask alone. The request itself is sent with that same session, so the answer
+ * is that member's. null when nothing is saved or it cannot be read.
+ */
+function savedSessionUser(): string | null {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) ?? "";
+      if (!/^sb-.+-auth-token$/.test(k)) continue;
+      const id = (JSON.parse(localStorage.getItem(k) ?? "null") as { user?: { id?: unknown } } | null)?.user?.id;
+      if (typeof id === "string" && id) return id;
+    }
+  } catch { /* unreadable storage: wait for the auth hook, as before */ }
+  return null;
+}
+
 export async function startPart<T = unknown>(part: StartPart, uid?: string | null, reader = ""): Promise<T | undefined> {
-  const me = getLogUser();
+  const me = getLogUser() ?? savedSessionUser();
   // Only ever for the signed-in member: a reader asking about SOMEONE ELSE never gets the start-up answer.
   if (uid && me && uid !== me) return undefined;
   const who = uid ?? me;
