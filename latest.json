@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-23T13:42:36.588Z",
+  "at": "2026-11-24T00:58:44.161Z",
   "window": 12,
   "lanes": {
     "live": {
@@ -7,29 +7,29 @@
         "home": {
           "ok": true,
           "status": 200,
-          "ttfb": 278,
-          "p95": 1675
+          "ttfb": 314,
+          "p95": 403
         },
         "site_settings": {
           "ok": true,
           "status": 200,
-          "ttfb": 1334,
+          "ttfb": 1165,
           "p95": 1572
         },
         "feed_rest": {
           "ok": true,
           "status": 200,
-          "ttfb": 745,
+          "ttfb": 820,
           "p95": 1031
         },
         "cdn_image": {
           "ok": true,
           "status": 200,
-          "ttfb": 473,
+          "ttfb": 945,
           "p95": 1023
         }
       },
-      "est_egress_per_1k_feed_views_mb": 554,
+      "est_egress_per_1k_feed_views_mb": 612,
       "feed_page_images": 10
     },
     "staging": {
@@ -37,26 +37,26 @@
         "home": {
           "ok": true,
           "status": 200,
-          "ttfb": 191,
+          "ttfb": 331,
           "p95": 484
         },
         "site_settings": {
           "ok": true,
           "status": 200,
-          "ttfb": 1066,
+          "ttfb": 911,
           "p95": 1188
         },
         "feed_rest": {
           "ok": true,
           "status": 200,
-          "ttfb": 826,
+          "ttfb": 836,
           "p95": 1276
         },
         "cdn_image": {
           "ok": true,
           "status": 200,
-          "ttfb": 363,
-          "p95": 709
+          "ttfb": 730,
+          "p95": 730
         }
       },
       "est_egress_per_1k_feed_views_mb": 258,
