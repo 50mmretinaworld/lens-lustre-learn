@@ -247,6 +247,9 @@ import { setSiteLogoQueryClient } from "@/hooks/core/useSiteLogo";
 import { setProfileBatchQueryClient } from "@/lib/profileBatch";
 import { setProfileMapQueryClient } from "@/lib/profileMapCache";
 import { setLiveAdminSyncQueryClient } from "@/lib/liveAdminSync";
+// N6-4: the next screen starts loading on touch / hover (src/lib/prefetchNext.ts). Its own small chunk, loaded right
+// after start, so the first download does not grow.
+void import("@/lib/prefetchNext").then((m) => { m.setPrefetchQueryClient(queryClient); m.installPrefetchNext(); }).catch(() => { /* screens load as before */ });
 setSiteLogoQueryClient(queryClient);
 setProfileBatchQueryClient(queryClient);
 setProfileMapQueryClient(queryClient);

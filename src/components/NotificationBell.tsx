@@ -377,6 +377,8 @@ const NotificationBell = () => {
   return (
     <div className="relative" ref={containerRef}>
       <button
+        // N6-4: touching the bell starts loading the Notifications page and its first page of rows
+        data-prefetch="/notifications"
         onClick={() => {
           // N7b · on a phone-width screen (the Android app included) the
           // centre's bell opens the full page, Instagram-style; a wide screen
