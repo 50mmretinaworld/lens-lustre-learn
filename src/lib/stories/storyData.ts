@@ -19,6 +19,8 @@
  * with the story unless it is in a highlight.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { startPart } from "@/lib/appStart";
+import { getLogUser } from "@/lib/logger";
 import { compressImage } from "@/lib/imageCompression";
 import { uploadImage } from "@/lib/imageUpload";
 import { storageSafeFileName } from "@/lib/storageSafeName";
@@ -93,13 +95,20 @@ export const rpc = (fn: string, args?: Record<string, unknown>) =>
   (supabase.rpc as unknown as (f: string, a?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>)(fn, args);
 
 export async function fetchStoryBar(): Promise<StoryBarUser[]> {
+  // N6-1: at app start the one start-up answer carries the row (same function).
+  const pre = await startPart<StoryBarUser[]>("stories_bar");
+  if (Array.isArray(pre)) return pre;
   const { data, error } = await rpc("get_feed_stories_bar");
   if (error) throw new Error(error.message);
   return (data as StoryBarUser[] | null) ?? [];
 }
 
 export async function fetchUserStories(userId: string): Promise<StoryRow[]> {
-  const { data, error } = await rpc("get_user_stories", { _user_id: userId });
+  // N6-1: the signed-in member's OWN stories only — never another member's page — come from the start-up answer.
+  const pre = userId === getLogUser() ? await startPart<StoryRow[]>("my_stories", userId) : undefined;
+  const { data, error } = Array.isArray(pre)
+    ? { data: pre as unknown, error: null }
+    : await rpc("get_user_stories", { _user_id: userId });
   if (error) throw new Error(error.message);
   return ((data as StoryRow[] | null) ?? []).map((r) => ({
     ...r,

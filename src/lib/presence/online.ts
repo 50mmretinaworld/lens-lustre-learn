@@ -64,6 +64,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
+import { startPart } from "@/lib/appStart";
 
 /** §1. One channel name for the whole product. */
 export const PRESENCE_CHANNEL = "presence:online";
@@ -328,11 +329,15 @@ export function usePresenceOnline(): void {
     void (async () => {
       let visible = true;
       try {
-        const { data } = await supabase
-          .from("profiles")
-          .select("privacy_settings")
-          .eq("id", userId)
-          .maybeSingle();
+        // N6-1: at app start the one start-up answer carries the member's own row (same read). null = no row.
+        const pre = await startPart<{ privacy_settings?: Record<string, unknown> | null } | null>("me", userId, "privacy");
+        const { data } = pre !== undefined
+          ? { data: pre }
+          : await supabase
+            .from("profiles")
+            .select("privacy_settings")
+            .eq("id", userId)
+            .maybeSingle();
         visible = activeStatusVisible(
           (data as { privacy_settings?: Record<string, unknown> | null } | null)
             ?.privacy_settings ?? null,

@@ -28,6 +28,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { startPart } from "@/lib/appStart";
 import type { Category } from "@/lib/categories";
 
 /**
@@ -54,6 +55,10 @@ export function useCategories() {
   return useQuery<Category[]>({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: async () => {
+      // N6-1: signed in, the one start-up answer carries the same list (same read). A non-empty list only —
+      // an empty one is asked again, the same as a failed read (see the note below).
+      const pre = await startPart<Category[]>("categories");
+      if (Array.isArray(pre) && pre.length > 0) return pre;
       const { data, error } = await (supabase.from as unknown as UntypedFrom)(
         "categories",
       )
