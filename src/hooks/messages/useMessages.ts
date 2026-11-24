@@ -6,6 +6,7 @@
  * Fresh data: a short poll while a screen is open (no websocket yet — a push already
  * tells a member who is away). The polls are slow and stop when the tab is hidden.
  */
+import { useCallback, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/core/useAuth";
 import { messageKeys } from "@/lib/messages/keys";
@@ -26,12 +27,48 @@ const onPage = (re: RegExp): boolean => {
 export { useMessagingAllowed } from "./useMessagingAllowed";
 export { useUnreadCounts } from "./useUnreadCounts";
 
+/**
+ * HOW MANY CHATS THE LIST HOLDS (Owner 24 Nov 2026: "more than 173 msg but showing a few only" — the list asked for
+ * 30 and never for more). It starts at 30 (fast first paint) and grows by 50 when the member reaches the end or
+ * searches, up to LIST_MAX (the server's cap, SQL 20261124_5400). Always asked FROM THE TOP: paging by time would
+ * skip chats that share one instant (a broadcast). Shared by every reader of the same list (module state).
+ */
+export const LIST_FIRST = 30;
+export const LIST_STEP = 50;
+export const LIST_MAX = 500;
+const listLimit = new Map<string, number>();
+const limitKey = (who: string, folder: MessageFolder) => `${who}:${folder}`;
+const limitFor = (who: string, folder: MessageFolder) => listLimit.get(limitKey(who, folder)) ?? LIST_FIRST;
+
+function conversationsKey(viewAsUser: string | null, userId: string, folder: MessageFolder) {
+  return viewAsUser ? (["messages", "view-as", viewAsUser, "conversations", folder] as const) : messageKeys.conversations(userId, folder);
+}
+
+/** The list's "more" control: how many are asked for, and the call to ask for more (from the top). */
+export function useConversationsMore(folder: MessageFolder) {
+  const { user } = useAuth();
+  const viewAs = useViewAs();
+  const qc = useQueryClient();
+  const who = viewAs ? `view-as:${viewAs.userId}` : user?.id ?? "";
+  const [, bump] = useState(0);
+  const limit = limitFor(who, folder);
+  const more = useCallback((to?: number) => {
+    const next = Math.min(LIST_MAX, to ?? limitFor(who, folder) + LIST_STEP);
+    if (!who || next <= limitFor(who, folder)) return;
+    listLimit.set(limitKey(who, folder), next);
+    bump((n) => n + 1);
+    void qc.refetchQueries({ queryKey: conversationsKey(viewAs?.userId ?? null, user?.id ?? "", folder), exact: true });
+  }, [who, folder, qc, viewAs?.userId, user?.id]);
+  return { limit, more };
+}
+
 export function useConversations(folder: MessageFolder) {
   const { user, loading } = useAuth();
   const viewAs = useViewAs();   // admin "open a member's message box": the member's list, read-only
+  const who = viewAs ? `view-as:${viewAs.userId}` : user?.id ?? "";
   const q = useQuery({
-    queryKey: viewAs ? (["messages", "view-as", viewAs.userId, "conversations", folder] as const) : messageKeys.conversations(user?.id ?? "", folder),
-    queryFn: () => (viewAs ? fetchViewInbox(viewAs.userId, folder) : fetchConversations(folder)),
+    queryKey: conversationsKey(viewAs?.userId ?? null, user?.id ?? "", folder),
+    queryFn: () => (viewAs ? fetchViewInbox(viewAs.userId, folder, limitFor(who, folder)) : fetchConversations(folder, limitFor(who, folder))),
     enabled: !!user && !loading,
     staleTime: 10_000,
     // P10: 30 s while the inbox is open: a new chat from someone else appears without a reload.

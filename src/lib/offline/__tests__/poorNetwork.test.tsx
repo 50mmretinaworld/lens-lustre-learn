@@ -38,10 +38,11 @@ describe("networkQuality", () => {
     setConnection({ effectiveType: "4g", saveData: true }); resetNetState();
     expect(getNetState().reason).toBe("declared");
   });
-  it("declared 3g, a weak downlink or a long round trip -> slow (Owner 2026-10-29)", () => {
+  it("Chrome's 3g, a weak downlink or a long round trip -> slow for photos (Owner 2026-10-29), but only HINTED (Owner 24 Nov)", () => {
     for (const c of [{ effectiveType: "3g" }, { effectiveType: "4g", downlink: 1.0 }, { effectiveType: "4g", rtt: 800 }]) {
       setConnection(c); resetNetState();
-      expect(getNetState().reason, JSON.stringify(c)).toBe("declared");
+      expect(getNetState().slow, JSON.stringify(c)).toBe(true);
+      expect(getNetState().reason, JSON.stringify(c)).toBe("hinted");
     }
   });
   it("a good 4g link, or an unknown downlink of 0, is not slow", () => {
@@ -92,10 +93,16 @@ describe("NetworkBanner", () => {
     // S7b-5: the Owner's wording — "No internet — showing saved".
     expect(b.textContent).toMatch(/No internet — showing saved/);
   });
-  it("turning slow while mounted shows the slow line (live)", async () => {
+  it("turning slow while mounted shows the slow line (live) — Data Saver switched on", async () => {
     render(<NetworkBanner />);
-    await act(async () => { noteOutcome(25_000, true); noteOutcome(25_000, true); });
+    await act(async () => { setConnection({ effectiveType: "4g", saveData: true }); noteOutcome(100, false); });
     expect(screen.getByTestId("network-banner").getAttribute("data-state")).toBe("slow");
+  });
+  it("Owner 24 Nov: two timeouts -> lighter photos, but no bar (a slow server looks the same)", async () => {
+    const { container } = render(<NetworkBanner />);
+    await act(async () => { noteOutcome(25_000, true); noteOutcome(25_000, true); });
+    expect(getNetState().reason).toBe("timeouts");
+    expect(container.innerHTML).toBe("");
   });
   it("Owner 23 Nov: slow reads on a browser that cannot measure the link -> no bar (lighter images only)", async () => {
     const { container } = render(<NetworkBanner />);
@@ -103,10 +110,18 @@ describe("NetworkBanner", () => {
     expect(getNetState().reason).toBe("observed");
     expect(container.innerHTML).toBe("");
   });
-  it("a browser-declared weak link shows the slow line", () => {
-    setConnection({ effectiveType: "3g" }); resetNetState();
+  it("a browser-declared 2G link shows the slow line", () => {
+    setConnection({ effectiveType: "2g" }); resetNetState();
     render(<NetworkBanner />);
     expect(screen.getByTestId("network-banner").getAttribute("data-reason")).toBe("declared");
+  });
+  it("Owner 24 Nov (\"still fake slow connection\"): Chrome's 3g / rtt / downlink GUESS never shows the bar", () => {
+    for (const c of [{ effectiveType: "3g" }, { effectiveType: "4g", rtt: 800 }, { effectiveType: "4g", downlink: 1.0 }]) {
+      setConnection(c); resetNetState();
+      const { container, unmount } = render(<NetworkBanner />);
+      expect(container.innerHTML, JSON.stringify(c)).toBe("");
+      unmount();
+    }
   });
 });
 
