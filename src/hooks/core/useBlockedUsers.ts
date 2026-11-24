@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
 import { queryKeys } from "@/lib/queryKeys";
+import { startPart } from "@/lib/appStart";
 
 /**
  * Blocking (App Store guideline 1.2 — "a mechanism for users to block abusive
@@ -33,6 +34,9 @@ export function useBlockedUsers() {
     queryKey: key,
     enabled: !!userId,
     queryFn: async (): Promise<BlockRow[]> => {
+      // N6-1: at app start the one start-up answer carries the same rows (same read, newest first).
+      const pre = await startPart<BlockRow[]>("blocked", userId);
+      if (Array.isArray(pre)) return pre;
       const { data, error } = await supabase
         .from("user_blocks")
         .select("blocked_id, created_at")

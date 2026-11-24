@@ -172,6 +172,9 @@ const notificationGroups: FakeRoute = ({ method, path }) => {
   if (path === "/rest/v1/rpc/get_my_unread_notifications_grouped" || path === "/rest/v1/rpc/get_my_notifications_grouped") {
     return { body: [commentGroup] };
   }
+  // N6-1: this harness answers the bell (and the rest) with its OWN routes above. The shared start-up answer would
+  // carry the generic fixtures instead, so here it carries nothing: every reader asks through these routes, as before.
+  if (path === "/rest/v1/rpc/get_app_start") return { body: {} };
   return undefined;
 };
 (window as unknown as { __navBellActor: string }).__navBellActor = BELL_ACTOR;

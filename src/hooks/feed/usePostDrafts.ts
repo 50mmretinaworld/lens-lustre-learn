@@ -35,6 +35,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
 import { queryKeys } from "@/lib/queryKeys";
+import { startPart } from "@/lib/appStart";
 import { logger } from "@/lib/logger";
 
 const FILE = "src/hooks/feed/usePostDrafts.ts";
@@ -136,9 +137,13 @@ export function usePostDrafts() {
     queryKey: queryKeys.postDrafts(user?.id ?? "anon"),
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await from("post_drafts")
-        .select("*")
-        .order("updated_at", { ascending: false });
+      // N6-1: at app start the one start-up answer carries the same rows (same read, own drafts by row rules).
+      const pre = await startPart<unknown[]>("drafts", user?.id);
+      const { data, error } = Array.isArray(pre)
+        ? ({ data: pre, error: null } as never)
+        : await from("post_drafts")
+          .select("*")
+          .order("updated_at", { ascending: false });
 
       /**
        * ⚠ A FAILED FETCH MUST THROW. AN ABSENT TABLE MUST NOT.

@@ -316,6 +316,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setSession(session);
       setUser(session?.user ?? null);
+      // N6-1: known to the start-up request at once (the effect that also sets it runs a render later).
+      setLogUser(session?.user?.id ?? null);
 
       // Resolve loading for ALL events including INITIAL_SESSION
       setLoading(false);
@@ -500,6 +502,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           setSession(session);
           setUser(session?.user ?? null);
+          // N6-1: known to the start-up request at once (the effect that also sets it runs a render later).
+          setLogUser(session?.user?.id ?? null);
           setLoading(false);
 
           if (session?.user) {

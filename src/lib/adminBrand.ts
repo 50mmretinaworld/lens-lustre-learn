@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { startPart } from "@/lib/appStart";
 
 export const BRAND_NAME = "50mm Retina World";
 
@@ -32,8 +33,10 @@ export async function getAdminIds(): Promise<Set<string>> {
     // Use SECURITY DEFINER RPC: non-admins cannot SELECT admin rows from user_roles
     // directly (RLS restricts to own rows), which would silently return an empty set
     // and revert the admin's brand name + verified badge for every non-admin viewer.
-    const { data } = await supabase.rpc("get_public_role_user_ids" as any, { _role: "admin" });
-    const ids = new Set<string>((data as any[] | null || []).map((r: any) => (typeof r === "string" ? r : r.user_id ?? r)));
+    // N6-1: at app start the one start-up answer carries the same list (same function).
+    const pre = await startPart<unknown[]>("admin_ids");
+    const data = Array.isArray(pre) ? pre : (await supabase.rpc("get_public_role_user_ids" as any, { _role: "admin" })).data;
+    const ids =new Set<string>((data as any[] | null || []).map((r: any) => (typeof r === "string" ? r : r.user_id ?? r)));
     adminIdsCache = ids;
     return ids;
   })();

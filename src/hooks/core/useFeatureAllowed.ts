@@ -17,6 +17,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
+import { startPart } from "@/lib/appStart";
 
 export type FeatureName = "video_posts" | "video_ads" | "copyright_music_check" | "personal_feed" | "media_ladder_feed" | "media_private_photos" | "photo_upload_resume" | "photo_set_v2";
 
@@ -37,6 +38,9 @@ const rpc: Rpc = (fn, a) => (supabase.rpc as unknown as Rpc)(fn, a);
 let batchMissing = false;
 async function fetchAllFeatures(): Promise<Record<string, boolean> | null> {
   if (batchMissing) return null;
+  // N6-1: at app start the one start-up answer carries every switch (same function, same rule).
+  const pre = await startPart<Record<string, boolean>>("features");
+  if (pre && typeof pre === "object" && !Array.isArray(pre) && Object.keys(pre).length > 0) return pre;
   const { data, error } = await rpc("features_allowed_me");
   if (error) {
     if (error.code === "PGRST202" || /could not find the function/i.test(error.message ?? "")) { batchMissing = true; return null; }
