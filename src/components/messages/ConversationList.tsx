@@ -3,12 +3,12 @@
  * (Owner 22 Nov 2026) — sizes and the header come from ./ui (one look for every messenger screen).
  * Reading is always allowed (even when sending is off or the account is under review).
  */
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, MessageCircle, Search, SquarePen, Users } from "lucide-react";
 import { useT } from "@/i18n/I18nContext";
 import { useAuth } from "@/hooks/core/useAuth";
 import { relativeAge } from "@/lib/notifications/describe";
-import { useConversations, useUnreadCounts } from "@/hooks/messages/useMessages";
+import { LIST_MAX, useConversations, useConversationsMore, useUnreadCounts } from "@/hooks/messages/useMessages";
 import AutoBadge from "@/components/AutoBadge";
 import { PersonAvatar, Ticks } from "@/components/messages/MessageParts";
 import { MSG, PageBar } from "@/components/messages/ui";
@@ -19,6 +19,24 @@ const NewGroupDialog = lazy(() => import("@/components/messages/NewGroupDialog")
 import type { ConversationSummary, MessageFolder } from "@/lib/messages/api";
 
 const AVATAR = 48;
+
+/** The end of the loaded list: asks for the next chats when it scrolls into view; a tap does the same. */
+function MoreChats({ onMore, label, fetching }: { onMore: () => void; label: string; fetching: boolean }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || fetching || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) onMore(); }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [onMore, fetching]);
+  return (
+    <button ref={ref} type="button" onClick={onMore} disabled={fetching} data-testid="messages-more"
+      className="block w-full py-3 text-center text-[13px] font-semibold text-primary disabled:text-muted-foreground">
+      {fetching ? "…" : label}
+    </button>
+  );
+}
 
 function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: boolean; meId: string | undefined; onOpen: () => void }) {
   const mine = c.last?.senderId === meId;
@@ -78,7 +96,12 @@ export default function ConversationList({ activeId, onOpen, folder: folderProp,
   const [newGroup, setNewGroup] = useState(false);
   const ownUnread = useUnreadCounts();
   const unread = viewAs ? { inbox: 0, requests: 0 } : ownUnread;
-  const { data, isLoading, isError } = useConversations(folder);
+  const { data, isLoading, isError, isFetching } = useConversations(folder);
+  const { limit, more } = useConversationsMore(folder);
+  // A full answer (as many rows as asked) means the server may hold more; a shorter one is the whole list.
+  const mayHoldMore = (data?.length ?? 0) >= limit && limit < LIST_MAX;
+  // Searching looks through EVERY chat, not only the ones loaded so far.
+  useEffect(() => { if (q.trim()) more(LIST_MAX); }, [q, more]);
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const all = data ?? [];
@@ -147,6 +170,10 @@ export default function ConversationList({ activeId, onOpen, folder: folderProp,
         <ul>
           {rows.map((c) => <Row key={c.conversationId} c={c} active={c.conversationId === activeId} meId={viewAs?.userId ?? user?.id} onOpen={() => onOpen(c.conversationId)} />)}
         </ul>
+        {/* Owner 24 Nov: every chat reachable — the next 50 load when this line scrolls into view (or on tap). */}
+        {mayHoldMore && !q.trim() && (
+          <MoreChats onMore={() => more()} label={t("messages.more", "Show more chats")} fetching={isFetching} />
+        )}
       </div>
       {newGroup && <Suspense fallback={null}><NewGroupDialog open={newGroup} onOpenChange={setNewGroup} onCreated={onOpen} /></Suspense>}
     </div>

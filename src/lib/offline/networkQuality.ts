@@ -30,7 +30,29 @@
  * network round trip to our server is ~60 ms while a one-row read takes 250–1000 ms — the server, not the internet.
  * So where the browser reports the link itself (NetInfo), ITS answer decides; read times are ignored there.
  */
-export type NetState = { online: boolean; slow: boolean; reason: "offline" | "declared" | "timeouts" | "observed" | null };
+/*
+ * Owner 24 Nov 2026 (screenshot, desktop Chrome, fast internet): "Still fake slow connection". Chrome's own link
+ * guesses are not facts: it labels any connection whose round trip is ≥ 270 ms "3g" — normal from India to most
+ * servers even on fast broadband — and its rtt/downlink numbers are estimates. So they are now "hinted": lighter
+ * photos (cheap insurance), but the bar never claims "Slow connection" from a guess. The bar is kept for facts the
+ * member can act on: no internet, Data Saver on, or the browser saying 2G.
+ */
+export type NetState = { online: boolean; slow: boolean; reason: "offline" | "declared" | "hinted" | "timeouts" | "observed" | null };
+
+/** The reasons the status bar may name. Every other slow reason only picks lighter photos, silently. */
+export function barShowsFor(s: NetState): boolean {
+  return !s.online || s.reason === "declared";
+}
+
+/** Chrome's link estimate, for telemetry only (what turned "slow" on). Never throws. */
+export function connectionHint(): { ect: string; rtt: number } {
+  try {
+    const c = (globalThis.navigator as unknown as { connection?: { effectiveType?: string; rtt?: number } } | undefined)?.connection;
+    return { ect: typeof c?.effectiveType === "string" ? c.effectiveType : "na", rtt: typeof c?.rtt === "number" ? c.rtt : 0 };
+  } catch {
+    return { ect: "na", rtt: 0 };
+  }
+}
 
 export const WINDOW = 6;
 /**
@@ -53,10 +75,14 @@ let state: NetState = compute();
 
 interface NetInfo { effectiveType?: string; saveData?: boolean; downlink?: number; rtt?: number; addEventListener?: (t: string, f: () => void) => void }
 
-/** The browser's own word that the link is weak (Chromium / Android WebView only). */
+/** A FACT about the link: the member turned on Data Saver, or the browser reports 2G. */
 function declaredSlow(c: NetInfo): boolean {
   if (c.saveData === true) return true;
-  if (c.effectiveType === "slow-2g" || c.effectiveType === "2g" || c.effectiveType === "3g") return true;
+  return c.effectiveType === "slow-2g" || c.effectiveType === "2g";
+}
+/** Chrome's ESTIMATE that the link may be weak ("3g" = round trip ≥ 270 ms, low downlink, high rtt): lighter photos only. */
+function hintedSlow(c: NetInfo): boolean {
+  if (c.effectiveType === "3g") return true;
   // 0 means "unknown" in some WebViews — never read it as slow.
   if (typeof c.downlink === "number" && c.downlink > 0 && c.downlink < SLOW_DOWNLINK_MBPS) return true;
   if (typeof c.rtt === "number" && c.rtt > SLOW_RTT_MS) return true;
@@ -75,6 +101,7 @@ function compute(): NetState {
   }
   const failures = outcomes.filter((o) => o.failed).length;
   if (failures >= TIMEOUTS_FOR_SLOW) return { online: true, slow: true, reason: "timeouts" };
+  if (c && hintedSlow(c)) return { online: true, slow: true, reason: "hinted" };
   // The browser measures the link itself and calls it good: slow reads are the server, not the internet.
   if (c && typeof c.effectiveType === "string") return { online: true, slow: false, reason: null };
   const times = outcomes.filter((o) => !o.failed).map((o) => o.ms).sort((a, b) => a - b);
