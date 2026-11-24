@@ -60,7 +60,35 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export const onRequest = async (context: any) => {
-  const res = await context.next();
+  let res: Response;
+  try {
+    res = await context.next();
+  } catch {
+    // The static pipeline itself failed: an honest, never-stored 503 instead of the platform's error answer.
+    return new Response("Service Unavailable", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store, no-cache, must-revalidate", "Retry-After": "2" },
+    });
+  }
+
+  /**
+   * ONLY A GOOD ANSWER MAY BE KEPT FOR A YEAR. Live incident, 24 Nov 2026: right after a deploy the static pipeline
+   * answered some files with an EMPTY 500 (no content-type). The rule below used to test only "is it HTML?", so the
+   * error was not HTML and got `public, max-age=31536000, immutable` — Cloudflare kept the 500 for 9 files (the
+   * home page's among them) and members saw "Something went wrong" while the real files were fine at the source.
+   * The decision is now made on the STATUS first: anything that is not a delivered file (200) or a confirmed copy
+   * (304) keeps its status and is never stored.
+   */
+  if (res.status !== 200 && res.status !== 304) {
+    return new Response(res.body, {
+      status: res.status,
+      headers: {
+        "Content-Type": res.headers.get("content-type") || "text/plain; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
 
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) {
