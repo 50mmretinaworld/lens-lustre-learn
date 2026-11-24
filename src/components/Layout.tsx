@@ -19,7 +19,7 @@ import OnboardingModal from "@/components/OnboardingModal";
  */
 const PHOTO_PROMPT_SNOOZE_KEY = "dp_prompt_snoozed_v1";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import { isChatScreen } from "@/lib/appBar";
+import { isBottomBarHidden, isChatScreen } from "@/lib/appBar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SiteFooter from "@/components/SiteFooter";
 import PageTransition from "@/components/PageTransition";
@@ -418,7 +418,7 @@ const LayoutInner = () => {
       {/* OFF-3 network status + A4 account-review bar, and their height published as --banner-h (TopBanners). */}
       <TopBanners signedIn={!!user} />
       {/* app-frame: a page's "whole screen" in here is the screen minus this frame (index.css, src/lib/appFrame.ts). */}
-      <div className={chatScreen ? "app-frame app-frame--chat lg:pb-0" : "app-frame pb-12 lg:pb-0"}>
+      <div className={isBottomBarHidden(pathname) ? "app-frame app-frame--no-bar lg:pb-0" : "app-frame pb-12 lg:pb-0"}>
         <div className={isSidebarEligibleRoute ? "flex gap-8 container mx-auto" : undefined}>
           {isSidebarEligibleRoute ? (
             <aside className="hidden xl:block w-64 shrink-0 sticky top-24 self-start py-6 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">

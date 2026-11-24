@@ -9,7 +9,7 @@ import MobileProfileSheet from "@/components/MobileProfileSheet";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { useT } from "@/i18n/I18nContext";
 import { useMessagingAllowed } from "@/hooks/messages/useMessagingAllowed";
-import { isChatScreen } from "@/lib/appBar";
+import { isBottomBarHidden } from "@/lib/appBar";
 
 type Tab = {
   path: string;
@@ -80,10 +80,9 @@ const MobileBottomNav = () => {
     return true;
   });
 
-  const hideRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
-  if (hideRoutes.some((r) => pathname.startsWith(r))) return null;
-  // a chat is full screen on a phone, like every pro messenger (lib/appBar)
-  if (isChatScreen(pathname)) return null;
+  // Sign-in pages, admin and a phone chat (full screen, like every pro messenger): the ONE rule in lib/appBar,
+  // which the app frame (Layout) also reads so it keeps no room for a bar that is not there.
+  if (isBottomBarHidden(pathname)) return null;
 
   const isActive = (path: string, isCenter?: boolean) => {
     const cleanPath = path.split("?")[0];

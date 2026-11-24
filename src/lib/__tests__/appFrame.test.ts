@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { inFlowHeight } from "@/lib/appFrame";
+import { isBottomBarHidden } from "@/lib/appBar";
 
 const css = readFileSync(join(process.cwd(), "src/index.css"), "utf8");
 const layout = readFileSync(join(process.cwd(), "src/components/Layout.tsx"), "utf8");
@@ -19,14 +20,30 @@ describe("the app frame: a page's whole screen = the screen minus the frame", ()
 
   it("the bottom-bar room is 3rem on phones and 0 on a phone chat and from lg up", () => {
     expect(css).toMatch(/\.app-frame\s*\{\s*--frame-bottom:\s*3rem;/);
-    expect(css).toMatch(/\.app-frame--chat\s*\{\s*--frame-bottom:\s*0px;/);
+    expect(css).toMatch(/\.app-frame--no-bar\s*\{\s*--frame-bottom:\s*0px;/);
     expect(css).toMatch(/@media \(min-width: 1024px\)\s*\{\s*\.app-frame\s*\{\s*--frame-bottom:\s*0px;/);
   });
 
   it("Layout wraps every page in the frame and publishes the top bar's height", () => {
     expect(layout).toContain('"app-frame pb-12 lg:pb-0"');
-    expect(layout).toContain('"app-frame app-frame--chat lg:pb-0"');
+    expect(layout).toContain('"app-frame app-frame--no-bar lg:pb-0"');
     expect(layout).toMatch(/ref=\{frameTopRef\}/);
+  });
+
+  it("the frame keeps bottom-bar room ONLY where the bar shows — the ONE rule both read (measured live: Login 900 px on 852)", () => {
+    expect(layout).toMatch(/isBottomBarHidden\(pathname\) \? "app-frame app-frame--no-bar lg:pb-0"/);
+    const nav = readFileSync(join(process.cwd(), "src/components/MobileBottomNav.tsx"), "utf8");
+    expect(nav).toMatch(/if \(isBottomBarHidden\(pathname\)\) return null;/);
+    expect(nav).not.toMatch(/const hideRoutes =/);
+  });
+
+  it("isBottomBarHidden: sign-in pages, admin and a phone chat have no bar; everything else has it", () => {
+    for (const p of ["/login", "/signup", "/forgot-password", "/reset-password", "/admin/users", "/messages/with/abc"]) {
+      expect(isBottomBarHidden(p)).toBe(true);
+    }
+    for (const p of ["/", "/feed", "/messages", "/messages/requests", "/profile", "/competitions"]) {
+      expect(isBottomBarHidden(p)).toBe(false);
+    }
   });
 
   it("inside the installed app only, the page does not bounce (the fixed bottom bar is not dragged)", () => {
