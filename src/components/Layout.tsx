@@ -37,6 +37,7 @@ import CommentsOverlay from "@/components/comments/CommentsOverlay";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePublishFrameTop } from "@/lib/appFrame";
 import { queryKeys } from "@/lib/queryKeys";
 import { useGlobalConversionTracker } from "@/hooks/core/useGlobalConversionTracker";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,6 +102,8 @@ const LayoutInner = () => {
   // 90%-wide .container left blank bands down both edges on mobile/app.
   const isHome = pathname === "/" || pathname === "/home";
   const chatScreen = isChatScreen(pathname);
+  // The top bar's height in the page flow, published as --frame-top (0 when it floats over the page or is hidden).
+  const frameTopRef = usePublishFrameTop(pathname);
   const isProfilePage = pathname === "/profile";
   const isSidebarHiddenRoute = hideSidebarRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
@@ -300,6 +303,7 @@ const LayoutInner = () => {
       */}
       {!hideNav && (
         <div
+          ref={frameTopRef}
           className={
             isHome
               ? "absolute top-0 left-0 right-0 z-50"
@@ -413,7 +417,8 @@ const LayoutInner = () => {
       */}
       {/* OFF-3 network status + A4 account-review bar, and their height published as --banner-h (TopBanners). */}
       <TopBanners signedIn={!!user} />
-      <div className={chatScreen ? "lg:pb-0" : "pb-12 lg:pb-0"}>
+      {/* app-frame: a page's "whole screen" in here is the screen minus this frame (index.css, src/lib/appFrame.ts). */}
+      <div className={chatScreen ? "app-frame app-frame--chat lg:pb-0" : "app-frame pb-12 lg:pb-0"}>
         <div className={isSidebarEligibleRoute ? "flex gap-8 container mx-auto" : undefined}>
           {isSidebarEligibleRoute ? (
             <aside className="hidden xl:block w-64 shrink-0 sticky top-24 self-start py-6 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">
