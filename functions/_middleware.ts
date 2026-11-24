@@ -289,6 +289,16 @@ export const onRequest = async (context: Ctx): Promise<Response> => {
 
   const res = await context.next();
 
+  // AN ERROR FOR A FILE IS NEVER STORED. Owner 24 Nov 2026: right after a deploy the host briefly answered some
+  // /assets/ files with an empty 500 that still carried the 1-year "immutable" header (public/_headers), Cloudflare
+  // kept those errors, and the home page showed "Something went wrong" until the cache was purged (measured: 9 files,
+  // all 200 at the Pages source, 500 cache=HIT on www). Any error status for an asset now says no-store.
+  if (res.status >= 400 && url.pathname.startsWith("/assets/")) {
+    const out = new Response(res.body, res);
+    out.headers.set("cache-control", "no-store");
+    return out;
+  }
+
   // The content-route functions fetch /index.html with x-seo-shell: 1; that
   // inner fetch is raw material, not a page, and must not cost a metadata call.
   if (request.headers.get("x-seo-shell") === "1") return res;
