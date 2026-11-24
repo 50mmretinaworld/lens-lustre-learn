@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isNetworkError } from "@/lib/offline/retryPolicy";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
+import { startPart } from "@/lib/appStart";
 import { fetchProfileMap } from "@/lib/profileMapCache";
 import { fetchUserEntries } from "@/hooks/competition/useUserEntries";
 import { getAdminIds, resolveName, resolveBadges, isAdminUser } from "@/lib/adminBrand";
@@ -30,10 +31,15 @@ export interface ProfileCoreData {
 /** Fetch core profile data (works for anon + auth) */
 async function fetchProfileCore(userId: string): Promise<ProfileCoreData | null> {
   const [profileRes, adminIds] = await Promise.all([
-    profilesPublic()
-      .select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, pronouns, current_city, workplace, education, custom_url")
-      .eq("id", userId)
-      .maybeSingle() as any,
+    // N6-3 (20261124_5210): the member's OWN profile comes with the one start-up answer (same view, same columns);
+    // anyone else's — and a missing part — is read alone, as before.
+    startPart<Record<string, unknown> | null>("my_profile", userId, "core").then((pre) =>
+      pre !== undefined
+        ? { data: pre, error: null }
+        : (profilesPublic()
+            .select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, pronouns, current_city, workplace, education, custom_url")
+            .eq("id", userId)
+            .maybeSingle() as any)),
     getAdminIds(),
   ]);
 
