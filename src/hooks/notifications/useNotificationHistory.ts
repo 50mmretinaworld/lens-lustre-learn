@@ -19,6 +19,20 @@ import type { NotificationGroup } from "@/lib/notificationText";
 
 export const PAGE_SIZE = 25;
 
+/** One page of the history. Shared with N6-4's prefetch (src/lib/prefetchNext.ts) so both fill the same entry. */
+export async function fetchNotificationPage(pageParam: string | null): Promise<NotificationGroup[]> {
+  const { data, error } = await supabase.rpc("get_my_notifications_grouped" as any, {
+    _limit: PAGE_SIZE,
+    _before: pageParam,
+  });
+  if (error) throw error;
+  return (data ?? []) as NotificationGroup[];
+}
+
+/** A short page means the end; otherwise continue from the oldest row we saw. */
+export const nextNotificationPage = (last: NotificationGroup[]): string | undefined =>
+  last.length < PAGE_SIZE ? undefined : last[last.length - 1]?.latest_at ?? undefined;
+
 export function useNotificationHistory() {
   const { user } = useAuth();
 
@@ -26,17 +40,8 @@ export function useNotificationHistory() {
     queryKey: ["notification-history", user?.id ?? ""],
     enabled: !!user?.id,
     initialPageParam: null as string | null,
-    queryFn: async ({ pageParam }) => {
-      const { data, error } = await supabase.rpc("get_my_notifications_grouped" as any, {
-        _limit: PAGE_SIZE,
-        _before: pageParam,
-      });
-      if (error) throw error;
-      return (data ?? []) as NotificationGroup[];
-    },
-    // A short page means the end; otherwise continue from the oldest row we saw.
-    getNextPageParam: (last: NotificationGroup[]) =>
-      last.length < PAGE_SIZE ? undefined : last[last.length - 1]?.latest_at ?? undefined,
+    queryFn: ({ pageParam }) => fetchNotificationPage(pageParam),
+    getNextPageParam: nextNotificationPage,
     staleTime: 30_000,
   });
 }

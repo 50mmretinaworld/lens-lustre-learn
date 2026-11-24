@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import MobileProfileSheet from "@/components/MobileProfileSheet";
 import { profilesPublic } from "@/lib/profilesPublic";
+import { isBottomBarHidden } from "@/lib/appFrame";
 import { startPart } from "@/lib/appStart";
 import { useT } from "@/i18n/I18nContext";
 
@@ -73,8 +74,8 @@ const MobileBottomNav = () => {
     return true;
   });
 
-  const hideRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
-  if (hideRoutes.some((r) => pathname.startsWith(r))) return null;
+  // The ONE rule (src/lib/appFrame.ts), which the app frame (Layout) also reads so it keeps no room for a hidden bar.
+  if (isBottomBarHidden(pathname)) return null;
 
   const isActive = (path: string, isCenter?: boolean) => {
     const cleanPath = path.split("?")[0];

@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import { isBottomBarHidden, usePublishFrameTop } from "@/lib/appFrame";
 import GlobalComposer from "@/components/GlobalComposer";
 import { isNativeCapacitorApp } from "@/lib/native/authDeepLink";
 import { isNativeIOSApp } from "@/lib/native/authDeepLink";
@@ -74,6 +75,8 @@ const Layout = () => {
 
 const LayoutInner = () => {
   const { pathname } = useLocation();
+  // The top bar's height in the page flow, published as --frame-top (0 when it floats over the page or is hidden).
+  const frameTopRef = usePublishFrameTop(pathname);
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
@@ -299,6 +302,7 @@ const LayoutInner = () => {
       */}
       {!hideNav && (
         <div
+          ref={frameTopRef}
           className={
             isHome
               ? "absolute top-0 left-0 right-0 z-50"
@@ -411,7 +415,8 @@ const LayoutInner = () => {
       <NetworkBanner />
       {/* A4: "Your account is under review" + support e-mail; nothing for an active member. */}
       {user && <Suspense fallback={null}><AccountStateBanner /></Suspense>}
-      <div className="pb-12 lg:pb-0">
+      {/* app-frame: a page's "whole screen" in here is the screen minus this frame (index.css, src/lib/appFrame.ts). */}
+      <div className={isBottomBarHidden(pathname) ? "app-frame app-frame--no-bar lg:pb-0" : "app-frame pb-12 lg:pb-0"}>
         <div className={isSidebarEligibleRoute ? "flex gap-8 container mx-auto" : undefined}>
           {isSidebarEligibleRoute ? (
             <aside className="hidden xl:block w-64 shrink-0 sticky top-24 self-start py-6 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">
