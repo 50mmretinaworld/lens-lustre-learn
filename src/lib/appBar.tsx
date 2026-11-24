@@ -52,3 +52,15 @@ export function isChatScreen(pathname: string): boolean {
   const m = /^\/messages\/([^/]+)\/?$/.exec(pathname);
   return !!m && m[1] !== "requests";
 }
+
+/** Screens that never show the phone's bottom tab bar (sign-in pages, admin, a phone chat). */
+const NO_BOTTOM_BAR_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
+
+/**
+ * THE rule for "does this screen have the bottom tab bar?" — read by the bar itself (MobileBottomNav) AND by the app
+ * frame (Layout), so the frame never keeps room for a bar that is not there. Owner 24 Nov (iPhone): "all screens must
+ * be screen-wise tight" — measured live: Login and Sign up were 900 px on an 852 px phone (48 px of bar room, no bar).
+ */
+export function isBottomBarHidden(pathname: string): boolean {
+  return NO_BOTTOM_BAR_PREFIXES.some((p) => pathname.startsWith(p)) || isChatScreen(pathname);
+}

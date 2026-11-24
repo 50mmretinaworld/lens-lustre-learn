@@ -365,7 +365,7 @@
 /* THE FRAME RULE (src/lib/appFrame.ts). Inside Layout's frame a page's "whole screen" is the screen minus what the
    frame already puts around it: the status bars (--banner-h), the top bar in the flow (--frame-top, published by
    Layout; 0 when it floats over the page) and the room kept for the bottom bar (--frame-bottom: 3rem on phones, 0
-   on a phone chat and from lg up). Owner 24 Nov 2026 (iPhone): "all screens have a scroll bar" — measured: every
+   on a screen without the bottom bar — sign-in pages, admin, a phone chat (lib/appBar isBottomBarHidden) — and from lg up). Owner 24 Nov 2026 (iPhone): "all screens have a scroll bar" — measured: every
    min-h-screen page was 96 px taller than the phone (48 px top bar + 48 px bottom-bar room). */
 :root {
   --frame-top: 0px;
@@ -373,7 +373,7 @@
 .app-frame {
   --frame-bottom: 3rem;
 }
-.app-frame--chat {
+.app-frame--no-bar {
   --frame-bottom: 0px;
 }
 @media (min-width: 1024px) {
