@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Gift, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
+import { startPart } from "@/lib/appStart";
 import { formatUSDFixed } from "@/lib/currencyFormat";
 
 interface GiftAnnouncement {
@@ -77,12 +78,16 @@ const GiftCelebrationModal = () => {
     if (!user) return;
 
     const fetchUnread = async () => {
-      const { data } = await supabase
-        .from("gift_announcements")
-        .select("id, amount, reason, created_at")
-        .eq("user_id", user.id)
-        .eq("is_read", false)
-        .order("created_at", { ascending: false });
+      // N6-1: at app start the one start-up answer carries the same rows (same read).
+      const pre = await startPart<unknown[]>("gift_unread", user.id);
+      const { data } = Array.isArray(pre)
+        ? ({ data: pre } as never)
+        : await supabase
+          .from("gift_announcements")
+          .select("id, amount, reason, created_at")
+          .eq("user_id", user.id)
+          .eq("is_read", false)
+          .order("created_at", { ascending: false });
 
       if (data && data.length > 0) {
         setGifts(data);

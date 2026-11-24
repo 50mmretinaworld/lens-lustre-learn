@@ -8,6 +8,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { startPart } from "@/lib/appStart";
 import { toast } from "@/hooks/core/use-toast";
 
 export interface TrendingPhoto { id: string; image_url: string; thumb_url: string | null; title: string; reaction_count: number; source: "post" }
@@ -32,6 +33,9 @@ export function useTrendingWeek(enabled = true) {
     enabled,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<TrendingWeek> => {
+      // N6-1: at app start the one start-up answer carries it (same function).
+      const pre = await startPart<unknown>("trending");
+      if (pre !== undefined && pre !== null) return parseTrendingWeek(pre);
       const { data, error } = await supabase.rpc("get_trending_week" as never);
       if (error) throw new Error(error.message);
       return parseTrendingWeek(data);

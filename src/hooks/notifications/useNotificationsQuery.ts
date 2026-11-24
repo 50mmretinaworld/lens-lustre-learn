@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { getAdminIds, resolveName } from "@/lib/adminBrand";
 import { queryKeys } from "@/lib/queryKeys";
+import { startPart } from "@/lib/appStart";
 import { useNotificationRealtime } from "@/hooks/feed/useRealtimeFeed";
 import { queueCacheUpdate } from "@/lib/batchedCacheUpdate";
 import type { NotificationGroup } from "@/lib/notificationText";
@@ -173,7 +174,12 @@ async function fetchNotifications(
   userId: string,
   isAdmin: boolean,
 ): Promise<NotificationsData> {
-  const [friendsRes, giftsRes, groupsRes] = await Promise.all([
+  // N6-1: at app start the one start-up answer carries these three reads (same reads, same limits).
+  const pre = await startPart<{ friend_requests?: unknown; gifts?: unknown; groups?: unknown }>("bell", userId);
+  const fromStart = pre && Array.isArray(pre.friend_requests) && Array.isArray(pre.gifts) && Array.isArray(pre.groups)
+    ? ([{ data: pre.friend_requests, error: null }, { data: pre.gifts, error: null }, { data: pre.groups, error: null }] as never)
+    : null;
+  const [friendsRes, giftsRes, groupsRes] = fromStart ?? await Promise.all([
     supabase
       .from("friendships")
       .select("id, requester_id, created_at")
