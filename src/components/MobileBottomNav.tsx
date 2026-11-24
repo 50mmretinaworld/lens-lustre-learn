@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import MobileProfileSheet from "@/components/MobileProfileSheet";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { isBottomBarHidden } from "@/lib/appFrame";
+import { startPart } from "@/lib/appStart";
 import { useT } from "@/i18n/I18nContext";
 
 type Tab = {
@@ -51,13 +52,16 @@ const MobileBottomNav = () => {
 
   useEffect(() => {
     if (!user) { setProfileData(null); return; }
-    profilesPublic()
-      .select("avatar_url, full_name, custom_url")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) setProfileData(data as any);
-      });
+    let live = true;
+    void (async () => {
+      // N6-3 (20261124_5210): the one start-up answer carries the member's own profile; asked alone only without it.
+      const pre = await startPart<{ avatar_url: string | null; full_name: string | null; custom_url?: string | null } | null>("my_profile", user.id, "nav");
+      const data = pre !== undefined
+        ? pre
+        : (await profilesPublic().select("avatar_url, full_name, custom_url").eq("id", user.id).single()).data;
+      if (live && data) setProfileData({ avatar_url: data.avatar_url, full_name: data.full_name, custom_url: data.custom_url ?? null } as any);
+    })();
+    return () => { live = false; };
   }, [user]);
 
   const initials = profileData?.full_name
