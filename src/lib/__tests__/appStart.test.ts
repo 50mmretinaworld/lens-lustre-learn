@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 let answer: unknown = { features: { video_posts: true }, message_allowed: true, my_stories: [{ id: "s1" }], me: null };
 let fail = false;
-const rpc = vi.fn(async (fn: string) => {
+const rpc = vi.fn(async (fn: string, _args?: unknown) => {
   if (fn !== "get_app_start") return { data: null, error: null };
   if (fail) return { data: null, error: { code: "PGRST202", message: "Could not find the function public.get_app_start" } };
   return { data: answer, error: null };
