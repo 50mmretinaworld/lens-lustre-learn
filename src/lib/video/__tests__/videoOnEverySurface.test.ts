@@ -28,7 +28,8 @@ const BUILDERS = [
 describe("src/lib/posts/postAttachments.ts — the one attachments reader", () => {
   const src = stripComments(readFileSync("src/lib/posts/postAttachments.ts", "utf8"));
   it("reads photographs and video together, batched", () => {
-    expect(src).toMatch(/Promise\.all\(\[fetchPostMediaMap\(postIds\), fetchPostVideoMap\(postIds\)\]\)/);
+    // N6-2: each read may instead be answered by rows the feed's one extras answer already holds — still side by side
+    expect(src).toMatch(/Promise\.all\(\[[^;]*?fetchPostMediaMap\(postIds\),[^;]*?fetchPostVideoMap\(postIds\),?\s*\]\)/);
   });
   it("hides a post whose video is not playable for this viewer (null), never shows it empty", () => {
     expect(src).toMatch(/if \(v === "hidden"\) return null;/);

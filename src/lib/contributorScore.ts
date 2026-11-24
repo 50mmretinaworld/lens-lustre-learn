@@ -66,6 +66,20 @@ const runBatch = async (ids: string[]): Promise<Map<string, number>> => {
   return out;
 };
 
+/**
+ * N6-2 (20261124_5300): the feed's one extras answer already holds these authors' scores (the same
+ * get_contributor_scores rows). They go into the same cache, so the cards ask nothing.
+ */
+export const seedContributorScores = (userIds: string[], rows: unknown[]): void => {
+  const got = new Map<string, number>();
+  for (const row of rows as Array<{ user_id?: string; contributor_score?: unknown }>) {
+    const n = Number(row?.contributor_score);
+    if (row?.user_id && Number.isFinite(n) && n > 0) got.set(row.user_id, n);
+  }
+  const at = Date.now();
+  for (const id of userIds) if (id) cache.set(id, { score: got.get(id) ?? null, at });
+};
+
 export const fetchContributorScores = async (
   userIds: string[],
 ): Promise<Map<string, number>> => {

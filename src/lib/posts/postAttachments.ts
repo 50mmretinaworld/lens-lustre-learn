@@ -15,8 +15,8 @@
  * (post_media_for, ITEM E) and fetchPostVideoMap (post_videos through RLS,
  * VID-1) — run side by side: one round trip per page, never one per post.
  */
-import { fetchPostMediaMap, resolvePostImageUrls, type PostMediaMap } from "@/lib/media/postMediaRead";
-import { fetchPostVideoMap, type FeedVideo, type PostVideoMap } from "@/lib/video/postVideoRead";
+import { fetchPostMediaMap, postMediaMapFromRows, resolvePostImageUrls, type PostMediaForRow, type PostMediaMap } from "@/lib/media/postMediaRead";
+import { fetchPostVideoMap, toPostVideoMap, type FeedVideo, type PostVideoMap, type PostVideoRow } from "@/lib/video/postVideoRead";
 import { fetchResolvedMediaMap, ladderSwitchOn, resolvedImageUrls, type ResolvedMap } from "@/lib/media/resolvedMedia";
 
 export interface PostAttachments {
@@ -31,13 +31,25 @@ export interface AttachedMedia {
   video: FeedVideo | null;
 }
 
+/**
+ * N6-2 (20261124_5300): rows the feed's one extras answer already holds — the very rows post_media_for and the
+ * post_videos read return. A part that is present is used as is; a missing part is read as before.
+ */
+export interface PreAnsweredAttachments {
+  media?: readonly unknown[];
+  videos?: readonly unknown[];
+}
+
 /** Photographs and videos for a whole page of posts: two batched reads, in parallel. */
-export async function fetchPostAttachments(postIds: readonly string[]): Promise<PostAttachments> {
+export async function fetchPostAttachments(postIds: readonly string[], pre: PreAnsweredAttachments = {}): Promise<PostAttachments> {
   // S3-c: started first, runs alongside today's two reads; any failure → undefined (today's path).
   const resolvedP = ladderSwitchOn()
     .then((on) => (on ? fetchResolvedMediaMap(postIds) : undefined))
     .catch(() => undefined);
-  const [media, video] = await Promise.all([fetchPostMediaMap(postIds), fetchPostVideoMap(postIds)]);
+  const [media, video] = await Promise.all([
+    pre.media ? postMediaMapFromRows(pre.media as PostMediaForRow[]) : fetchPostMediaMap(postIds),
+    pre.videos ? toPostVideoMap(pre.videos as PostVideoRow[]) : fetchPostVideoMap(postIds),
+  ]);
   const resolved = await resolvedP;
   return resolved ? { media, video, resolved } : { media, video };
 }
