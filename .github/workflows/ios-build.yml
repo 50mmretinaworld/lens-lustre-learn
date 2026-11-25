@@ -49,6 +49,12 @@ on:
         type: boolean
         required: false
         default: true
+      runner:
+        description: "macOS machine. macos-15-intel = the one this account gets (25 Nov 2026: every Apple-silicon label was refused 'not acquired'). Both carry Xcode 26.3."
+        type: choice
+        required: false
+        default: macos-15-intel
+        options: [macos-15-intel, macos-15]
   # push:
   #   branches: [main]
 
@@ -72,7 +78,15 @@ jobs:
     # compile. No build flag can fix that - the feature simply isn't in that
     # compiler. macos-15 carries Xcode 26.x (Swift 6.2+), where the gate
     # evaluates true and the API is visible as intended.
-    runs-on: macos-15
+    #
+    # INTEL BY DEFAULT since 25 Nov 2026. After the repository moved to the
+    # 50mmretinaworld account, iOS 1.4 (run 45675925228) was cancelled five
+    # times "not acquired by Runner of type hosted"; githubstatus.com showed
+    # Actions operational. A probe (run 45695474561) asked for macos-14,
+    # macos-15, macos-26 and macos-15-intel: only macos-15-intel was acquired
+    # (macOS 15.7, x86_64, Xcode 26.3 present — the version pinned below).
+    # The `runner` input keeps macos-15 one click away if that changes.
+    runs-on: ${{ inputs.runner || 'macos-15-intel' }}
     timeout-minutes: 60
     env:
       BUNDLE_ID: com.fiftymmretina.app
