@@ -23,6 +23,7 @@ import FeedVideoCard from "@/components/video/FeedVideoCard";
 import { COPYRIGHT_REASON, videoCopyrightReportOn } from "@/lib/video/takedown";
 import { useFeedSignals } from "@/hooks/feed/FeedSignalsContext";
 import { postMedia } from "@/lib/posts/subjectMedia";
+import { postPathOf } from "@/lib/posts/postPath";
 import Caption from "@/components/post/Caption";
 import HashtagSuggestions from "@/components/post/HashtagSuggestions";
 import { useCaptionHashtags } from "@/hooks/feed/useCaptionHashtags";
@@ -451,7 +452,17 @@ const PostCard = ({
                 Renders nothing for an admin, a suspended or deleted account, or
                 a score of zero. */}
             <ContributorScore userId={post.user_id} />
-            <span>{timeAgo(post.created_at)}</span>
+            {/* The time is the post's permalink, as on Instagram / Facebook — and the link Google follows
+                from every feed, hashtag and profile card (Search Console 25 Nov 2026: 0 post links on the site). */}
+            {/* A 24px-TALL TARGET WITHOUT MOVING ANYTHING (P23 A:target-size). The link stays INLINE text
+                (the UI gate's own rule: an inline anchor is words, not a 44px control) and pb-[9px] on an inline box (15px glyph box + 9 = 24)
+                grows only its hit area, 8px DOWN into the header's own pb-2 — never up into the name, never into
+                the photo, never a layout change. That gives the name link above its 12px of clear space.
+                THE <span> IS LOAD-BEARING: a direct child of this flex row is blockified, so its padding WOULD
+                move the line (camline + ui-baselines caught 3px). Inside the span the link is truly inline.
+                Tried and rejected: inline-block min-h-6 (the gate judges it a 44px control);
+                min-w-6 (a short "2h" pushed the privacy icon — ui-baselines caught it). */}
+            <span><Link to={postPathOf(post)} className="pb-[9px] hover:underline">{timeAgo(post.created_at)}</Link></span>
             <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
             {post.is_suggested && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
