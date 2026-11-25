@@ -1,5 +1,7 @@
-import { useSyncExternalStore } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
+import { useLocation } from "react-router-dom";
 import { SITE_ORIGIN } from "@/lib/env";
+import { claimHead, edgeOwns, headWinner, nextOwnerId, releaseEdge, subscribeHead } from "@/lib/seo/headOwner";
 import { Helmet } from "react-helmet-async";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSEO } from "@/hooks/core/useSEO";
@@ -138,6 +140,16 @@ const PageSEO = ({ title, description, ogImage, ogType, jsonLd, rawJsonLd }: Pag
     (onStoreChange) => queryCache.subscribe(() => onStoreChange()),
     () => qc.getQueryData<{ name: string; json: string }[]>(["site-setting", "seo_schemas"])
   );
+
+  // One head, one owner (src/lib/seo/headOwner.ts): the edge on the loaded address, else ONE mounted PageSEO.
+  const { pathname } = useLocation();
+  const [id] = useState(nextOwnerId);
+  const weight = shouldRenderSiteSchemas ? 0 : 1;
+  useLayoutEffect(() => claimHead(id, weight), [id, weight]);
+  const winner = useSyncExternalStore(subscribeHead, headWinner, () => -1);
+  const edge = edgeOwns(pathname);
+  useLayoutEffect(() => { if (!edge) releaseEdge(); }, [edge]);
+  if (edge || winner !== id) return null;
 
   return (
     <Helmet>
