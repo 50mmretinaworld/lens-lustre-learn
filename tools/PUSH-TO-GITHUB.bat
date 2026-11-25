@@ -14,7 +14,7 @@ echo.
 set "HERE=%~dp0"
 set "BUNDLE=%HERE%50mm-57-commits.bundle"
 set "WORK=%HERE%50mm-push-workspace"
-set "REPO=https://github.com/altisinfonet/lens-lustre-learn-Claude.git"
+set "REPO=https://github.com/50mmretinaworld/lens-lustre-learn.git"
 
 REM ---------- Step 1: is git installed? ----------
 echo  [1/5] Checking that Git is installed...
@@ -62,7 +62,7 @@ if errorlevel 1 (
   echo  Most likely one of these:
   echo    - No internet connection right now.
   echo    - The sign-in was cancelled or the wrong account was used.
-  echo      The account that owns this code is: altisinfonet
+  echo      The account that owns this code is: 50mmretinaworld
   echo.
   echo  Nothing was changed. It is safe to run this file again.
   echo.
@@ -111,7 +111,7 @@ if errorlevel 1 (
   echo.
   echo  The code was prepared correctly but GitHub would not accept it.
   echo  Usually this means the signed-in account cannot write to this
-  echo  repository. The account that owns it is: altisinfonet
+  echo  repository. The account that owns it is: 50mmretinaworld
   echo.
   echo  Nothing was lost. Tell Claude what this window says.
   echo.
@@ -125,7 +125,7 @@ echo    DONE. All 57 commits are now on GitHub.
 echo  ================================================================
 echo.
 echo  You can check them here:
-echo    https://github.com/altisinfonet/lens-lustre-learn-Claude/commits/main
+echo    https://github.com/50mmretinaworld/lens-lustre-learn/commits/main
 echo.
 echo  The working folder "50mm-push-workspace" next to this file can be
 echo  deleted whenever you like - it is only a scratch copy.

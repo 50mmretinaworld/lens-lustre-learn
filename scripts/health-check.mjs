@@ -97,7 +97,7 @@ function readAnonKey() {
 }
 
 const ANON = readAnonKey();
-const REPO = "altisinfonet/lens-lustre-learn-Claude";
+const REPO = "50mmretinaworld/lens-lustre-learn";
 
 const H = { apikey: ANON, Authorization: `Bearer ${ANON}` };
 const problems = [];
