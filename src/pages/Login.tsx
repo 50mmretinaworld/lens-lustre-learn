@@ -286,7 +286,11 @@ const Login = () => {
       </div>
 
       {/* Right — Content */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 md:px-12 lg:px-16">
+      {/* Scrolls when the keyboard (or a small phone) leaves less room than the form needs. The two
+          flex-1 pseudo-elements centre the form when it fits and collapse when it does not, so the
+          top is never cut off (justify-center + overflow-hidden used to hide the logo, the fields
+          and the checkbox with no way to scroll to them: Owner 23 Nov 2026, iPhone sign-in/sign-up). */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center px-6 md:px-12 lg:px-16 py-3 overflow-y-auto overscroll-contain before:content-[''] before:flex-1 after:content-[''] after:flex-1">
         {/* min-h-11 = 44px; reported at 45x17. This is the ONLY way back out of
             the sign-in screen, so it is the last control that should be hard
             to hit. `-mt-3` takes the added height off the top, keeping the gap
