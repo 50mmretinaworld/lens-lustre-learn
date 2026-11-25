@@ -454,10 +454,12 @@ const PostCard = ({
             <ContributorScore userId={post.user_id} />
             {/* The time is the post's permalink, as on Instagram / Facebook — and the link Google follows
                 from every feed, hashtag and profile card (Search Console 25 Nov 2026: 0 post links on the site). */}
-            {/* A REAL 24×24 TARGET WITHOUT MOVING ANYTHING (P23 A:target-size): min-h-6/min-w-6 make the box
-                full size; -mb-2 hands the extra 8px back, so the line keeps its 16px height and the text sits
-                exactly where it did — the box simply hangs into the header's own pb-2 below. */}
-            <Link to={postPathOf(post)} className="inline-block min-h-6 min-w-6 -mb-2 hover:underline">{timeAgo(post.created_at)}</Link>
+            {/* A 24px-TALL TARGET WITHOUT MOVING ANYTHING (P23 A:target-size): min-h-6 gives the name link
+                above its 12px of clear space; -mb-2 hands the extra 8px back, so the line keeps its 16px height
+                and the text sits exactly where it did — the box hangs into the header's own pb-2 below.
+                NO min-w: a short time ("2h") would widen and push the privacy icon (ui-baselines caught it);
+                a narrow time passes on spacing alone. */}
+            <Link to={postPathOf(post)} className="inline-block min-h-6 -mb-2 hover:underline">{timeAgo(post.created_at)}</Link>
             <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
             {post.is_suggested && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
