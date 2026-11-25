@@ -991,8 +991,10 @@ jobs:
           # 2026-11-23: bumped 1.2.56 -> 1.2.57. 1.2.57 carries #1203 (slow bar only for a slow internet; slow server reads = lighter images, no bar).
           # 2026-11-25: bumped 1.2.57 -> 1.2.58 (Owner: "Android can go on"). Carries N1–N6 speed work, admin home,
           # one SEO head owner (#1257), post links + sitemap (#1263).
-          sed -i 's/versionName "1.0"/versionName "1.2.58"/' android/app/build.gradle
-          echo "versionCode=${VC} versionName=1.2.58 (1.2.57 is spent - built 23 Nov)"
+          # 2026-11-25: bumped 1.2.58 -> 1.2.59 (Owner: "build Android 1.2.59"). Adds the typing fixes (#1265/#1266:
+          # no focus zoom in the app, comment-box caret on the letters) and Sign in / Sign up keyboard scroll (#1228).
+          sed -i 's/versionName "1.0"/versionName "1.2.59"/' android/app/build.gradle
+          echo "versionCode=${VC} versionName=1.2.59 (1.2.58 is spent - built 25 Nov, not handed over)"
           grep -E "versionCode|versionName" android/app/build.gradle
           cat android/variables.gradle
           # S11: prove both edits landed — exactly one versionCode, the derived
