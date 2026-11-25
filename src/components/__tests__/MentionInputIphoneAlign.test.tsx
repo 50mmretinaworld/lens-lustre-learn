@@ -25,7 +25,7 @@ describe("MentionInput on iPhone: the caret layer sits on the letters", () => {
     Object.defineProperty(navigator, "userAgent", { value: IPHONE, configurable: true });
     vi.resetModules();
     const { default: MentionInput } = await import("@/components/MentionInput");
-    const { container } = render(<MentionInput value="" onChange={() => {}} placeholder="Add a comment" />);
+    const { container } = render(<MentionInput value="" onChange={() => {}} onSubmit={() => {}} placeholder="Add a comment" />);
     const ta = container.querySelector("textarea") as HTMLTextAreaElement;
     expect(ta).toBeTruthy();
     expect(ta.style.marginLeft).toBe("0px");
