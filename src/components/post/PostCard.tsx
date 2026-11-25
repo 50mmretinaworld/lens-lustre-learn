@@ -454,12 +454,13 @@ const PostCard = ({
             <ContributorScore userId={post.user_id} />
             {/* The time is the post's permalink, as on Instagram / Facebook — and the link Google follows
                 from every feed, hashtag and profile card (Search Console 25 Nov 2026: 0 post links on the site). */}
-            {/* A 24px-TALL TARGET WITHOUT MOVING ANYTHING (P23 A:target-size): min-h-6 gives the name link
-                above its 12px of clear space; -mb-2 hands the extra 8px back, so the line keeps its 16px height
-                and the text sits exactly where it did — the box hangs into the header's own pb-2 below.
-                NO min-w: a short time ("2h") would widen and push the privacy icon (ui-baselines caught it);
-                a narrow time passes on spacing alone. */}
-            <Link to={postPathOf(post)} className="inline-block min-h-6 -mb-2 hover:underline">{timeAgo(post.created_at)}</Link>
+            {/* A 24px-TALL TARGET WITHOUT MOVING ANYTHING (P23 A:target-size). The link stays INLINE text
+                (the UI gate's own rule: an inline anchor is words, not a 44px control) and pb-2 on an inline box
+                grows only its hit area, 8px DOWN into the header's own pb-2 — never up into the name, never into
+                the photo, never a layout change. That gives the name link above its 12px of clear space.
+                Tried and rejected: inline-block min-h-6 (the gate judges it a 44px control);
+                min-w-6 (a short "2h" pushed the privacy icon — ui-baselines caught it). */}
+            <Link to={postPathOf(post)} className="pb-2 hover:underline">{timeAgo(post.created_at)}</Link>
             <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
             {post.is_suggested && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
