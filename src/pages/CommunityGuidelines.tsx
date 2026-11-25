@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import PageSEO from "@/components/PageSEO";
 import { Link } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 
@@ -16,13 +16,10 @@ const headingFont = { fontFamily: "var(--font-heading)" };
  */
 const CommunityGuidelines = () => (
   <>
-    <Helmet>
-      <title>Terms of Use &amp; Community Guidelines — 50mm Retina World</title>
-      <meta
-        name="description"
-        content="The terms of use and community guidelines for 50mm Retina World, including our zero-tolerance policy for objectionable content and abusive users."
-      />
-    </Helmet>
+    <PageSEO
+      title="Terms of Use & Community Guidelines"
+      description="The terms of use and community guidelines for 50mm Retina World, including our zero-tolerance policy for objectionable content and abusive users."
+    />
 
     <div className="container mx-auto max-w-3xl px-4 py-12">
       <div className="flex items-center gap-3 mb-8">

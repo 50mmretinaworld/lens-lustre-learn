@@ -1,5 +1,5 @@
 import { useCookieConsent } from "@/hooks/core/useCookieConsent";
-import { Helmet } from "react-helmet-async";
+import PageSEO from "@/components/PageSEO";
 import { Cookie, Shield, BarChart3, Ban, Settings } from "lucide-react";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
@@ -9,10 +9,10 @@ const CookiePolicy = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Cookie Policy — 50mm Retina World</title>
-        <meta name="description" content="Learn about the cookies used on 50mm Retina World, why we use them, and how to manage your preferences." />
-      </Helmet>
+      <PageSEO
+        title="Cookie Policy"
+        description="Learn about the cookies used on 50mm Retina World, why we use them, and how to manage your preferences."
+      />
 
       <div className="container mx-auto max-w-3xl px-4 py-12">
         <div className="flex items-center gap-3 mb-8">
