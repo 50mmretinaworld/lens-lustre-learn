@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { canonicalOrigin } from "../_shared/laneConfig.ts"; // one address (A2)
 import { postPath } from "../_shared/postPath.ts"; // A3: one post-address rule
 import { ANSWERS } from "../_shared/answers.ts"; // AEO: one answer list
+import { moderatedSet } from "../_shared/moderated.ts"; // B: the head's own "not offered to search" rule
 // Call-time, not module load: a module-level throw would kill the whole function
 // before it can report why.
 const SITE_URL = () => canonicalOrigin();
@@ -172,17 +173,21 @@ Deno.serve(async () => {
       }
     }
 
+    // B: a banned or suspended member's profile and posts are noindex on the page
+    // (seo-route-metadata), so the sitemap must not offer them either — same rule, one place.
+    const moderated = await moderatedSet(supabase);
+
     // 7. Public profiles — SOW §5.3: filter out indexing_disabled = true
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("custom_url, updated_at, avatar_url")
+      .select("id, custom_url, updated_at, avatar_url")
       .eq("indexing_disabled", false)
       .not("custom_url", "is", null)
       .limit(HARD_CAP_PER_SECTION);
 
     if (profiles) {
       for (const p of profiles as any[]) {
-        if (!p.custom_url) continue;
+        if (!p.custom_url || moderated.has(p.id)) continue;
         xml += urlEntry(
           `${SITE_URL()}/${p.custom_url}`,
           p.updated_at?.split("T")[0],
@@ -211,6 +216,7 @@ Deno.serve(async () => {
         for (const a of (authors ?? []) as any[]) handles.set(a.id, a.custom_url ?? null);
       }
       for (const p of posts as any[]) {
+        if (moderated.has(p.user_id)) continue;
         xml += urlEntry(
           `${SITE_URL()}${postPath(p.id, handles.get(p.user_id) ?? null)}`,
           p.created_at?.split("T")[0],
