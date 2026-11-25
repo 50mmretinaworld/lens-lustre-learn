@@ -20,7 +20,7 @@ type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unkno
 const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
 
 export const SYNTHETIC_URL =
-  "https://raw.githubusercontent.com/altisinfonet/lens-lustre-learn-Claude/d2-synthetic-data/latest.json";
+  "https://raw.githubusercontent.com/50mmretinaworld/lens-lustre-learn/d2-synthetic-data/latest.json";
 const FEED_METRICS = ["rpc.get_broadcast_feed", "rpc.get_personal_feed"];
 
 interface Timing { day: string; metric: string; n: number; p50: number; p95: number; p99: number; fail_pct: number }
