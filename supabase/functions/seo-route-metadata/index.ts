@@ -408,6 +408,10 @@ async function resolvePost(postId: string, meta: Metadata, global: any) {
           creator: person,
           creditText: name,
           copyrightNotice: `© ${name}`,
+          // Google Image Metadata: the photographer keeps ownership (Terms → "Your content"); a licence is asked
+          // from the photographer, so the acquire page is their profile (Help & Support when no public handle).
+          license: `${SITE_URL()}/terms-of-use#your-content`,
+          acquireLicensePage: authorUrl ?? `${SITE_URL()}/help-support`,
           ...(caption ? { caption: snippet(caption, 200) } : {}),
         },
       } : {}),
