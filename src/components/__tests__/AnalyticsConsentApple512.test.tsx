@@ -14,6 +14,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
 vi.mock("@/hooks/core/useSiteSetting", () => ({
@@ -38,12 +39,15 @@ const stored = (analytics: boolean) =>
   JSON.stringify({ essential: true, analytics, timestamp: 1755000000000 });
 
 function Shell({ children }: { children: ReactNode }) {
+  // The app always has a QueryClient; the Cookie Policy's PageSEO reads the cached SEO settings through it.
   return (
-    <HelmetProvider>
-      <MemoryRouter>
-        <CookieConsentProvider>{children}</CookieConsentProvider>
-      </MemoryRouter>
-    </HelmetProvider>
+    <QueryClientProvider client={new QueryClient()}>
+      <HelmetProvider>
+        <MemoryRouter>
+          <CookieConsentProvider>{children}</CookieConsentProvider>
+        </MemoryRouter>
+      </HelmetProvider>
+    </QueryClientProvider>
   );
 }
 
