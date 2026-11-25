@@ -20,7 +20,10 @@ import {
   installZoomPolicy,
   __resetZoomPolicyForTests,
   ZOOM_LOCK_CLASS,
+  APP_VIEWPORT,
 } from "@/lib/native/zoomPolicy";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const mockedIsNative = vi.mocked(isNativeCapacitorApp);
 
@@ -50,6 +53,25 @@ describe("installZoomPolicy", () => {
     expect(
       document.documentElement.className.split(/\s+/).filter((c) => c === ZOOM_LOCK_CLASS),
     ).toHaveLength(1);
+  });
+
+  it("stops iPhone FOCUS zoom in the app: viewport maximum-scale=1 (Owner screenshot 25 Nov, ×1.14 = 16/14)", () => {
+    document.head.innerHTML = '<meta name="viewport" content="width=device-width, initial-scale=1.0" />';
+    mockedIsNative.mockReturnValue(true);
+    installZoomPolicy();
+    expect(document.querySelector('meta[name="viewport"]')?.getAttribute("content")).toBe(APP_VIEWPORT);
+    expect(APP_VIEWPORT).toMatch(/maximum-scale=1(\.0)?\b/);
+  });
+
+  it("the WEBSITE keeps a zoomable viewport — runtime only, never in index.html", () => {
+    const original = "width=device-width, initial-scale=1.0";
+    document.head.innerHTML = `<meta name="viewport" content="${original}" />`;
+    mockedIsNative.mockReturnValue(false);
+    installZoomPolicy();
+    expect(document.querySelector('meta[name="viewport"]')?.getAttribute("content")).toBe(original);
+    const indexHtml = readFileSync(join(process.cwd(), "index.html"), "utf8");
+    const tag = indexHtml.match(/<meta name="viewport"[^>]*>/)?.[0] ?? "";
+    expect(tag).not.toMatch(/maximum-scale|user-scalable/);
   });
 
   it("never throws — it runs during boot, before anything can catch for it", () => {
