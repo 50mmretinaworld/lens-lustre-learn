@@ -1,0 +1,24 @@
+# TEMPORARY DIAGNOSTIC (probe/mac-runner branch only — never merged).
+# iOS 1.4 (run 45675925228) was cancelled 5× "not acquired by Runner of type hosted" since the repo moved to
+# the 50mmretinaworld account; githubstatus.com shows Actions operational. Which macOS labels does this
+# account get at all? Runs on push of THIS branch only. Prints the OS and the Xcode versions present.
+name: PROBE mac runner availability
+on:
+  push:
+    branches: [probe/mac-runner]
+permissions:
+  contents: read
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-14, macos-15-intel, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Which machine answered
+        run: |
+          sw_vers
+          uname -m
+          ls /Applications | grep -i xcode || true
