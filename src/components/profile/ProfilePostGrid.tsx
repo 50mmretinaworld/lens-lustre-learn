@@ -53,7 +53,8 @@
  */
 
 import { memo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import type React from "react";
+import { Link } from "react-router-dom";
 import { Images, Heart, MessageCircle } from "lucide-react";
 import type { UnifiedPost } from "@/types/post";
 import { postMedia } from "@/lib/posts/subjectMedia";
@@ -212,7 +213,6 @@ const HoverCounts = ({ post, revealed = false }: { post: UnifiedPost; revealed?:
 
 /** One small square. Cropped to 1:1 on purpose — this is the scanning view. */
 const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
-  const navigate = useNavigate();
   const [failed, setFailed] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const photoSetV2 = usePhotoSetV2();
@@ -238,20 +238,20 @@ const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
    * half of his rule, and matches `PostCard.interceptFirstTap` so the two
    * surfaces behave identically — which is the whole point of one funnel.
    */
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!revealed) {
+      e.preventDefault(); // first tap: counts only; the link opens on the second
       setRevealed(true);
-      return;
     }
-    navigate(postPathOf(post));
   };
 
   return (
-    <button
-      type="button"
+    // A REAL LINK (Search Console 25 Nov 2026): Google follows <a href> only — as a button with a click
+    // handler, not one post on the site had a link pointing at it (measured live: 0 on home, profiles,
+    // hashtag pages, post pages). Reachable by keyboard and announced by screen readers as before.
+    <Link
+      to={postPathOf(post)}
       onClick={handleClick}
-      // A real button, not a div with onClick: it has to be reachable by
-      // keyboard and announce itself to a screen reader.
       aria-label={tileLabel(post)}
       /* 4:5 PORTRAIT — MEASURED, not chosen.
          The written spec said "square cells by default", so square is what I
@@ -281,7 +281,7 @@ const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
       )}
       <MultiMarker count={count} />
       <HoverCounts post={post} />
-    </button>
+    </Link>
   );
 });
 
@@ -296,7 +296,6 @@ const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
  * roughly 1KB of unrecognisable mush.
  */
 const ShowcaseTile = memo(function ShowcaseTile({ post }: { post: UnifiedPost }) {
-  const navigate = useNavigate();
   const [failed, setFailed] = useState(false);
   // The backdrop needs its OWN failure state. Caught by the capture sweep,
   // 2026-08-15: a post whose thumbnail address 404s left this decorative image
@@ -323,12 +322,12 @@ const ShowcaseTile = memo(function ShowcaseTile({ post }: { post: UnifiedPost })
    */
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate(postPathOf(post))}
+    // A REAL LINK — same reason as GridTile above.
+    <Link
+      to={postPathOf(post)}
       aria-label={tileLabel(post)}
       style={{ aspectRatio: String(SHOWCASE_ASPECT) }}
-      className="group relative col-span-3 w-full overflow-hidden bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="group relative col-span-3 block w-full overflow-hidden bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       {video ? (
         <VideoPoster video={video} fit="contain" />
@@ -372,7 +371,7 @@ const ShowcaseTile = memo(function ShowcaseTile({ post }: { post: UnifiedPost })
       )}
       <MultiMarker count={count} />
       <HoverCounts post={post} />
-    </button>
+    </Link>
   );
 });
 

@@ -23,6 +23,7 @@ import FeedVideoCard from "@/components/video/FeedVideoCard";
 import { COPYRIGHT_REASON, videoCopyrightReportOn } from "@/lib/video/takedown";
 import { useFeedSignals } from "@/hooks/feed/FeedSignalsContext";
 import { postMedia } from "@/lib/posts/subjectMedia";
+import { postPathOf } from "@/lib/posts/postPath";
 import Caption from "@/components/post/Caption";
 import HashtagSuggestions from "@/components/post/HashtagSuggestions";
 import { useCaptionHashtags } from "@/hooks/feed/useCaptionHashtags";
@@ -451,7 +452,9 @@ const PostCard = ({
                 Renders nothing for an admin, a suspended or deleted account, or
                 a score of zero. */}
             <ContributorScore userId={post.user_id} />
-            <span>{timeAgo(post.created_at)}</span>
+            {/* The time is the post's permalink, as on Instagram / Facebook — and the link Google follows
+                from every feed, hashtag and profile card (Search Console 25 Nov 2026: 0 post links on the site). */}
+            <Link to={postPathOf(post)} className="hover:underline">{timeAgo(post.created_at)}</Link>
             <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
             {post.is_suggested && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
