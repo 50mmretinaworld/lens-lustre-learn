@@ -742,6 +742,245 @@ jobs:
           echo "--- gradle.properties tail ---"
           tail -5 android/gradle.properties
 
+      # ⚠ MUST DIFFER FROM WHAT IS LIVE. Play production is on 1073 (1.2.2)
+      # as of 2026-08-12. Shipping a second release also called "1.2.2"
+      # makes the Console, the crash reports and the user's About screen
+      # ambiguous — two different builds wearing one name. Bump it every
+      # time the store gets a new build.
+      # 2026-08-14: bumped 1.2.3 -> 1.2.4. Build 1082 was cut as 1.2.3; I do
+      # not know whether the owner promoted it to the store. Bumping is
+      # correct either way — if 1.2.3 never shipped we simply skip a name,
+      # and if it did, reusing it would put two different builds under one
+      # version string. Skipping a name costs nothing; reusing one costs
+      # clarity in the Console, in crash reports and on the About screen.
+      # 2026-08-17: bumped 1.2.13 -> 1.2.14 for the publishing blocker fix.
+      # 2026-08-17: bumped 1.2.12 -> 1.2.13. Build 1103 was cut as 1.2.12;
+      # whether it was promoted or not, bumping is correct — skipping a
+      # name costs nothing, reusing one costs clarity in the Console, in
+      # crash reports and on the member's About screen.
+      # 2026-08-20: bumped 1.2.15 -> 1.2.16. Build 1110 was cut as 1.2.15
+      # and uploaded to the Play production track as a draft; whether the
+      # owner rolled it out or not, the name is spent. 1.2.16 carries the
+      # media write-path fix (RED-1) — the reason this build exists.
+      # 2026-08-31: bumped 1.2.16 -> 1.2.17. Build 1111 was cut as 1.2.16.
+      # 1.2.17 carries F-53 (the unsubstituted %VITE_SITE_ORIGIN% that the
+      # app bundles into its own index.html) and the @mention list fix —
+      # and it is the first build since run #113 failed on F-52, leaving
+      # the Android channel dead with every other check green.
+      # 2026-09-01: bumped 1.2.17 -> 1.2.18. Build 1115 was cut as 1.2.17 and
+      # UPLOADED to the Play Console (version code 1115 reached "Preview and
+      # confirm" on an internal testing release), so the name is spent
+      # whether or not it was rolled out. Reusing it would put two different
+      # builds under one version string in the Console, in crash reports and
+      # on the member's About screen. 1.2.18 carries the native debug
+      # symbols that 1115 was missing.
+      # 2026-09-03: bumped 1.2.18 -> 1.2.19, AND THIS ONE WAS CAUGHT BY THE
+      # OWNER, NOT BY THIS FILE. Build 1117 SUCCEEDED and was cut as 1.2.18.
+      # The rule three paragraphs up says to bump every time the store gets
+      # a new build; nobody did, so run 119 was about to produce a second,
+      # different build also called 1.2.18 — different code (the corrected
+      # Authorized Signatory label, the 30-day Top Contributors card, the
+      # withdrawn "Preview All Types" button) under a spent name. versionCode
+      # would have been unique (1000 + run number, so Play would have taken
+      # it) which is precisely why nothing failed and nothing complained:
+      # the code is generated and the name is typed, so only the typed half
+      # can rot, and only a person reading it can notice.
+      #
+      # F-70: THE VERSION NAME IS THE ONLY PART OF THIS BUILD NOBODY CHECKS.
+      # versionCode is derived, the AAB is gated on vitest, tsc, the security
+      # audit, the UI gate and the native-symbols check — and the string that
+      # every member reads on the About screen, and that the Play Console and
+      # every crash report key on, is a literal that eight prior comments in
+      # this very block record having to fix by hand. Eight corrections in
+      # three weeks is not a run of bad luck, it is a missing check. Raised
+      # for D2: the build should refuse a versionName that a previous
+      # SUCCESSFUL run already shipped, the same way it refuses a bundle with
+      # native code and no symbols. Not fixed in this unit, because a new
+      # blocking gate must be shown failing on unfixed input first (C-34).
+      # 2026-09-12: bumped 1.2.19 -> 1.2.20. Run 121 SUCCEEDED on 493d4d49,
+      # which carries the 1.2.19 bump (it landed in ecdad73 on 2026-09-04),
+      # so 1.2.19 reached the store and the name is spent. Checked before
+      # firing rather than after: the run list was read, the bump commit was
+      # found with `git log -S`, and `git merge-base --is-ancestor` confirmed
+      # run 121's sha carries it — F-70 says this string is the one part of
+      # the build nobody checks, so it was checked by hand again. 1.2.20
+      # carries the comment section redesign (PR #241, a168d886).
+      # The guard F-70 asks for is still NOT built. It is a separate unit,
+      # and it must be shown failing on unfixed input first (C-34); writing
+      # it in the same commit as a bump it would have caught proves nothing.
+      # 2026-11-10 (later): bumped 1.2.44 -> 1.2.45. 1.2.44 (run 148, 42779574612 on 525633cb) is spent (handed to the Owner).
+      # 1.2.45 carries comments v3 (#997, Owner 10 Nov "comments OK": one reply flow in the bottom box, mentions as
+      # names, 14px), the signed-out top bar fix (#993), the 4 page fixes (#998: course covers, journal byline,
+      # chip rows) and the /help answer pages (AEO). No switch is changed.
+      # 2026-11-10: bumped 1.2.43 -> 1.2.44. 1.2.43 (run 147, 42483045124 on 2738a852) is spent (handed to the Owner).
+      # 1.2.44 carries H1 (#987, Owner 10 Nov "make it LIVE Site and App"): new hashtag page (photographers ·
+      # posts, Follow, related tags, Top|Recent, grid|cards), hashtags in every language, plus A3 post addresses
+      # /<handle>/post/<id> and www share links (#974). No switch is changed.
+      # 2026-11-08: bumped 1.2.42 -> 1.2.43. 1.2.42 (run 146, 42394574762 on 4dd20e6f) is spent (handed to the Owner).
+      # 1.2.43 carries #963 (carry of #961, Owner 8 Nov "go on App"): app top bar + · 50mm Retina World · ☰,
+      # ☰ = Bottom Dock menu (search + Notifications), tighter feed top, Back with a story open closes the
+      # story instead of leaving the app. No switch is changed.
+      # 2026-11-07 (evening): bumped 1.2.41 -> 1.2.42. 1.2.41 (run 145, 42352647141 on bf3b2ed7) is spent (handed to the Owner).
+      # 1.2.42 carries #957 (Owner 7 Nov): square story + highlight tiles everywhere (no circle), highlights in the
+      # one story viewer, profile Friends / Followers / Following counts are links, no Delete Account item in the
+      # app menu (it stays in Settings). No switch is changed.
+      # 2026-11-07: bumped 1.2.40 -> 1.2.41. 1.2.40 (run 144, 42252316524 on f6c1afaa) is spent (handed to the Owner).
+      # 1.2.41 carries Stories v2.2 (#949 SQL + #952 website, Owner 7 Nov "make it live and build App"):
+      # square story tiles, post-to-story box, story likes/comments, Seen by, My Stories. No switch is changed.
+      # 2026-11-06: bumped 1.2.39 -> 1.2.40. 1.2.39 (run 143, 42021446265 on 4be5bf1c) is spent (on Play).
+      # 1.2.40 carries main 546d99c6 (#936, Owner 6 Nov): photo blur codes, profile wall saved-copy refresh,
+      # bigger password eye, sign-up checkbox place + picture, one quiet video retry. No switch is changed.
+      # 2026-11-05: bumped 1.2.38 -> 1.2.39. 1.2.38 (run 142, 41922968514 on a563c308) is spent (uploaded to Play).
+      # 1.2.39 carries what main gained since a563c308 (Owner order, 5 Nov): every feed photo saves as .jpg
+      # with the 22 px credit drawn in the browser (#917), feed photo under 1 s via stored clean copies
+      # (#920), Instagram row gap + photo on screen first (#923). No switch is changed.
+      # 2026-11-04: bumped 1.2.37 -> 1.2.38. 1.2.37 (run 140, 41534590843 on e92d4669) is spent.
+      # 1.2.38 carries what main gained since 2 Nov (Owner order, 4 Nov): one age rule 18+ at sign-up
+      # and Edit Profile, no tracking / no cookie box in the app, compact comments (competition too),
+      # credit U1+U2, Instagram action row, photo gaps + one left edge, camera line every 5 s,
+      # hashtag page on PostCard, waiting-card words. No switch is changed.
+      # 2026-11-02: bumped 1.2.36 -> 1.2.37. 1.2.36 (run 139, 41341965644 on 90d9c4fa) is spent.
+      # 1.2.37 is the ONE app version of the Smart Photo Plan (Owner-approved 2026-11-02): it carries
+      # U1–U7 (new photo set + credit, camera details, download removal and WebView long-press off,
+      # Save mobile data, backfill/retire server pieces). Every new behaviour is behind photo_set_v2 /
+      # competition_fullsize_purge, both OFF on live: the app looks and behaves as 1.2.36 until the Owner switches.
+      # 2026-11-01: bumped 1.2.35 -> 1.2.36. 1.2.35 (run 138, 41328942399 on 48186230) is spent.
+      # 1.2.36 is the ONE final app version after S9 (Owner order, 31 Oct): it carries everything on
+      # main, including the S2 native-exit reader (#562) and the S11 build guards (#596), which
+      # 1.2.34 and 1.2.35 were built without. No switch changes.
+      # 2026-11-01: bumped 1.2.34 -> 1.2.35. 1.2.34 (run 137 on c3c42d7b) is spent. 1.2.35 carries
+      # N7b into the app: the bell and See all are ONE view (same rows, same tabs, sections New /
+      # This week / Last 30 days / Earlier), type badges, two stacked avatars, a ⋯ menu (Remove,
+      # Turn off this kind), swipe left to remove, and on a phone the bell opens the full page.
+      # Owner checked it on the live site (screenshots, 16:05 UTC) and said "build app". No switch changes.
+      # 2026-11-01: bumped 1.2.33 -> 1.2.34. 1.2.33 (run 136 on 2f13f196) is spent. 1.2.34 carries
+      # the new notification centre into the app: one row design with unread dot and tabs, comment
+      # preview + Reply, "also follows N people you know", big-moment cards, settings as one table
+      # with quiet hours, weekly summary, push with a big picture. Everything is behind switches that
+      # are OFF; the Owner turns them on one group at a time (N8 guide). Nothing is switched on by this bump.
+      # 2026-10-31: bumped 1.2.32 -> 1.2.33. 1.2.32 (run 135 on edcc3522) is spent. 1.2.33 carries
+      # S7 "Video complete" into the app: "Add a video ad" in the ad library (#542, on main after
+      # 1.2.32 was cut), with the video takedown (#541), purge worker (#539), video alarms (#724)
+      # and the updated Privacy Policy (#727) already live server-side. Not switched on by this
+      # bump: Video posts / Video ads stay as the Owner set them; the copyright check stays Off.
+      # 2026-10-30: bumped 1.2.31 -> 1.2.32. 1.2.31 (run 134 on 4a84a7ed) is spent. 1.2.32 adds
+      # the rest of S7b offline: post pages / profiles / comments / notifications seen before
+      # (#572, #579), the "No internet — showing saved" bar and follows / reports made offline
+      # sent exactly once (#579), posts with photos made offline (#598), feed videos saved for
+      # no network (#682). Already in 1.2.31 and still carried: S7b-1 photo worker (#557) and
+      # ~200 saved feed posts (#563). Not switched on by this bump: app_image_sw and Upload
+      # resume stay as they are on live.
+      # 2026-10-29 (night, ads): bumped 1.2.30 -> 1.2.31. 1.2.30 (versionCode 1133, run 133 on
+      # c0275456) is spent. 1.2.31 adds: a sponsored feed card never shows without its Like +
+      # Comment (#556/#559), the feed's ad kept on the phone for no network (#558/#560/#565).
+      # Also on main since 1.2.30: S7b-1 photo worker behind app_image_sw, default OFF (#557),
+      # S2 native exit reader (#561). Not switched on by this bump.
+      # 2026-10-29 (late night): bumped 1.2.29 -> 1.2.30. 1.2.29 (versionCode 1132) is spent (on
+      # the Owner's phone). 1.2.30 adds: own name never "Photographer" offline (#544) and poor
+      # network photos — 3g/weak links slow, phones get 1080 px (#546). Offline S7b (#547/#548)
+      # is NOT in it (paused by the Owner).
+      # 2026-10-29 (night): bumped 1.2.28 -> 1.2.29. 1.2.28 (versionCode 1131) is spent (built,
+      # not uploaded). 1.2.29 carries S4 (post page, comment links, Back per entry), S5 (shared
+      # upload layer, resume switch OFF) and S6 (cursor paging, one feed-live channel) into the
+      # app (#533/#534/#535).
+      # 2026-10-29 (evening): bumped 1.2.27 -> 1.2.28. 1.2.27 is spent (built, not uploaded).
+      # 1.2.28 adds the blank posts 1-2 fix: a culled card that becomes eager shows again
+      # (#529/#530), on top of 1.2.27's admin ad library fix.
+      # 2026-10-29 (later): bumped 1.2.26 -> 1.2.27. 1.2.26 (versionCode 1129) is spent (built,
+      # not uploaded). 1.2.27 adds the admin ad library fix: a new picture takes the freed spot,
+      # Replace picture, Move up/down (#525/#526).
+      # 2026-10-29: bumped 1.2.25 -> 1.2.26. 1.2.25 (versionCode 1128) was built from main
+      # f5eae3e0 on 2026-10-18 and its Play status is unknown, so the name is treated as spent.
+      # 1.2.26 carries today's live web code into the app: blank feed cards on fast scroll fixed
+      # (#512/#513), no birthday box above the posts (#511/#514), S2 telemetry (#495).
+      # 2026-10-18 (later): bumped 1.2.24 -> 1.2.25. 1.2.24 is spent (versionCode 1127, on Play
+      # production, Owner 2026-10-18). 1.2.25 carries BUG-VID-HOME (video in the home preview and
+      # notification thumbnails) and S12 personal feed client (signals, For you / Following /
+      # Favourites tabs, Not interested / Mute, behind the personal_feed switch).
+      # 2026-10-18: bumped 1.2.23 -> 1.2.24. 1.2.23 is spent (versionCode 1126, on the
+      # Owner's phone). 1.2.24 carries the Meta-style video player: autoplay with sound
+      # in the app (hls.js instead of the WebView's own HLS player), controls hidden
+      # until a tap, a thin progress bar.
+      # 2026-10-17 (later): bumped 1.2.22 -> 1.2.23. 1.2.22 is spent (versionCode 1125, on
+      # Play Internal testing). 1.2.23 carries the app video fix: every call to our own
+      # Pages Functions goes to the lane site origin from the app, and those Functions
+      # answer CORS for https://localhost (video could not play or upload in 1.2.22).
+      # 2026-10-17: bumped 1.2.21 -> 1.2.22. 1.2.21 is spent (run 34956566930, on members' phones).
+      # 1.2.22 carries the 2026-10-17 promotion (feed refresh, Back, one comments box, ads,
+      # Apple consent, video client) for Android testers via Play Internal testing (draft).
+      # 2026-09-15: bumped 1.2.20 -> 1.2.21. Checked before firing, not
+      # assumed: the Actions run list for this workflow was read and
+      # Android Build #122 on 59ff7f5 (the commit that made this exact
+      # 1.2.19 -> 1.2.20 edit) shows "completed successfully" — so 1.2.20
+      # reached the store and the name is spent. 1.2.21 carries two
+      # independent client-UI fixes, both merged to main today: the
+      # badge/role label redesign to plain superscript text (PR #247,
+      # 2c3c65d) and making the Friends page's Awaited/Pending/Friends/
+      # Followers/Following tab row reachable at every width, including a
+      # tap-target regression the UI gate itself caught mid-PR and that got
+      # fixed before merge (PR #248, 6ff1c81). Neither PR's own CI runs a
+      # full vitest pass (their gates are security/typecheck/UI-gate/web-
+      # build only), and this sandbox could not run `npm test` itself to
+      # check ahead of time — `npm install` is blocked by this sandbox's
+      # own registry proxy policy, not a repo problem. That is not a gap
+      # in what actually gates the build: vitest is already a hard gate
+      # inside build-aab below, same as it was for every prior bump, so a
+      # red suite still stops the build here rather than upstream.
+      # 2026-09-15: RE-CUT. Android Build #123 — this exact 1.2.21 bump —
+      # ran build-aab and FAILED its own `npm test` gate, the one check
+      # neither PR's CI could run and this sandbox could not pre-verify
+      # (see the paragraph above): src/__tests__/textSizeFloor.test.ts
+      # caught `text-[9.5px]` (PR #247's badge label, BADGE_PILL_SIZE.full)
+      # as a sub-12px class the P8 readability-floor block in
+      # src/index.css never listed, so it would have shipped under the
+      # owner-mandated 12px floor. #123 produced no artifact — build-aab
+      # exited 1 before packaging anything — so versionName stays 1.2.21,
+      # the same rule as every re-cut in this file: a version is spent
+      # only by a run that actually produces an AAB. Fixed in PR #250
+      # (6663d33): added `.text-\[9\.5px\]` to the P8 block, the same
+      # mechanism already covering `.text-\[8\.5px\]` and `.text-\[9px\]`
+      # beside it. Verified without vitest, same sandbox limitation as
+      # above: textSizeFloor.test.ts's own scan logic was re-implemented
+      # in a standalone script and run against the fixed tree — 0
+      # uncovered sub-12px classes, the floor still exactly 12px. PR
+      # #250's own CI (security gate + UI gate, 8/8) passed clean,
+      # including the UI gate — which does not track this non-interactive
+      # span (tools/uishot/capture.mjs fingerprints only interactive
+      # controls) but ran for real regardless, not assumed clean. This
+      # re-cut is what actually puts the vitest gate in front of the
+      # fix; nothing before this run has observed it green.
+      # The guard F-70 asks for is still NOT built. It is a separate unit,
+      # and it must be shown failing on unfixed input first (C-34); writing
+      # it in the same commit as a bump it would have caught proves nothing.
+      # 2026-11-16: bumped 1.2.49 -> 1.2.50. 1.2.49 (run 153, vc1153, 190a2c0a) is spent (handed to the Owner).
+      # 1.2.50 carries A4 (#1079/#1081/#1082: "Your account is under review · Contact support@50mmretina.com" banner,
+      # admin Account Review page; Owner 16 Nov "rest all approved") and A3b's delete-account request text (#1077).
+      # The live account guard switch stays as it is (OFF) — it is a database switch, not part of the app.
+      # 2026-11-17: 1.2.50 re-fired (first run 43821462690 stopped at phone-check, DEPENDENCY DIED on the
+      # virtual phone — nothing handed over, number still free). Now also carries the push centre app part
+      # (PN4, #1098): PushRichService / PushRichNotifier / PushCentrePlugin + the Turn-on-notifications card.
+      # 2026-11-13 (evening): bumped 1.2.48 -> 1.2.49. 1.2.48 (run 152, vc1152, d77cb59f) is spent (handed to the Owner).
+      # 1.2.49 carries the ONE Trending card in the app feed below the 4th post (#1033, Owner 13 Nov "Approved. GO",
+      # real renders trending-everywhere/). The app's feed videos keep starting with sound (Owner: "don't change it").
+      # 2026-11-13 (later): bumped 1.2.47 -> 1.2.48. 1.2.47 (run 151, vc1151, 6f0785a3) is spent (handed to the Owner).
+      # 1.2.48 carries the story fixes (#1020: paper plane = Share, story video plays with sound + 🔊, video tile frame),
+      # A (#1027: a member's name always shows, never "Photographer"; database: no blank names) and B (#1026: Trending
+      # this week = one admin-marked video or exactly 4 photos). Owner 13 Nov: "fold A and B … same release". No switch changed.
+      # 2026-11-13: bumped 1.2.46 -> 1.2.47. 1.2.46 (run 150, vc1150, d4c2de34) is spent (built, Owner chose not to
+      # upload it). 1.2.47 carries the 1.2.46 app links plus @all / @followers (#1010/#1012/#1014 carried; Owner 12 Nov
+      # "@all OK", 13 Nov "i will check in main web and app get ready"). The @all switch stays as the Owner sets it.
+      # 2026-11-12: bumped 1.2.45 -> 1.2.46. 1.2.45 (run 149, vc1149) is LIVE on Play. 1.2.46 carries app-first links
+      # (Owner 12 Nov: every 50mmretina.com link opens the app; verified https filter for www + assetlinks.json) and
+      # the new phone-check job (virtual phone proves the link opens the app before the Owner uploads). No switch changed.
+      # 2026-11-18: bumped 1.2.50 -> 1.2.51. 1.2.50 (run 155, vc1155) is LIVE on Play. 1.2.51 carries today's three
+      # Owner-approved changes: the story caption (2 lines + more / Show less, #1111), member tags read from the
+      # member's profile everywhere (#1110/#1114), and photography suggestions under the comment box (#1115).
+      # Owner 18 Nov: "all approved go ahead", "build the App". No switch changed.
+      # 2026-11-23: bumped 1.2.56 -> 1.2.57. 1.2.57 carries #1203 (slow bar only for a slow internet; slow server reads = lighter images, no bar).
+      # 2026-11-25: bumped 1.2.57 -> 1.2.58 (Owner: "Android can go on"). Carries N1–N6 speed work, admin home,
+      # one SEO head owner (#1257), post links + sitemap (#1263).
+      # 2026-11-25: bumped 1.2.58 -> 1.2.59 (Owner: "build Android 1.2.59"). Adds the typing fixes (#1265/#1266:
+      # no focus zoom in the app, comment-box caret on the letters) and Sign in / Sign up keyboard scroll (#1228).
       - name: Set app version (monotonic versionCode from run number)
         run: |
           VC=$(( 1000 + ${{ github.run_number }} ))
@@ -754,245 +993,7 @@ jobs:
             echo "::error::android/app/build.gradle does not hold exactly one template line 'versionName \"1.0\"' — the versionName edit would not apply. Refusing to build."
             exit 1
           fi
-          # ⚠ MUST DIFFER FROM WHAT IS LIVE. Play production is on 1073 (1.2.2)
-          # as of 2026-08-12. Shipping a second release also called "1.2.2"
-          # makes the Console, the crash reports and the user's About screen
-          # ambiguous — two different builds wearing one name. Bump it every
-          # time the store gets a new build.
-          # 2026-08-14: bumped 1.2.3 -> 1.2.4. Build 1082 was cut as 1.2.3; I do
-          # not know whether the owner promoted it to the store. Bumping is
-          # correct either way — if 1.2.3 never shipped we simply skip a name,
-          # and if it did, reusing it would put two different builds under one
-          # version string. Skipping a name costs nothing; reusing one costs
-          # clarity in the Console, in crash reports and on the About screen.
-          # 2026-08-17: bumped 1.2.13 -> 1.2.14 for the publishing blocker fix.
-          # 2026-08-17: bumped 1.2.12 -> 1.2.13. Build 1103 was cut as 1.2.12;
-          # whether it was promoted or not, bumping is correct — skipping a
-          # name costs nothing, reusing one costs clarity in the Console, in
-          # crash reports and on the member's About screen.
-          # 2026-08-20: bumped 1.2.15 -> 1.2.16. Build 1110 was cut as 1.2.15
-          # and uploaded to the Play production track as a draft; whether the
-          # owner rolled it out or not, the name is spent. 1.2.16 carries the
-          # media write-path fix (RED-1) — the reason this build exists.
-          # 2026-08-31: bumped 1.2.16 -> 1.2.17. Build 1111 was cut as 1.2.16.
-          # 1.2.17 carries F-53 (the unsubstituted %VITE_SITE_ORIGIN% that the
-          # app bundles into its own index.html) and the @mention list fix —
-          # and it is the first build since run #113 failed on F-52, leaving
-          # the Android channel dead with every other check green.
-          # 2026-09-01: bumped 1.2.17 -> 1.2.18. Build 1115 was cut as 1.2.17 and
-          # UPLOADED to the Play Console (version code 1115 reached "Preview and
-          # confirm" on an internal testing release), so the name is spent
-          # whether or not it was rolled out. Reusing it would put two different
-          # builds under one version string in the Console, in crash reports and
-          # on the member's About screen. 1.2.18 carries the native debug
-          # symbols that 1115 was missing.
-          # 2026-09-03: bumped 1.2.18 -> 1.2.19, AND THIS ONE WAS CAUGHT BY THE
-          # OWNER, NOT BY THIS FILE. Build 1117 SUCCEEDED and was cut as 1.2.18.
-          # The rule three paragraphs up says to bump every time the store gets
-          # a new build; nobody did, so run 119 was about to produce a second,
-          # different build also called 1.2.18 — different code (the corrected
-          # Authorized Signatory label, the 30-day Top Contributors card, the
-          # withdrawn "Preview All Types" button) under a spent name. versionCode
-          # would have been unique (1000 + run number, so Play would have taken
-          # it) which is precisely why nothing failed and nothing complained:
-          # the code is generated and the name is typed, so only the typed half
-          # can rot, and only a person reading it can notice.
-          #
-          # F-70: THE VERSION NAME IS THE ONLY PART OF THIS BUILD NOBODY CHECKS.
-          # versionCode is derived, the AAB is gated on vitest, tsc, the security
-          # audit, the UI gate and the native-symbols check — and the string that
-          # every member reads on the About screen, and that the Play Console and
-          # every crash report key on, is a literal that eight prior comments in
-          # this very block record having to fix by hand. Eight corrections in
-          # three weeks is not a run of bad luck, it is a missing check. Raised
-          # for D2: the build should refuse a versionName that a previous
-          # SUCCESSFUL run already shipped, the same way it refuses a bundle with
-          # native code and no symbols. Not fixed in this unit, because a new
-          # blocking gate must be shown failing on unfixed input first (C-34).
-          # 2026-09-12: bumped 1.2.19 -> 1.2.20. Run 121 SUCCEEDED on 493d4d49,
-          # which carries the 1.2.19 bump (it landed in ecdad73 on 2026-09-04),
-          # so 1.2.19 reached the store and the name is spent. Checked before
-          # firing rather than after: the run list was read, the bump commit was
-          # found with `git log -S`, and `git merge-base --is-ancestor` confirmed
-          # run 121's sha carries it — F-70 says this string is the one part of
-          # the build nobody checks, so it was checked by hand again. 1.2.20
-          # carries the comment section redesign (PR #241, a168d886).
-          # The guard F-70 asks for is still NOT built. It is a separate unit,
-          # and it must be shown failing on unfixed input first (C-34); writing
-          # it in the same commit as a bump it would have caught proves nothing.
-          # 2026-11-10 (later): bumped 1.2.44 -> 1.2.45. 1.2.44 (run 148, 42779574612 on 525633cb) is spent (handed to the Owner).
-          # 1.2.45 carries comments v3 (#997, Owner 10 Nov "comments OK": one reply flow in the bottom box, mentions as
-          # names, 14px), the signed-out top bar fix (#993), the 4 page fixes (#998: course covers, journal byline,
-          # chip rows) and the /help answer pages (AEO). No switch is changed.
-          # 2026-11-10: bumped 1.2.43 -> 1.2.44. 1.2.43 (run 147, 42483045124 on 2738a852) is spent (handed to the Owner).
-          # 1.2.44 carries H1 (#987, Owner 10 Nov "make it LIVE Site and App"): new hashtag page (photographers ·
-          # posts, Follow, related tags, Top|Recent, grid|cards), hashtags in every language, plus A3 post addresses
-          # /<handle>/post/<id> and www share links (#974). No switch is changed.
-          # 2026-11-08: bumped 1.2.42 -> 1.2.43. 1.2.42 (run 146, 42394574762 on 4dd20e6f) is spent (handed to the Owner).
-          # 1.2.43 carries #963 (carry of #961, Owner 8 Nov "go on App"): app top bar + · 50mm Retina World · ☰,
-          # ☰ = Bottom Dock menu (search + Notifications), tighter feed top, Back with a story open closes the
-          # story instead of leaving the app. No switch is changed.
-          # 2026-11-07 (evening): bumped 1.2.41 -> 1.2.42. 1.2.41 (run 145, 42352647141 on bf3b2ed7) is spent (handed to the Owner).
-          # 1.2.42 carries #957 (Owner 7 Nov): square story + highlight tiles everywhere (no circle), highlights in the
-          # one story viewer, profile Friends / Followers / Following counts are links, no Delete Account item in the
-          # app menu (it stays in Settings). No switch is changed.
-          # 2026-11-07: bumped 1.2.40 -> 1.2.41. 1.2.40 (run 144, 42252316524 on f6c1afaa) is spent (handed to the Owner).
-          # 1.2.41 carries Stories v2.2 (#949 SQL + #952 website, Owner 7 Nov "make it live and build App"):
-          # square story tiles, post-to-story box, story likes/comments, Seen by, My Stories. No switch is changed.
-          # 2026-11-06: bumped 1.2.39 -> 1.2.40. 1.2.39 (run 143, 42021446265 on 4be5bf1c) is spent (on Play).
-          # 1.2.40 carries main 546d99c6 (#936, Owner 6 Nov): photo blur codes, profile wall saved-copy refresh,
-          # bigger password eye, sign-up checkbox place + picture, one quiet video retry. No switch is changed.
-          # 2026-11-05: bumped 1.2.38 -> 1.2.39. 1.2.38 (run 142, 41922968514 on a563c308) is spent (uploaded to Play).
-          # 1.2.39 carries what main gained since a563c308 (Owner order, 5 Nov): every feed photo saves as .jpg
-          # with the 22 px credit drawn in the browser (#917), feed photo under 1 s via stored clean copies
-          # (#920), Instagram row gap + photo on screen first (#923). No switch is changed.
-          # 2026-11-04: bumped 1.2.37 -> 1.2.38. 1.2.37 (run 140, 41534590843 on e92d4669) is spent.
-          # 1.2.38 carries what main gained since 2 Nov (Owner order, 4 Nov): one age rule 18+ at sign-up
-          # and Edit Profile, no tracking / no cookie box in the app, compact comments (competition too),
-          # credit U1+U2, Instagram action row, photo gaps + one left edge, camera line every 5 s,
-          # hashtag page on PostCard, waiting-card words. No switch is changed.
-          # 2026-11-02: bumped 1.2.36 -> 1.2.37. 1.2.36 (run 139, 41341965644 on 90d9c4fa) is spent.
-          # 1.2.37 is the ONE app version of the Smart Photo Plan (Owner-approved 2026-11-02): it carries
-          # U1–U7 (new photo set + credit, camera details, download removal and WebView long-press off,
-          # Save mobile data, backfill/retire server pieces). Every new behaviour is behind photo_set_v2 /
-          # competition_fullsize_purge, both OFF on live: the app looks and behaves as 1.2.36 until the Owner switches.
-          # 2026-11-01: bumped 1.2.35 -> 1.2.36. 1.2.35 (run 138, 41328942399 on 48186230) is spent.
-          # 1.2.36 is the ONE final app version after S9 (Owner order, 31 Oct): it carries everything on
-          # main, including the S2 native-exit reader (#562) and the S11 build guards (#596), which
-          # 1.2.34 and 1.2.35 were built without. No switch changes.
-          # 2026-11-01: bumped 1.2.34 -> 1.2.35. 1.2.34 (run 137 on c3c42d7b) is spent. 1.2.35 carries
-          # N7b into the app: the bell and See all are ONE view (same rows, same tabs, sections New /
-          # This week / Last 30 days / Earlier), type badges, two stacked avatars, a ⋯ menu (Remove,
-          # Turn off this kind), swipe left to remove, and on a phone the bell opens the full page.
-          # Owner checked it on the live site (screenshots, 16:05 UTC) and said "build app". No switch changes.
-          # 2026-11-01: bumped 1.2.33 -> 1.2.34. 1.2.33 (run 136 on 2f13f196) is spent. 1.2.34 carries
-          # the new notification centre into the app: one row design with unread dot and tabs, comment
-          # preview + Reply, "also follows N people you know", big-moment cards, settings as one table
-          # with quiet hours, weekly summary, push with a big picture. Everything is behind switches that
-          # are OFF; the Owner turns them on one group at a time (N8 guide). Nothing is switched on by this bump.
-          # 2026-10-31: bumped 1.2.32 -> 1.2.33. 1.2.32 (run 135 on edcc3522) is spent. 1.2.33 carries
-          # S7 "Video complete" into the app: "Add a video ad" in the ad library (#542, on main after
-          # 1.2.32 was cut), with the video takedown (#541), purge worker (#539), video alarms (#724)
-          # and the updated Privacy Policy (#727) already live server-side. Not switched on by this
-          # bump: Video posts / Video ads stay as the Owner set them; the copyright check stays Off.
-          # 2026-10-30: bumped 1.2.31 -> 1.2.32. 1.2.31 (run 134 on 4a84a7ed) is spent. 1.2.32 adds
-          # the rest of S7b offline: post pages / profiles / comments / notifications seen before
-          # (#572, #579), the "No internet — showing saved" bar and follows / reports made offline
-          # sent exactly once (#579), posts with photos made offline (#598), feed videos saved for
-          # no network (#682). Already in 1.2.31 and still carried: S7b-1 photo worker (#557) and
-          # ~200 saved feed posts (#563). Not switched on by this bump: app_image_sw and Upload
-          # resume stay as they are on live.
-          # 2026-10-29 (night, ads): bumped 1.2.30 -> 1.2.31. 1.2.30 (versionCode 1133, run 133 on
-          # c0275456) is spent. 1.2.31 adds: a sponsored feed card never shows without its Like +
-          # Comment (#556/#559), the feed's ad kept on the phone for no network (#558/#560/#565).
-          # Also on main since 1.2.30: S7b-1 photo worker behind app_image_sw, default OFF (#557),
-          # S2 native exit reader (#561). Not switched on by this bump.
-          # 2026-10-29 (late night): bumped 1.2.29 -> 1.2.30. 1.2.29 (versionCode 1132) is spent (on
-          # the Owner's phone). 1.2.30 adds: own name never "Photographer" offline (#544) and poor
-          # network photos — 3g/weak links slow, phones get 1080 px (#546). Offline S7b (#547/#548)
-          # is NOT in it (paused by the Owner).
-          # 2026-10-29 (night): bumped 1.2.28 -> 1.2.29. 1.2.28 (versionCode 1131) is spent (built,
-          # not uploaded). 1.2.29 carries S4 (post page, comment links, Back per entry), S5 (shared
-          # upload layer, resume switch OFF) and S6 (cursor paging, one feed-live channel) into the
-          # app (#533/#534/#535).
-          # 2026-10-29 (evening): bumped 1.2.27 -> 1.2.28. 1.2.27 is spent (built, not uploaded).
-          # 1.2.28 adds the blank posts 1-2 fix: a culled card that becomes eager shows again
-          # (#529/#530), on top of 1.2.27's admin ad library fix.
-          # 2026-10-29 (later): bumped 1.2.26 -> 1.2.27. 1.2.26 (versionCode 1129) is spent (built,
-          # not uploaded). 1.2.27 adds the admin ad library fix: a new picture takes the freed spot,
-          # Replace picture, Move up/down (#525/#526).
-          # 2026-10-29: bumped 1.2.25 -> 1.2.26. 1.2.25 (versionCode 1128) was built from main
-          # f5eae3e0 on 2026-10-18 and its Play status is unknown, so the name is treated as spent.
-          # 1.2.26 carries today's live web code into the app: blank feed cards on fast scroll fixed
-          # (#512/#513), no birthday box above the posts (#511/#514), S2 telemetry (#495).
-          # 2026-10-18 (later): bumped 1.2.24 -> 1.2.25. 1.2.24 is spent (versionCode 1127, on Play
-          # production, Owner 2026-10-18). 1.2.25 carries BUG-VID-HOME (video in the home preview and
-          # notification thumbnails) and S12 personal feed client (signals, For you / Following /
-          # Favourites tabs, Not interested / Mute, behind the personal_feed switch).
-          # 2026-10-18: bumped 1.2.23 -> 1.2.24. 1.2.23 is spent (versionCode 1126, on the
-          # Owner's phone). 1.2.24 carries the Meta-style video player: autoplay with sound
-          # in the app (hls.js instead of the WebView's own HLS player), controls hidden
-          # until a tap, a thin progress bar.
-          # 2026-10-17 (later): bumped 1.2.22 -> 1.2.23. 1.2.22 is spent (versionCode 1125, on
-          # Play Internal testing). 1.2.23 carries the app video fix: every call to our own
-          # Pages Functions goes to the lane site origin from the app, and those Functions
-          # answer CORS for https://localhost (video could not play or upload in 1.2.22).
-          # 2026-10-17: bumped 1.2.21 -> 1.2.22. 1.2.21 is spent (run 34956566930, on members' phones).
-          # 1.2.22 carries the 2026-10-17 promotion (feed refresh, Back, one comments box, ads,
-          # Apple consent, video client) for Android testers via Play Internal testing (draft).
-          # 2026-09-15: bumped 1.2.20 -> 1.2.21. Checked before firing, not
-          # assumed: the Actions run list for this workflow was read and
-          # Android Build #122 on 59ff7f5 (the commit that made this exact
-          # 1.2.19 -> 1.2.20 edit) shows "completed successfully" — so 1.2.20
-          # reached the store and the name is spent. 1.2.21 carries two
-          # independent client-UI fixes, both merged to main today: the
-          # badge/role label redesign to plain superscript text (PR #247,
-          # 2c3c65d) and making the Friends page's Awaited/Pending/Friends/
-          # Followers/Following tab row reachable at every width, including a
-          # tap-target regression the UI gate itself caught mid-PR and that got
-          # fixed before merge (PR #248, 6ff1c81). Neither PR's own CI runs a
-          # full vitest pass (their gates are security/typecheck/UI-gate/web-
-          # build only), and this sandbox could not run `npm test` itself to
-          # check ahead of time — `npm install` is blocked by this sandbox's
-          # own registry proxy policy, not a repo problem. That is not a gap
-          # in what actually gates the build: vitest is already a hard gate
-          # inside build-aab below, same as it was for every prior bump, so a
-          # red suite still stops the build here rather than upstream.
-          # 2026-09-15: RE-CUT. Android Build #123 — this exact 1.2.21 bump —
-          # ran build-aab and FAILED its own `npm test` gate, the one check
-          # neither PR's CI could run and this sandbox could not pre-verify
-          # (see the paragraph above): src/__tests__/textSizeFloor.test.ts
-          # caught `text-[9.5px]` (PR #247's badge label, BADGE_PILL_SIZE.full)
-          # as a sub-12px class the P8 readability-floor block in
-          # src/index.css never listed, so it would have shipped under the
-          # owner-mandated 12px floor. #123 produced no artifact — build-aab
-          # exited 1 before packaging anything — so versionName stays 1.2.21,
-          # the same rule as every re-cut in this file: a version is spent
-          # only by a run that actually produces an AAB. Fixed in PR #250
-          # (6663d33): added `.text-\[9\.5px\]` to the P8 block, the same
-          # mechanism already covering `.text-\[8\.5px\]` and `.text-\[9px\]`
-          # beside it. Verified without vitest, same sandbox limitation as
-          # above: textSizeFloor.test.ts's own scan logic was re-implemented
-          # in a standalone script and run against the fixed tree — 0
-          # uncovered sub-12px classes, the floor still exactly 12px. PR
-          # #250's own CI (security gate + UI gate, 8/8) passed clean,
-          # including the UI gate — which does not track this non-interactive
-          # span (tools/uishot/capture.mjs fingerprints only interactive
-          # controls) but ran for real regardless, not assumed clean. This
-          # re-cut is what actually puts the vitest gate in front of the
-          # fix; nothing before this run has observed it green.
-          # The guard F-70 asks for is still NOT built. It is a separate unit,
-          # and it must be shown failing on unfixed input first (C-34); writing
-          # it in the same commit as a bump it would have caught proves nothing.
-          # 2026-11-16: bumped 1.2.49 -> 1.2.50. 1.2.49 (run 153, vc1153, 190a2c0a) is spent (handed to the Owner).
-          # 1.2.50 carries A4 (#1079/#1081/#1082: "Your account is under review · Contact support@50mmretina.com" banner,
-          # admin Account Review page; Owner 16 Nov "rest all approved") and A3b's delete-account request text (#1077).
-          # The live account guard switch stays as it is (OFF) — it is a database switch, not part of the app.
-          # 2026-11-17: 1.2.50 re-fired (first run 43821462690 stopped at phone-check, DEPENDENCY DIED on the
-          # virtual phone — nothing handed over, number still free). Now also carries the push centre app part
-          # (PN4, #1098): PushRichService / PushRichNotifier / PushCentrePlugin + the Turn-on-notifications card.
-          # 2026-11-13 (evening): bumped 1.2.48 -> 1.2.49. 1.2.48 (run 152, vc1152, d77cb59f) is spent (handed to the Owner).
-          # 1.2.49 carries the ONE Trending card in the app feed below the 4th post (#1033, Owner 13 Nov "Approved. GO",
-          # real renders trending-everywhere/). The app's feed videos keep starting with sound (Owner: "don't change it").
-          # 2026-11-13 (later): bumped 1.2.47 -> 1.2.48. 1.2.47 (run 151, vc1151, 6f0785a3) is spent (handed to the Owner).
-          # 1.2.48 carries the story fixes (#1020: paper plane = Share, story video plays with sound + 🔊, video tile frame),
-          # A (#1027: a member's name always shows, never "Photographer"; database: no blank names) and B (#1026: Trending
-          # this week = one admin-marked video or exactly 4 photos). Owner 13 Nov: "fold A and B … same release". No switch changed.
-          # 2026-11-13: bumped 1.2.46 -> 1.2.47. 1.2.46 (run 150, vc1150, d4c2de34) is spent (built, Owner chose not to
-          # upload it). 1.2.47 carries the 1.2.46 app links plus @all / @followers (#1010/#1012/#1014 carried; Owner 12 Nov
-          # "@all OK", 13 Nov "i will check in main web and app get ready"). The @all switch stays as the Owner sets it.
-          # 2026-11-12: bumped 1.2.45 -> 1.2.46. 1.2.45 (run 149, vc1149) is LIVE on Play. 1.2.46 carries app-first links
-          # (Owner 12 Nov: every 50mmretina.com link opens the app; verified https filter for www + assetlinks.json) and
-          # the new phone-check job (virtual phone proves the link opens the app before the Owner uploads). No switch changed.
-          # 2026-11-18: bumped 1.2.50 -> 1.2.51. 1.2.50 (run 155, vc1155) is LIVE on Play. 1.2.51 carries today's three
-          # Owner-approved changes: the story caption (2 lines + more / Show less, #1111), member tags read from the
-          # member's profile everywhere (#1110/#1114), and photography suggestions under the comment box (#1115).
-          # Owner 18 Nov: "all approved go ahead", "build the App". No switch changed.
-          # 2026-11-23: bumped 1.2.56 -> 1.2.57. 1.2.57 carries #1203 (slow bar only for a slow internet; slow server reads = lighter images, no bar).
-          # 2026-11-25: bumped 1.2.57 -> 1.2.58 (Owner: "Android can go on"). Carries N1–N6 speed work, admin home,
-          # one SEO head owner (#1257), post links + sitemap (#1263).
-          # 2026-11-25: bumped 1.2.58 -> 1.2.59 (Owner: "build Android 1.2.59"). Adds the typing fixes (#1265/#1266:
-          # no focus zoom in the app, comment-box caret on the letters) and Sign in / Sign up keyboard scroll (#1228).
+          # Version history + the versionCode rules: the comment block ABOVE this step. Kept out of this script on purpose: GitHub refuses a run step over 21,000 characters (1.2.59 run 45679260559, 25 Nov).
           sed -i 's/versionName "1.0"/versionName "1.2.59"/' android/app/build.gradle
           echo "versionCode=${VC} versionName=1.2.59 (1.2.58 is spent - built 25 Nov, not handed over)"
           grep -E "versionCode|versionName" android/app/build.gradle
