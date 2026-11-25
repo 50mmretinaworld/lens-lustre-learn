@@ -16,10 +16,10 @@ const DESC = 'meta[name="description"]';
 const ROBOTS = 'meta[name="robots"]';
 const CANON = 'link[rel="canonical"]';
 
-function addEdgeTags() {
+function addEdgeTags(src = "post") {
   document.head.insertAdjacentHTML(
     "beforeend",
-    '<title data-seo="edge">Edge title</title>' +
+    `<title data-seo="edge" data-seo-src="${src}">Edge title</title>` +
       '<meta name="description" content="edge desc" data-seo="edge">' +
       '<meta name="robots" content="index, follow" data-seo="edge">' +
       '<link rel="canonical" href="https://www.50mmretina.com/x" data-seo="edge">',
@@ -63,6 +63,17 @@ describe("one head, one owner", () => {
     expect(count(CANON)).toBe(1);
     expect(document.head.querySelector(DESC)?.getAttribute("content")).toBe("edge desc");
     expect(count("title")).toBe(1);
+  });
+
+  it("the edge knew nothing about the address (source default): the app's page tags are the only ones", async () => {
+    addEdgeTags("default");
+    __resetHeadOwner({ firstPathOverride: "/x" });
+    await act(async () => { mount("/x"); });
+    expect(count('[data-seo="edge"]')).toBe(0);
+    expect(count(DESC)).toBe(1);
+    expect(count(ROBOTS)).toBe(1);
+    expect(count(CANON)).toBe(1);
+    expect(document.head.querySelector(DESC)?.getAttribute("content")).toBe("page desc");
   });
 
   it("after moving to another address the edge's tags are gone and the app's set is the only one", async () => {

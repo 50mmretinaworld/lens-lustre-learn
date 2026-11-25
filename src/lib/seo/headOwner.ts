@@ -22,18 +22,33 @@ function loadedPath(): string {
   return window.location.pathname;
 }
 
-let firstPath = loadedPath();
-let edgeReleased = typeof document === "undefined" || !document.querySelector(EDGE_SEL);
-
-/** True while the edge's tags describe the address on screen: the app must not add its own. */
-export function edgeOwns(pathname: string): boolean {
-  return !edgeReleased && pathname === firstPath;
+/**
+ * The edge stamps where its metadata came from on its <title data-seo-src>. "default" / "fallback-error" = it knew
+ * nothing about this address (e.g. /terms-of-use → the generic site title): then the app's own page tags are better,
+ * so the edge does not own the head. No attribute (an older edge) = owns, as before.
+ */
+const GENERIC_SOURCES = new Set(["default", "fallback-error", ""]);
+function edgeKnowsPage(): boolean {
+  if (typeof document === "undefined") return false;
+  const t = document.querySelector('title[data-seo="edge"]');
+  if (!document.querySelector(EDGE_SEL)) return false;
+  if (!t || !t.hasAttribute("data-seo-src")) return true;
+  return !GENERIC_SOURCES.has(t.getAttribute("data-seo-src") ?? "");
 }
 
-/** First move away from the loaded address: drop the edge's tags (once) so the app's set is the only one. */
+let firstPath = loadedPath();
+let edgeKnowsFirst = edgeKnowsPage();
+let edgeGone = typeof document === "undefined" || !document.querySelector(EDGE_SEL);
+
+/** True while the edge's (route-specific) tags describe the address on screen: the app must not add its own. */
+export function edgeOwns(pathname: string): boolean {
+  return edgeKnowsFirst && !edgeGone && pathname === firstPath;
+}
+
+/** The app takes the head (moved away, or the edge knew nothing): drop the edge's tags once — one set only. */
 export function releaseEdge(): void {
-  if (edgeReleased) return;
-  edgeReleased = true;
+  if (edgeGone) return;
+  edgeGone = true;
   document.querySelectorAll(EDGE_SEL).forEach((el) => el.remove());
 }
 
@@ -68,10 +83,11 @@ export function headWinner(): number {
 }
 
 /** Tests only. */
-export function __resetHeadOwner(opts: { firstPathOverride?: string; edgeReleased?: boolean } = {}): void {
+export function __resetHeadOwner(opts: { firstPathOverride?: string } = {}): void {
   owners.clear();
   listeners.clear();
   seq = 0;
-  edgeReleased = opts.edgeReleased ?? !document.querySelector(EDGE_SEL);
+  edgeKnowsFirst = edgeKnowsPage();
+  edgeGone = !document.querySelector(EDGE_SEL);
   if (opts.firstPathOverride !== undefined) firstPath = opts.firstPathOverride;
 }
