@@ -454,7 +454,10 @@ const PostCard = ({
             <ContributorScore userId={post.user_id} />
             {/* The time is the post's permalink, as on Instagram / Facebook — and the link Google follows
                 from every feed, hashtag and profile card (Search Console 25 Nov 2026: 0 post links on the site). */}
-            <Link to={postPathOf(post)} className="hover:underline">{timeAgo(post.created_at)}</Link>
+            {/* A REAL 24×24 TARGET WITHOUT MOVING ANYTHING (P23 A:target-size): min-h-6/min-w-6 make the box
+                full size; -mb-2 hands the extra 8px back, so the line keeps its 16px height and the text sits
+                exactly where it did — the box simply hangs into the header's own pb-2 below. */}
+            <Link to={postPathOf(post)} className="inline-block min-h-6 min-w-6 -mb-2 hover:underline">{timeAgo(post.created_at)}</Link>
             <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
             {post.is_suggested && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
