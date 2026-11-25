@@ -50,6 +50,29 @@ import { deviceContext } from "@/lib/deviceContext";
 /** Defined in src/index.css. Kept as a constant so the test can assert both sides agree. */
 export const ZOOM_LOCK_CLASS = "app-zoom-locked";
 
+/**
+ * ── THE ZOOM touch-action CANNOT STOP: iPhone's FOCUS ZOOM ─────────────────
+ *
+ * Owner iPhone screenshot, 25 Nov 2026 (comment box, app): the whole sheet cut
+ * off at the left, the view sliding sideways while typing, and staying cut after
+ * the keyboard closed. MEASURED from the screenshot: the emoji row's spacing was
+ * 52.6 pt against 46.3 pt in the normal layout = ×1.14 = 16 / 14. iOS WebKit
+ * zooms the page whenever a text field under 16 px gets focus (the composer is
+ * 14 px, textarea.tsx is text-sm) and never zooms back. That is not a gesture, so
+ * `touch-action` (above) never sees it.
+ *
+ * The cure is the viewport's maximum-scale — set HERE, at runtime, inside the
+ * installed app only, so the two objections in the header still hold for the
+ * web: index.html keeps a zoomable viewport for every visitor (and for axe's
+ * meta-viewport rule), and no font size or design changes anywhere.
+ */
+export const APP_VIEWPORT = "width=device-width, initial-scale=1.0, maximum-scale=1.0";
+
+function lockViewportScale(): void {
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta) meta.setAttribute("content", APP_VIEWPORT);
+}
+
 let applied = false;
 
 /**
@@ -64,6 +87,7 @@ export function installZoomPolicy(): void {
     const native = isNativeCapacitorApp();
     if (native) {
       document.documentElement.classList.add(ZOOM_LOCK_CLASS);
+      lockViewportScale();
       applied = true;
     }
 
