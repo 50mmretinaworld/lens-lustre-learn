@@ -585,7 +585,9 @@ journey("post page: More posts from <name> + the feed beneath → open one → B
   const more = page.getByTestId("more-posts-from");
   await more.waitFor({ timeout: 60000 });
   if (!/More posts from/i.test(await more.getByRole("heading").innerText())) throw new Error("the section has no \"More posts from\" heading");
-  const tiles = more.getByRole("button");
+  // The tiles are real links to each post (Search Console 25 Nov 2026: Google follows <a href> only);
+  // the heading's own profile link is not a tile.
+  const tiles = more.locator('a[href*="/post/"]');
   const tileCount = await tiles.count();
   if (tileCount < 1) throw new Error("More posts from <name> shows no posts");
   const beneath = page.getByTestId("post-page-feed");

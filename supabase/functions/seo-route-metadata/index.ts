@@ -16,6 +16,7 @@ import { canonicalOrigin } from "../_shared/laneConfig.ts"; // one address (A2)
 import { isPostHandle, postPath } from "../_shared/postPath.ts"; // A3: one post-address rule
 import { answersBody, captionTags, listBody, postBody, snippet } from "./readable.ts"; // B: readable pages
 import { hashtagKey, hashtagPattern } from "../_shared/hashtagRule.ts"; // H1: one hashtag rule
+import { moderatedIds as sharedModeratedIds } from "../_shared/moderated.ts"; // B: one "not offered to search" rule
 import { ANSWERS, ANSWERS_INTRO, ANSWERS_TITLE, answerBySlug, faqJsonLd, withOfficialProfiles } from "../_shared/answers.ts"; // AEO: one answer list + official pages
 const SITE_URL = () => canonicalOrigin();
 const SITE_NAME_FALLBACK = "50mm Retina World";
@@ -440,10 +441,8 @@ async function resolvePost(postId: string, meta: Metadata, global: any) {
  * read straight from the profiles_public_data view — a read, never an rpc, in an
  * open function holding the service role.
  */
-async function moderatedIds(ids: string[]): Promise<string[]> {
-  if (!ids.length) return [];
-  const { data } = await supabase.from("profiles_public_data").select("id, is_banned, is_suspended").in("id", ids);
-  return ((data ?? []) as any[]).filter((p) => p.is_banned || p.is_suspended).map((p) => p.id);
+function moderatedIds(ids: string[]): Promise<string[]> {
+  return sharedModeratedIds(supabase, ids); // the one rule, shared with the sitemap
 }
 
 function breadcrumbs(items: Array<[string, string]>): object {
