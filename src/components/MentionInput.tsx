@@ -395,6 +395,15 @@ const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
             maxHeight: "116px",
           },
           input: {
+            // ⚠ iPHONE: THE CARET LAYER MUST SIT EXACTLY ON THE LETTERS. react-mentions adds
+            // `marginTop: 1, marginLeft: -3` to this textarea on any iPhone/iPad user agent
+            // (an old-iOS hack, dist line ~2109 `isMobileSafari`). On today's iOS it shifts the
+            // real (transparent) text 3px left and 1px down from the letters the highlighter
+            // draws — Owner, 25 Nov 2026: typing "goes to the left" in every comment box on
+            // iPhone. Measured in WebKit: textarea x=49 vs highlighter x=52, then 0 with this.
+            // Same keys, so they override the library's (a `margin` shorthand would not).
+            marginTop: 0,
+            marginLeft: 0,
             // Right padding must clear the 44px send button, or typed text runs
             // underneath it. Padding AND lineHeight MUST stay identical to
             // `highlighter` below — react-mentions overlays the two, and once
