@@ -114,7 +114,9 @@ class HeadRewriter {
       const robots = m.noindex ? "noindex, nofollow" : "index, follow";
 
       let html = "";
-      html += `<title data-seo="edge">${title}</title>`;
+      // data-seo-src: what the metadata came from ("default" = nothing route-specific) — the app keeps its own
+      // head on those (src/lib/seo/headOwner.ts). Same as functions/_middleware.ts headBlock.
+      html += `<title data-seo="edge" data-seo-src="${escapeAttr(m.source || "")}">${title}</title>`;
       html += `<meta name="description" content="${desc}" data-seo="edge">`;
       html += `<meta name="robots" content="${robots}" data-seo="edge">`;
       if (canonical) {
