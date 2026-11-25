@@ -83,7 +83,8 @@ const CommunityGuidelines = () => (
           </p>
         </section>
 
-        <section>
+        {/* id="your-content": the photo licence address every post's ImageObject names (seo-route-metadata). */}
+        <section id="your-content">
           <h2 className="text-lg font-semibold text-foreground" style={headingFont}>
             Your content and your account
           </h2>
