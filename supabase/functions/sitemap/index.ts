@@ -43,12 +43,16 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// Google takes only a full, encoded address. A relative one is not a photograph (members without a photo carry the
+// site's drawn fallback, "/avatars/fallback/m4.svg" — Search Console 26 Nov 2026: 89 "Invalid URL"), so that page
+// is listed without a picture. Spaces in a stored slug or file name are percent-encoded; "%xx" already there stays.
 function urlEntry(loc: string, lastmod?: string, changefreq?: string, priority?: string, image?: string): string {
-  let entry = `  <url>\n    <loc>${escapeXml(loc)}</loc>\n`;
+  const enc = (u: string) => u.replace(/\s/g, "%20");
+  let entry = `  <url>\n    <loc>${escapeXml(enc(loc))}</loc>\n`;
   if (lastmod) entry += `    <lastmod>${lastmod}</lastmod>\n`;
   if (changefreq) entry += `    <changefreq>${changefreq}</changefreq>\n`;
   if (priority) entry += `    <priority>${priority}</priority>\n`;
-  if (image) entry += `    <image:image>\n      <image:loc>${escapeXml(image)}</image:loc>\n    </image:image>\n`;
+  if (image && /^https?:\/\//i.test(image)) entry += `    <image:image>\n      <image:loc>${escapeXml(enc(image))}</image:loc>\n    </image:image>\n`;
   entry += `  </url>\n`;
   return entry;
 }
