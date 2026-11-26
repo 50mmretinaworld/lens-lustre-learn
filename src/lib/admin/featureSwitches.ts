@@ -10,7 +10,7 @@
  * audit row); a page that hides a control is never the enforcement.
  */
 export type FeatureKey = "video_posts" | "video_ads" | "copyright_music_check" | "personal_feed" | "media_ladder_feed" | "media_private_photos" | "photo_upload_resume"
-  | "photo_set_v2" | "competition_fullsize_purge" | "mention_groups" | "mention_all_blocked" | "feed_newest_first";
+  | "photo_set_v2" | "competition_fullsize_purge" | "mention_groups" | "mention_all_blocked" | "feed_newest_first" | "floating_footer";
 export type FeatureMode = "off" | "selected" | "everyone";
 
 export const FEATURE_MODES: ReadonlyArray<{ mode: FeatureMode; label: string }> = [
@@ -72,6 +72,15 @@ export const FEATURE_INFO: Record<FeatureKey, { title: string; blurb: string; mo
       everyone: "Every member gets the feed newest first.",
     },
   },
+  // App footer (20261126_6500, Owner 26 Nov 2026): src/lib/ui/footerStyle.ts reads it; apps only.
+  floating_footer: {
+    title: "App footer: floating",
+    blurb: "Who sees the new footer in the Android and iPhone apps: thin floating bar, big beating 50mm button, smaller while scrolling down. The website never changes. Reaches the apps within a minute, once the app has the update.",
+    modeText: {
+      off: "Everyone keeps the classic footer.",
+      everyone: "Every signed-in member gets the floating footer in the apps.",
+    },
+  },
 };
 
 export const NOTE_MAX = 500;
@@ -95,7 +104,7 @@ export interface FeatureState {
 }
 
 const FEATURES = new Set<string>(["video_posts", "video_ads", "copyright_music_check", "personal_feed", "media_ladder_feed", "media_private_photos", "photo_upload_resume",
-  "photo_set_v2", "competition_fullsize_purge", "mention_groups", "mention_all_blocked", "feed_newest_first"]);
+  "photo_set_v2", "competition_fullsize_purge", "mention_groups", "mention_all_blocked", "feed_newest_first", "floating_footer"]);
 const MODES = new Set<string>(["off", "selected", "everyone"]);
 
 /** feature_admin_state() → cards. Unknown features / modes are dropped, never guessed. */
