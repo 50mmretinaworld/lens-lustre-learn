@@ -3,14 +3,13 @@ import { ownDisplayName } from "@/lib/ownDisplayName";
 import { fadeUp } from "@/lib/motionVariants";
 import ProfileLink from "@/components/ProfileLink";
 import {
-  User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle,
-  Clock, XCircle, Award, GraduationCap, Wallet, UserCheck, UserX, Users,
+  User, Camera, Trophy, Calendar, Edit2, Shield, 
+  Clock, Award, GraduationCap, Wallet, UserCheck, UserX, Users,
   MessageSquare, Heart, Globe, Lock, Settings, ImageIcon, Rss, ExternalLink,
   KeyRound, Mail, MapPin, Phone, ChevronRight, Eye, TrendingUp, Star
 } from "lucide-react";
 import ParticipantStageBadge, { ParticipantStageTimeline } from "@/components/judge/ParticipantStageBadge";
 import { PARTICIPANT_PLACEMENT_LABELS, participantLabelForJudgingTag, normalizePlacementKey, canonicalMention } from "@/lib/judging/participantStageLabels";
-import PhotographerUpgradeCard from "@/components/PhotographerUpgradeCard";
 import UserNextStepPanel from "@/components/UserNextStepPanel";
 import JudgingStampBadge from "@/components/JudgingStampBadge";
 import PhaseWatermark from "@/components/competition/PhaseWatermark";
@@ -19,17 +18,12 @@ import { Suspense, lazy, useEffect, useState, useMemo, useCallback, useRef } fro
 import { useAuth } from "@/hooks/core/useAuth";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
-import { useApplyForRole, usePasswordReset } from "@/hooks/dashboard/useDashboardMutations";
+import { usePasswordReset } from "@/hooks/dashboard/useDashboardMutations";
 import { useProfileCore } from "@/hooks/profile/useProfileData";
 import { memberPath, CLAIM_URL_PATH } from "@/lib/urlHelpers";
 import { useAcceptFriendRequest, useRemoveFriendship } from "@/hooks/social/useFriendshipMutations";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "@/hooks/core/use-toast";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 
-import VerificationRequestCard from "@/components/profile/VerificationRequestCard";
 import ActiveDevices from "@/components/ActiveDevices";
 import DeleteAccountSection from "@/components/settings/DeleteAccountSection";
 import { isNativeIOSApp } from "@/lib/native/authDeepLink";
@@ -38,7 +32,7 @@ import ProfileAnalytics from "@/components/profile/ProfileAnalytics";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import UserIdentityBlock from "@/components/UserIdentityBlock";
 import { getAdminIds, resolveBadges } from "@/lib/adminBrand";
-import { useDashboardData, type MyCompEntry, type FriendRequest, type RecentPost, type RoleApplication } from "@/hooks/dashboard/useDashboardData";
+import { useDashboardData, type MyCompEntry, type FriendRequest, type RecentPost } from "@/hooks/dashboard/useDashboardData";
 import { useEntryPublicStatus, type EntryPublicStatusRow } from "@/hooks/judging/useEntryPublicStatus";
 import { useUserEntriesInfinite } from "@/hooks/competition/useUserEntries";
 import InfiniteScrollSentinel from "@/components/InfiniteScrollSentinel";
@@ -88,7 +82,6 @@ const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const acceptFriendMutation = useAcceptFriendRequest();
   const removeFriendMutation = useRemoveFriendship();
-  const applyForRoleMutation = useApplyForRole();
   const passwordResetMutation = usePasswordReset();
   const queryClient = useQueryClient();
 
@@ -100,7 +93,6 @@ const Dashboard = () => {
   const { data: dashboardData, isLoading: dashLoading } = useDashboardData(user?.id);
 
   const roles = dashboardData?.roles || [];
-  const applications = dashboardData?.applications || [];
   const friendRequests = dashboardData?.friendRequests || [];
   const recentPosts = dashboardData?.recentPosts || [];
   const myEntries = dashboardData?.myEntries || [];
@@ -111,12 +103,6 @@ const Dashboard = () => {
   const userBadges = dashboardData?.userBadges || [];
   const loading = dashLoading;
 
-  const [showApplyForm, setShowApplyForm] = useState(false);
-  const [applyRole, setApplyRole] = useState<"judge" | "content_editor" | "registered_photographer">("judge");
-  const [applyReason, setApplyReason] = useState("");
-  const [applyPortfolio, setApplyPortfolio] = useState("");
-  const [applyExperience, setApplyExperience] = useState("");
-  const submitting = applyForRoleMutation.isPending;
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
   const sendingReset = passwordResetMutation.isPending;
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -191,25 +177,6 @@ const Dashboard = () => {
     setFriendActionLoading(null);
   };
 
-  const handleApply = async () => {
-    if (!user) return;
-    if (!applyReason.trim()) { toast({ title: t("dash.provideReason"), variant: "destructive" }); return; }
-    applyForRoleMutation.mutate(
-      {
-        userId: user.id,
-        role: applyRole,
-        reason: applyReason.trim().slice(0, 1000),
-        portfolioUrl: applyPortfolio.trim().slice(0, 500) || null,
-        experience: applyExperience.trim().slice(0, 1000) || null,
-      },
-      {
-        onSuccess: () => {
-          setShowApplyForm(false); setApplyReason(""); setApplyPortfolio(""); setApplyExperience("");
-        },
-      },
-    );
-  };
-
   const handlePasswordReset = async () => {
     if (!user?.email) return;
     passwordResetMutation.mutate(user.email);
@@ -228,11 +195,6 @@ const Dashboard = () => {
   const initials = displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   const hasRole = (role: string) => roles.some((r) => r.role === role);
   const getRoleDate = (role: string) => { const r = roles.find((r) => r.role === role); return r ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : ""; };
-  const hasPendingApp = (role: string) => applications.some((a) => a.requested_role === role && a.status === "pending");
-  const canApplyFor = (role: string) => !hasRole(role) && !hasPendingApp(role);
-  const appStatusIcon = (status: string) => {
-    switch (status) { case "pending": return <Clock className="h-3.5 w-3.5 text-accent-foreground" />; case "approved": return <CheckCircle className="h-3.5 w-3.5 text-primary" />; case "rejected": return <XCircle className="h-3.5 w-3.5 text-destructive" />; default: return null; }
-  };
 
 
   return (
@@ -367,14 +329,6 @@ const Dashboard = () => {
         <AnimatePresence mode="wait">
           {activeTab === "overview" && (
             <motion.div key="overview" {...tabContent}>
-              {/* Photographer Upgrade CTA — show if user doesn't have the role */}
-              {!hasRole("registered_photographer") && !hasPendingApp("registered_photographer") && (
-                <div className="mb-6">
-                  <PhotographerUpgradeCard onUpgraded={() => {
-                    if (user) queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(user.id) });
-                  }} />
-                </div>
-              )}
               <OverviewTab
                 displayName={displayName} user={user} profile={profile}
                 myEntries={myEntries} recentPosts={recentPosts} roles={roles}
@@ -409,15 +363,9 @@ const Dashboard = () => {
           {activeTab === "settings" && (
             <motion.div key="settings" {...tabContent}>
               <SettingsTab
-                user={user} profile={profile} roles={roles} applications={applications}
-                hasRole={hasRole} canApplyFor={canApplyFor} showApplyForm={showApplyForm}
-                setShowApplyForm={setShowApplyForm} applyRole={applyRole} setApplyRole={setApplyRole}
-                applyReason={applyReason} setApplyReason={setApplyReason}
-                applyPortfolio={applyPortfolio} setApplyPortfolio={setApplyPortfolio}
-                applyExperience={applyExperience} setApplyExperience={setApplyExperience}
-                submitting={submitting} handleApply={handleApply}
+                user={user} profile={profile}
                 sendingReset={sendingReset} handlePasswordReset={handlePasswordReset}
-                appStatusIcon={appStatusIcon} setRoles={() => user && queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(user.id) })}
+
               />
             </motion.div>
           )}
@@ -1088,7 +1036,7 @@ const SubmissionsTab = ({ myEntries, statusFilter, setStatusFilter, statusCounts
 /* ================================================================
    SETTINGS TAB
    ================================================================ */
-const SettingsTab = ({ user, profile, roles, applications, hasRole, canApplyFor, showApplyForm, setShowApplyForm, applyRole, setApplyRole, applyReason, setApplyReason, applyPortfolio, setApplyPortfolio, applyExperience, setApplyExperience, submitting, handleApply, sendingReset, handlePasswordReset, appStatusIcon, setRoles }: any) => {
+const SettingsTab = ({ user, profile, sendingReset, handlePasswordReset }: any) => {
   const t = useT();
   return (
   <div className="space-y-4">
@@ -1137,80 +1085,6 @@ const SettingsTab = ({ user, profile, roles, applications, hasRole, canApplyFor,
 
     {/* Active Devices */}
     {user && <ActiveDevices userId={user.id} />}
-
-    {/* Verification Request */}
-    <VerificationRequestCard />
-
-
-    {/* Role Applications */}
-    <div className="border border-border p-4 md:p-5">
-      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>{t("dash.roleApplications")}</span>
-      {(canApplyFor("judge") || canApplyFor("content_editor")) && !showApplyForm && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {canApplyFor("judge") && (
-            <button onClick={() => { setApplyRole("judge"); setShowApplyForm(true); }} className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 border border-border hover:border-primary/50 transition-all duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-              <Briefcase className="h-3 w-3 text-primary" /> {t("dash.applyJudge")}
-            </button>
-          )}
-          {canApplyFor("content_editor") && (
-            <button onClick={() => { setApplyRole("content_editor"); setShowApplyForm(true); }} className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 border border-border hover:border-primary/50 transition-all duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-              <Briefcase className="h-3 w-3 text-primary" /> {t("dash.applyEditor")}
-            </button>
-          )}
-        </div>
-      )}
-
-      {showApplyForm && (
-        <div className="border border-border p-4 mb-3 space-y-3 bg-muted/10">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-              {`${t("dash.applyAs")}: ${applyRole === "judge" ? t("msheet.judge") : applyRole === "registered_photographer" ? t("menu.badge.photographer") : t("dash.roleEditor")}`}
-            </span>
-            <button onClick={() => setShowApplyForm(false)} className="text-muted-foreground hover:text-foreground"><XCircle className="h-4 w-4" /></button>
-          </div>
-          <div>
-            <label className="block text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>{t("dash.whyRequired")}</label>
-            <Textarea value={applyReason} onChange={(e: any) => setApplyReason(e.target.value)} placeholder={t("dash.phReason")} className="bg-transparent text-sm" maxLength={1000} />
-          </div>
-          <div>
-            <label className="block text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>{t("dash.portfolioUrl")}</label>
-            <Input value={applyPortfolio} onChange={(e: any) => setApplyPortfolio(e.target.value)} placeholder="https://..." className="bg-transparent text-sm" maxLength={500} />
-          </div>
-          <div>
-            <label className="block text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>{t("dash.experience")}</label>
-            <Textarea value={applyExperience} onChange={(e: any) => setApplyExperience(e.target.value)} placeholder={t("dash.phExperience")} className="bg-transparent text-sm" maxLength={1000} />
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleApply} disabled={submitting} className="text-[10px] tracking-[0.1em] uppercase bg-primary text-primary-foreground h-8" style={{ fontFamily: "var(--font-heading)" }}>
-              <Send className="h-3 w-3 mr-1" /> {submitting ? t("dash.submitting") : t("dash.submit")}
-            </Button>
-            <Button variant="ghost" onClick={() => setShowApplyForm(false)} className="text-[10px] tracking-[0.1em] uppercase h-8" style={{ fontFamily: "var(--font-heading)" }}>{t("common.cancel")}</Button>
-          </div>
-        </div>
-      )}
-
-      {applications.length > 0 ? (
-        <div className="divide-y divide-border">
-          {applications.map((app: any) => (
-            <div key={app.id} className="flex items-start gap-3 py-3">
-              <div className="mt-0.5">{appStatusIcon(app.status)}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-light" style={{ fontFamily: "var(--font-heading)" }}>
-                  {app.requested_role === "content_editor" ? t("dash.roleEditor") : app.requested_role === "registered_photographer" ? t("menu.badge.photographer") : t("msheet.judge")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  <span className={app.status === "approved" ? "text-primary" : app.status === "rejected" ? "text-destructive" : "text-yellow-500"}>{app.status}</span>
-                </p>
-                {app.admin_message && <p className="text-[10px] text-muted-foreground mt-1 p-1.5 bg-muted/50 border-l-2 border-primary">{app.admin_message}</p>}
-              </div>
-              <span className="text-[9px] text-muted-foreground shrink-0">{new Date(app.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{t("dash.noApplications")}</p>
-      )}
-    </div>
 
     {/* Danger Zone — self-serve permanent account deletion (Play/Apple requirement) */}
     <BlockedUsersSection />

@@ -44,7 +44,9 @@ BEGIN
   SELECT p.id INTO _m
     FROM public.profiles p
    WHERE NOT EXISTS (SELECT 1 FROM public.user_badges b WHERE b.user_id = p.id AND b.badge_type = 'verified')
-   ORDER BY p.created_at
+     -- an ordinary member: never a role holder (the badge giver is an admin, and a self-notification is skipped)
+     AND NOT EXISTS (SELECT 1 FROM public.user_roles r WHERE r.user_id = p.id)
+   ORDER BY p.last_active_at DESC NULLS LAST
    LIMIT 1;
   IF _m IS NULL THEN RAISE EXCEPTION 'PROBE FAIL: no member without the verified badge to test with'; END IF;
   -- user_badges.assigned_by is NOT NULL: an admin gives badges.
@@ -54,7 +56,10 @@ BEGIN
   -- B2 ── verified → the honour words ───────────────────────────────────────────────────────────────────────────
   INSERT INTO public.user_badges (user_id, badge_type, assigned_by) VALUES (_m, 'verified', _admin) RETURNING id INTO _bid;
   SELECT count(*) INTO _n FROM public.user_notifications WHERE reference_id = _bid AND type = 'badge_awarded';
-  IF _n <> 1 THEN RAISE EXCEPTION 'PROBE FAIL B2: % notifications for one verified badge (want 1)', _n; END IF;
+  IF _n <> 1 THEN
+    RAISE EXCEPTION 'PROBE FAIL B2: % notifications for one verified badge (want 1); notification centre said: %', _n,
+      coalesce((SELECT string_agg(array_to_string(l.reasons, ','), ';') FROM public.notification_centre_log l WHERE l.reference_id = _bid), 'nothing logged');
+  END IF;
   SELECT title, message INTO _title, _msg FROM public.user_notifications WHERE reference_id = _bid AND type = 'badge_awarded';
   IF _title IS DISTINCT FROM 'You''ve been honoured' THEN RAISE EXCEPTION 'PROBE FAIL B2: wrong title'; END IF;
   IF _msg IS DISTINCT FROM
