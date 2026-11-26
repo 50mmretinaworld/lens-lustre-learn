@@ -97,6 +97,9 @@ installFakeBackend({ routes: fixtureRoutes, signedIn: !isSignedOutScene(name), c
  * all three of those faults were.
  * ─────────────────────────────────────────────────────────────────────────────
  */
+// `&footer=on`: the floating app footer switch (Admin → Features) answers on — src/lib/ui/footerStyle.ts.
+if (params.get("footer") === "on") (globalThis as { __harnessFeatures?: string[] }).__harnessFeatures = ["floating_footer"];
+
 if (params.get("native") === "1") {
   (window as unknown as { Capacitor?: unknown }).Capacitor = {
     isNativePlatform: () => true,

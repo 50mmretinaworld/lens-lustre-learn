@@ -242,10 +242,12 @@ describe("the bottom bar is icons only", () => {
     // slick" — so the bar came down from 56px to 48px, Instagram's height,
     // while the 24px icons he said were already right stayed exactly as they
     // were. Only the strip is thinner.
-    expect(nav).toContain("flex items-center justify-around h-12");
-    expect(nav, "the 56px bar is back").not.toContain("justify-around h-14");
-    expect(nav).not.toContain("flex items-end justify-around");
-    expect(nav, "the hairline was lightened with it").toContain("border-t border-border/25");
+    // the bar's classes live in the one footer-style module (classic = this slim ribbon)
+    const style = code("src/lib/ui/footerStyle.ts");
+    expect(style).toContain("flex items-center justify-around h-12");
+    expect(nav + style, "the 56px bar is back").not.toContain("justify-around h-14");
+    expect(nav + style).not.toContain("flex items-end justify-around");
+    expect(style, "the hairline was lightened with it").toContain("border-t border-border/25");
   });
 
   it("uses Instagram's 24px icon", () => {

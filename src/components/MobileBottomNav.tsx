@@ -4,6 +4,7 @@ import { Home, Trophy, Rss, LogIn, User, Newspaper, BookOpen, FileText } from "l
 import { useSiteLogo } from "@/hooks/core/useSiteLogo";
 import { useAuth } from "@/hooks/core/useAuth";
 import { motion } from "framer-motion";
+import { footerClasses, homePulse, useFooterStyle } from "@/lib/ui/footerStyle";
 import { useState, useEffect } from "react";
 import MobileProfileSheet from "@/components/MobileProfileSheet";
 import { profilesPublic } from "@/lib/profilesPublic";
@@ -29,6 +30,11 @@ const MobileBottomNav = () => {
   const siteLogo = useSiteLogo();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [profileData, setProfileData] = useState<{ avatar_url: string | null; full_name: string | null; custom_url: string | null } | null>(null);
+
+  // Classic bar, or the floating one (Admin → Features, apps only): src/lib/ui/footerStyle.ts
+  const { floating, compact, reduceMotion } = useFooterStyle(pathname);
+  const fc = footerClasses(floating, compact);
+  const pulse = homePulse(floating, reduceMotion);
 
   // F-95 — the wall tab is built from the member's HANDLE, not their id.
   const ownWallPath = memberPath(profileData?.custom_url);
@@ -87,7 +93,7 @@ const MobileBottomNav = () => {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl backdrop-saturate-150 border-t border-border/25 lg:hidden safe-area-bottom"
+        className={fc.nav}
         style={{ fontFamily: "var(--font-heading)" }}
       >
         {/* ICONS ONLY, ON A SLIM RIBBON.
@@ -104,7 +110,7 @@ const MobileBottomNav = () => {
             what he said was already right; only the strip they sit on is
             thinner. The elevated Home button keeps its own -mt-4 lift and is
             unaffected, because it is positioned from the bar's top edge. */}
-        <div className="flex items-center justify-around h-12 px-1 relative">
+        <div className={fc.row}>
           {visibleTabs.map((tab) => {
             const active = isActive(tab.path, tab.isCenter);
 
@@ -114,22 +120,22 @@ const MobileBottomNav = () => {
                 <Link
                   key="home-center"
                   to={tab.path}
-                  className="flex flex-col items-center justify-end flex-1 relative -mt-4 group"
+                  className={fc.homeLink}
                   aria-label="Home — 50mm Retina World"
                 >
-                  <div className="relative h-12 w-12 flex items-center justify-center">
+                  <div className={fc.homeBox}>
                     {/* Soft glow halo — breathes in sync */}
                     <motion.span
                       aria-hidden
                       className="absolute inset-0 rounded-full bg-primary/30 blur-md pointer-events-none"
-                      animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0.7, 0.35] }}
-                      transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+                      animate={pulse.glow}
+                      transition={pulse.transition}
                     />
                     {/* Logo button — gentle continuous breathe */}
                     <motion.div
-                      animate={{ scale: [1, 1.08, 1] }}
-                      transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
-                      className={`relative h-12 w-12 rounded-full flex items-center justify-center shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.6)] ring-4 ring-background overflow-hidden ${
+                      animate={pulse.disc}
+                      transition={pulse.transition}
+                      className={`relative ${fc.homeDisc} rounded-full flex items-center justify-center shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.6)] ring-4 ring-background overflow-hidden ${
                         active
                           ? "bg-gradient-to-br from-primary to-primary/60"
                           : "bg-gradient-to-br from-primary/90 to-primary/55"
@@ -143,7 +149,7 @@ const MobileBottomNav = () => {
                           height={44}
                           loading="eager"
                           decoding="async"
-                          className="h-11 w-11 object-contain rounded-full [image-rendering:auto]"
+                          className={`${fc.homeLogo} object-contain rounded-full [image-rendering:auto]`}
                         />
                       ) : (
                         <Home className="h-5 w-5 text-primary-foreground stroke-[2.25]" />
@@ -186,14 +192,14 @@ const MobileBottomNav = () => {
                    * ───────────────────────────────────────────────────────────
                    */
                   aria-label={t(tab.labelKey ?? "nav.profile", tab.label)}
-                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors duration-200 relative ${
+                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors duration-200 relative ${fc.tab} ${
                     sheetOpen || active ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   {active && (
                     <motion.div
                       layoutId="bottomNavIndicator"
-                      className="absolute -top-px left-1/4 right-1/4 h-0.5 bg-primary rounded-full"
+                      className={fc.indicator}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
@@ -201,7 +207,7 @@ const MobileBottomNav = () => {
                     <img loading="lazy" decoding="async"
                       src={profileData.avatar_url}
                       alt=""
-                      className={`h-7 w-7 rounded-full object-cover ${active || sheetOpen ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "ring-1 ring-border"}`}
+                      className={`${fc.avatar} rounded-full object-cover ${active || sheetOpen ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "ring-1 ring-border"}`}
                     />
                   ) : initials ? (
                     <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold ${active || sheetOpen ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
@@ -224,14 +230,14 @@ const MobileBottomNav = () => {
                    Fixed here rather than left for a later sweep — an exception
                    list is how the last one missed the sidebar. */
                 aria-label={t(tab.labelKey ?? "", tab.label)}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors duration-200 relative ${
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors duration-200 relative ${fc.tab} ${
                   active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 {active && (
                   <motion.div
                     layoutId="bottomNavIndicator"
-                    className="absolute -top-px left-1/4 right-1/4 h-0.5 bg-primary rounded-full"
+                    className={fc.indicator}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
