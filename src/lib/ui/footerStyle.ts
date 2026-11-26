@@ -48,7 +48,10 @@ export function useFooterStyle(pathname: string) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [floating, pathname]);
 
-  return { floating, compact: floating && compact };
+  // Asked only for the floating bar, and not with framer's useReducedMotion: that one warns in the console.
+  const reduceMotion = floating && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  return { floating, compact: floating && compact, reduceMotion };
 }
 
 /** Class names for both styles. `classic` is the bar every build had before; it must not change. */

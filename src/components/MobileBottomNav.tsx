@@ -3,7 +3,7 @@ import { memberPath, CLAIM_URL_PATH } from "@/lib/urlHelpers";
 import { Home, Trophy, Rss, LogIn, User, Newspaper, BookOpen, FileText } from "lucide-react";
 import { useSiteLogo } from "@/hooks/core/useSiteLogo";
 import { useAuth } from "@/hooks/core/useAuth";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { footerClasses, homePulse, useFooterStyle } from "@/lib/ui/footerStyle";
 import { useState, useEffect } from "react";
 import MobileProfileSheet from "@/components/MobileProfileSheet";
@@ -32,9 +32,9 @@ const MobileBottomNav = () => {
   const [profileData, setProfileData] = useState<{ avatar_url: string | null; full_name: string | null; custom_url: string | null } | null>(null);
 
   // Classic bar, or the floating one (Admin → Features, apps only): src/lib/ui/footerStyle.ts
-  const { floating, compact } = useFooterStyle(pathname);
+  const { floating, compact, reduceMotion } = useFooterStyle(pathname);
   const fc = footerClasses(floating, compact);
-  const pulse = homePulse(floating, !!useReducedMotion());
+  const pulse = homePulse(floating, reduceMotion);
 
   // F-95 — the wall tab is built from the member's HANDLE, not their id.
   const ownWallPath = memberPath(profileData?.custom_url);
