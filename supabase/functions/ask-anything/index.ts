@@ -117,7 +117,7 @@ IMPORTANT: Never give the exact same response twice. Vary your phrasing, example
 - Profiles can have featured photos (showcase portfolio).
 - Profile highlights (story-like collections of photos with captions).
 - Users can earn badges (e.g., competition winner, top contributor, verified).
-- Users can apply for roles (e.g., Photographer, Judge, Mentor).
+- Roles (Photographer, Judge, Editor, Mentor) are given only by the admins; members cannot apply for them or choose them.
 - Verified badge: Verification is an honour given only by the admins; members cannot request it.
 - Profile completion bar shows how complete your profile is.
 - QR code card for easy profile sharing.
