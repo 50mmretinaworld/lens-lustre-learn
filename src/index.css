@@ -438,6 +438,15 @@ html.app-ios .app-frame--no-bar {
     --frame-bottom: 0px;
   }
 }
+/* The floating app footer (src/lib/ui/footerStyle.ts) sits a little higher than the classic bar: keep that room. */
+html.footer-floating .app-frame:not(.app-frame--no-bar) {
+  --frame-bottom: calc(3.5rem + var(--safe-bottom));
+}
+@media (min-width: 1024px) {
+  html.footer-floating .app-frame:not(.app-frame--no-bar) {
+    --frame-bottom: 0px;
+  }
+}
 .app-frame .min-h-screen {
   min-height: calc(100vh - var(--banner-h) - var(--safe-top) - var(--frame-top) - var(--frame-bottom));
   min-height: calc(100dvh - var(--banner-h) - var(--safe-top) - var(--frame-top) - var(--frame-bottom));

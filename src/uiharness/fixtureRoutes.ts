@@ -416,7 +416,7 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   features_allowed_me: () => {
     const on = (globalThis as { __harnessFeatures?: string[] }).__harnessFeatures ?? [];
     const all = ["video_posts", "video_ads", "copyright_music_check", "personal_feed", "media_ladder_feed",
-      "media_private_photos", "photo_upload_resume", "photo_set_v2"];
+      "media_private_photos", "photo_upload_resume", "photo_set_v2", "floating_footer"];
     return Object.fromEntries(all.map((f) => [f, on.includes(f)]));
   },
   // N6-1 (20261124_5200): the one start-up answer, built from the SAME harness answers the separate reads get, so a

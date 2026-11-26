@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
 import { startPart } from "@/lib/appStart";
 
-export type FeatureName = "video_posts" | "video_ads" | "copyright_music_check" | "personal_feed" | "media_ladder_feed" | "media_private_photos" | "photo_upload_resume" | "photo_set_v2";
+export type FeatureName = "video_posts" | "video_ads" | "copyright_music_check" | "personal_feed" | "media_ladder_feed" | "media_private_photos" | "photo_upload_resume" | "photo_set_v2" | "floating_footer";
 
 export const FEATURE_REFRESH_MS = 60_000;
 
