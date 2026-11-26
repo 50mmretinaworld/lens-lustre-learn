@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
--- 20261126_6600 · A0 — ROLES AND BADGES ARE AN HONOUR (Owner, 26 Nov 2026): no member gives themselves a role,
+-- 20261126_6700 · A0 — ROLES AND BADGES ARE AN HONOUR (Owner, 26 Nov 2026): no member gives themselves a role,
 -- and no member requests one. Only an admin grants.
 -- Lanes: staging, production.
 --
@@ -13,8 +13,8 @@
 -- Older app builds still send these inserts: the sign-up request is ignored by the app; the old "Upgrade to
 -- Photographer" and "Apply" buttons show an error. That is the intended refusal.
 --
--- Rollback: supabase/rollback/20261126_6600_roles_admin_only_ROLLBACK.sql
--- PROBE:    supabase/migrations/PROBE_20261126_6600_roles_admin_only.sql
+-- Rollback: supabase/rollback/20261126_6700_roles_admin_only_ROLLBACK.sql
+-- PROBE:    supabase/migrations/PROBE_20261126_6700_roles_admin_only.sql
 -- ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 BEGIN;
 
