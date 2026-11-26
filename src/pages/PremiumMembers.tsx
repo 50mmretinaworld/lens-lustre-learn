@@ -66,7 +66,7 @@ export default function PremiumMembers() {
           <ul className="flex flex-wrap gap-2" style={headingFont}>
             {n > 0 && (
               <li className="rounded-full border border-border px-3 py-1.5 text-[13px] font-semibold" data-testid="premium-count">
-                {n} photographers honoured
+                {n} photographer{n === 1 ? "" : "s"} honoured
               </li>
             )}
             <li className="rounded-full border border-border px-3 py-1.5 text-[13px] font-semibold">₹0 paid by anyone, ever</li>
@@ -84,11 +84,12 @@ export default function PremiumMembers() {
         </header>
 
         {isLoading ? (
-          <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4" aria-hidden="true">
+          <div className="mt-6 grid max-w-3xl grid-cols-2 gap-2.5 md:gap-4" aria-hidden="true">
             {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />)}
           </div>
         ) : n > 0 ? (
-          <section aria-label="Premium Members" className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          // Two cards per row on every screen (Owner 26 Nov, web screenshot: "make it bigger two row size").
+          <section aria-label="Premium Members" className="mt-6 grid max-w-3xl grid-cols-2 gap-2.5 md:gap-4">
             {members.map((m) => (
               <PremiumMemberCard
                 key={m.user_id}
