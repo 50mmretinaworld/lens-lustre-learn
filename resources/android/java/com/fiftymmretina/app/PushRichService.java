@@ -28,6 +28,10 @@ public class PushRichService extends MessagingService {
             PushRichNotifier.show(getApplicationContext(), data);
             return;
         }
+        if (PushRichNotifier.CHAT_TYPE.equals(data.get("type"))) {
+            PushRichNotifier.showChat(getApplicationContext(), data);
+            return;
+        }
         super.onMessageReceived(message);
     }
 }

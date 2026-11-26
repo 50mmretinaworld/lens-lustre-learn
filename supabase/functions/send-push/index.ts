@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildFcmMessage } from "../_shared/pushMessage.ts";
+import { buildFcmMessage, buildChatMessage } from "../_shared/pushMessage.ts";
+import { canonicalOrigin } from "../_shared/laneConfig.ts";
 import { startPushReceipt, finishPushReceipt, fcmErrorCode } from "../_shared/pushReceipts.ts";
 import { sendWithRetry } from "../_shared/pushRetry.ts";
 import { laneImageHosts } from "../_shared/laneImageHosts.ts";
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
     const sa = JSON.parse(saRaw);
 
     // Collect the user's device tokens
-    const { data: allTokens } = await admin.from("push_tokens").select("token, platform").eq("user_id", user_id);
+    const { data: allTokens } = await admin.from("push_tokens").select("token, platform, caps").eq("user_id", user_id);
     // App Store 3.1.1: the iOS app has no wallet, so an iPhone never gets a
     // money notification (deposit, withdrawal, gift, referral, vote reward,
     // wallet_*). Android and web still do. Same rule as
@@ -139,13 +140,20 @@ Deno.serve(async (req) => {
       const accessToken = await getAccessToken(sa);
       const endpoint = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
 
-      const imageHosts = image_url ? laneImageHosts() : [];   // once per call, not per device
-      for (const { token } of tokens) {
-        const message = buildFcmMessage({
+      const isMessage = data?.type === "new_message";
+      const imageHosts = image_url || isMessage ? laneImageHosts() : [];   // once per call, not per device
+      let origin: string | null = null;
+      if (isMessage) {
+        try { origin = canonicalOrigin(); } catch { /* SITE_ORIGIN unset: the ordinary push goes */ }
+      }
+      for (const { token, platform, caps } of tokens) {
+        const input = {
           token, title, body, data,
           imageUrl: image_url, category, groupKey: group_key, deliveryId,
           imageHosts,
-        });
+        };
+        // A private message to a build that draws it itself (sender's round photo); everyone else as before.
+        const message = buildChatMessage({ ...input, platform, caps, origin }) ?? buildFcmMessage(input);
         const post = () => fetch(endpoint, {
           method: "POST",
           headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },

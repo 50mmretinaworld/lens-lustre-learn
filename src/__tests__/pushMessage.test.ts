@@ -92,9 +92,9 @@ describe("send-push uses the builder (so what is tested is what is sent)", () =>
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const src = readFileSync(join(process.cwd(), "supabase/functions/send-push/index.ts"), "utf8");
-    expect(src).toMatch(/import \{ buildFcmMessage \} from "\.\.\/_shared\/pushMessage\.ts"/);
-    expect(src).toMatch(/buildFcmMessage\(\{/);
+    expect(src).toMatch(/import \{ buildFcmMessage, buildChatMessage \} from "\.\.\/_shared\/pushMessage\.ts"/);
+    expect(src).toMatch(/buildChatMessage\(\{ \.\.\.input, platform, caps, origin \}\) \?\? buildFcmMessage\(input\)/);
     expect(src).not.toMatch(/notification:\s*\{\s*title/);
-    expect(src).toMatch(/image_url \? laneImageHosts\(\) : \[\]/);
+    expect(src).toMatch(/image_url \|\| isMessage \? laneImageHosts\(\) : \[\]/);
   });
 });

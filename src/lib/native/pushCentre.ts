@@ -11,7 +11,7 @@
 // PushRichService are installed together by scripts/android-native-plugins.mjs.
 
 type PushCentrePlugin = {
-  status: () => Promise<{ enabled?: boolean; rich?: boolean }>;
+  status: () => Promise<{ enabled?: boolean; rich?: boolean; chat?: boolean }>;
   openSettings: () => Promise<void>;
 };
 
@@ -19,12 +19,13 @@ export const pushCentre = (): PushCentrePlugin | undefined =>
   (window as unknown as { Capacitor?: { Plugins?: { PushCentre?: PushCentrePlugin } } }).Capacitor?.Plugins?.PushCentre;
 
 /** Are notifications allowed for the app right now? null = this build cannot tell. */
-export async function pushStatus(): Promise<{ enabled: boolean; rich: boolean } | null> {
+export async function pushStatus(): Promise<{ enabled: boolean; rich: boolean; chat?: boolean } | null> {
   const p = pushCentre();
   if (!p) return null;
   try {
     const s = await p.status();
-    return { enabled: s?.enabled === true, rich: s?.rich === true };
+    // chat: only builds that draw a message push with the sender's photo say so (1.2.61 on)
+    return { enabled: s?.enabled === true, rich: s?.rich === true, ...(s?.chat === true ? { chat: true } : {}) };
   } catch {
     return null;
   }
