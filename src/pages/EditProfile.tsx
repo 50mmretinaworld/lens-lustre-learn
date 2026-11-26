@@ -186,7 +186,7 @@ const EditProfile = () => {
   const validateTwitter = (_value: string): string => "";
   const validateYoutube = (_value: string): string => "";
 
-  const RESERVED_URLS = ["login","signup","forgot-password","reset-password","dashboard","edit-profile","profile","friends","feed","discover","competitions","admin","judge","journal","courses","certificates","verify","winners","wallet","featured-artist","referrals","help-support","page","hashtag","not-found","root","system","api","support","help","contact","about","settings","user","users","www","mail","ftp","cdn","static","assets","media","photos","unsubscribe","cookie-policy","post","entry","certificate"];
+  const RESERVED_URLS = ["login","signup","forgot-password","reset-password","dashboard","edit-profile","profile","friends","feed","discover","competitions","admin","judge","journal","courses","certificates","verify","winners","premium-members","wallet","featured-artist","referrals","help-support","page","hashtag","not-found","root","system","api","support","help","contact","about","settings","user","users","www","mail","ftp","cdn","static","assets","media","photos","unsubscribe","cookie-policy","post","entry","certificate"];
 
   const validateCustomUrl = (value: string): string =>
     validateCustomUrlValue(value, RESERVED_URLS);

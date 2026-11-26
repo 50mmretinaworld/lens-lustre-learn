@@ -96,6 +96,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
     { to: "/journal", label: "Journal" },
     { to: "/courses", label: "Courses" },
     { to: "/winners", label: "Winners" },
+    { to: "/premium-members", label: "Premium Members" },
   ];
 
   const handleMegaEnter = (id: string) => {
