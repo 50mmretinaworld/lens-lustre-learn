@@ -72,7 +72,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
   ) : hasRole("student") ? (
     <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Student</Badge>
   ) : (
-    <Badge variant="outline" className="text-[9px] px-1.5 py-0">Guest</Badge>
+    <Badge variant="outline" className="text-[9px] px-1.5 py-0">Member</Badge>
   );
 
   const handleNav = (to: string) => { setOpen(false); onNavigate?.(); navigate(to); };
