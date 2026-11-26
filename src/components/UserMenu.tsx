@@ -72,7 +72,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
   ) : hasRole("student") ? (
     <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Student</Badge>
   ) : (
-    <Badge variant="outline" className="text-[9px] px-1.5 py-0">Guest</Badge>
+    <Badge variant="outline" className="text-[9px] px-1.5 py-0">Member</Badge>
   );
 
   const handleNav = (to: string) => { setOpen(false); onNavigate?.(); navigate(to); };
@@ -111,6 +111,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         { icon: Bell, label: "Notifications", to: "/notifications", show: true, tooltip: "Everything you have missed" },
         { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true, tooltip: "Competition entries" },
         { icon: Trophy, label: "Competitions", to: "/competitions", show: true, tooltip: "Browse & enter" },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true, tooltip: "Honoured members" },
         { icon: HelpCircle, label: "Help & Support", to: "/help-support", show: true, tooltip: "Get assistance" },
       ],
     },
@@ -130,6 +131,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         { icon: Bell, label: "Notifications", to: "/notifications", show: true, tooltip: "Everything you have missed" },
         { icon: Rss, label: "Feed", to: "/feed", show: true, tooltip: "Latest updates" },
         { icon: Compass, label: "Discover", to: "/discover", show: true, tooltip: "Find photographers" },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true, tooltip: "Honoured members" },
       ],
     },
     {

@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
-  Camera, Loader2, Sparkles, GraduationCap, User, Aperture, CalendarIcon, ImagePlus,
+  Camera, Loader2, Sparkles, CalendarIcon, ImagePlus,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -50,13 +50,6 @@ const GENDER_OPTIONS = [
   { value: "male", label: "He" },
   { value: "female", label: "She" },
 ];
-
-const USER_TYPES = [
-  { value: "student", label: "Student", description: "I'm learning photography", icon: GraduationCap },
-  { value: "normal", label: "Enthusiast", description: "Photography is my hobby", icon: User },
-  { value: "photographer", label: "Photographer", description: "I'm a professional / aspiring pro", icon: Aperture },
-];
-
 
 interface OnboardingModalProps {
   open: boolean;
@@ -143,7 +136,6 @@ const OnboardingModal = ({ open, userId, profile, onComplete, dismissible = fals
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     normaliseInterests(profile?.photography_interests),
   );
-  const [userType, setUserType] = useState(profile?.user_type || "");
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(
     profile?.date_of_birth ? new Date(profile.date_of_birth + "T00:00:00") : undefined,
   );
@@ -321,7 +313,7 @@ const OnboardingModal = ({ open, userId, profile, onComplete, dismissible = fals
    * stands between a new member and their first post.
    */
   const canProceed =
-    ageOk && !!userType && !!gender && selectedInterests.length > 0 && usernameOk;
+    ageOk && !!gender && selectedInterests.length > 0 && usernameOk;
 
   const handleFinish = async () => {
     if (!canProceed) {
@@ -332,7 +324,6 @@ const OnboardingModal = ({ open, userId, profile, onComplete, dismissible = fals
       // reason and send the member looking for the wrong thing.
       else if (!usernameOk) toast({ title: "Please choose an available username", variant: "destructive" });
       else if (!gender) toast({ title: "Please select He or She", variant: "destructive" });
-      else if (!userType) toast({ title: "Please select whether you're a Student, Photographer, or Enthusiast", variant: "destructive" });
       else if (selectedInterests.length === 0) toast({ title: "Please select at least one photography interest", variant: "destructive" });
       return;
     }
@@ -357,7 +348,9 @@ const OnboardingModal = ({ open, userId, profile, onComplete, dismissible = fals
       }
       const updates: Record<string, any> = {
         photography_interests: selectedInterests,
-        user_type: userType,
+        // Nobody chooses a role (Owner, 26 Nov 2026): only an admin honours one.
+        // The column is filled neutrally so the sign-up gate (Layout) reads "done".
+        user_type: profile?.user_type || "normal",
         date_of_birth: format(dateOfBirth!, "yyyy-MM-dd"),
         /**
          * ONLY write avatar_url when the member ACTUALLY UPLOADED a photo.
@@ -390,24 +383,6 @@ const OnboardingModal = ({ open, userId, profile, onComplete, dismissible = fals
       };
       const { error } = await supabase.from("profiles").update(updates as any).eq("id", userId);
       if (error) throw error;
-
-      // Auto-apply role based on the selection — only on FIRST-TIME type
-      // selection. Returning users (pulled back through the gate to claim a
-      // username) already have user_type set; re-inserting would file a
-      // duplicate pending application.
-      if (!profile?.user_type) {
-        if (userType === "photographer") {
-          await supabase.from("role_applications" as any).insert({
-            user_id: userId, requested_role: "registered_photographer",
-            reason: "Selected 'Photographer' during onboarding", status: "pending",
-          } as any);
-        } else if (userType === "student") {
-          await supabase.from("role_applications" as any).insert({
-            user_id: userId, requested_role: "student",
-            reason: "Selected 'Student' during onboarding", status: "pending",
-          } as any);
-        }
-      }
 
       toast({ title: "Welcome aboard! 🎉", description: "You're all set." });
       onComplete({ interests: [...selectedInterests] });
@@ -647,31 +622,6 @@ const OnboardingModal = ({ open, userId, profile, onComplete, dismissible = fals
               <p className="text-[9px] text-muted-foreground leading-snug" style={{ fontFamily: "var(--font-body)" }}>
                 Used only to pick a matching avatar if you ever have no photo. Nothing else.
               </p>
-            </div>
-
-            {/* Role */}
-            <div className="space-y-2">
-              <span className="text-[10px] tracking-[0.2em] uppercase text-foreground font-medium block" style={{ fontFamily: "var(--font-heading)" }}>
-                I am a... <span className="text-destructive">*</span>
-              </span>
-              <RadioGroup value={userType} onValueChange={setUserType} className="grid grid-cols-3 gap-2">
-                {USER_TYPES.map(({ value, label, description, icon: Icon }) => (
-                  <Label
-                    key={value}
-                    htmlFor={`type-${value}`}
-                    className={`flex flex-col items-center gap-2 p-3 border cursor-pointer transition-all duration-300 text-center ${
-                      userType === value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <RadioGroupItem value={value} id={`type-${value}`} className="sr-only" />
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center ${userType === value ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <span className="text-[11px] font-medium" style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
-                    <span className="text-[9px] text-muted-foreground leading-tight" style={{ fontFamily: "var(--font-body)" }}>{description}</span>
-                  </Label>
-                ))}
-              </RadioGroup>
             </div>
 
             {/* Interests */}
