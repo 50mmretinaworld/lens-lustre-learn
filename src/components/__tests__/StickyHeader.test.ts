@@ -43,7 +43,7 @@ const headerBlock = (() => {
 describe("the header sticks on web", () => {
   it("the WRAPPER carries the sticky, not just the nav inside it", () => {
     // This is the whole fix: sticky on the element whose parent spans the page.
-    expect(headerBlock).toContain('"sticky top-0 z-50"');
+    expect(headerBlock).toContain('"sticky top-[var(--safe-top)] z-50"');
   });
 
   it("sits above page content", () => {
@@ -53,7 +53,7 @@ describe("the header sticks on web", () => {
   it("is skipped inside the installed app, per 'Only for Web'", () => {
     expect(headerBlock).toContain("isNativeCapacitorApp()");
     // native -> undefined (unchanged behaviour), web -> sticky
-    expect(headerBlock).toMatch(/isNativeCapacitorApp\(\)\s*\?\s*undefined\s*:\s*"sticky top-0 z-50"/);
+    expect(headerBlock).toMatch(/isNativeCapacitorApp\(\)\s*\?\s*undefined\s*:\s*"sticky top-\[var\(--safe-top\)\] z-50"/);
   });
 
   it("imports the native check from the one helper that already exists", () => {
@@ -63,7 +63,7 @@ describe("the header sticks on web", () => {
   it("leaves the home page's transparent overlay alone", () => {
     // /home overlays a transparent bar on the hero; that is a deliberate design
     // and the owner did not ask for it to change.
-    expect(headerBlock).toContain('"absolute top-0 left-0 right-0 z-50"');
+    expect(headerBlock).toContain('"absolute top-[var(--safe-top)] left-0 right-0 z-50"');
     expect(headerBlock).toMatch(/isHome/);
   });
 

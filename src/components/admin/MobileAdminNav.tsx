@@ -71,7 +71,7 @@ export default function MobileAdminNav({ tab, setTab, tabGroups, unresolvedTicke
   return (
     <div className="md:hidden">
       {/* ── Top Bar ── */}
-      <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
+      <div className="sticky top-[var(--safe-top)] z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Left: Back button (to menu or to site) */}
           {showMenu ? (

@@ -24,7 +24,7 @@ const LearningTopBar = ({
   const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   return (
-    <div className="sticky top-0 z-30 h-[52px] border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 gap-4 shrink-0">
+    <div className="sticky top-[var(--safe-top)] z-30 h-[52px] border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 gap-4 shrink-0">
       {/* Left — Back to course */}
       <Link
         to={`/courses/${courseSlug}`}

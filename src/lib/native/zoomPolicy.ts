@@ -1,6 +1,7 @@
 import { isNativeCapacitorApp } from "@/lib/native/authDeepLink";
 import { logger } from "@/lib/logger";
 import { deviceContext } from "@/lib/deviceContext";
+import { appViewport, installSafeArea } from "@/lib/native/safeArea";
 
 /**
  * THE APP-ONLY PINCH-ZOOM LOCK. Build 1055.
@@ -70,7 +71,9 @@ export const APP_VIEWPORT = "width=device-width, initial-scale=1.0, maximum-scal
 
 function lockViewportScale(): void {
   const meta = document.querySelector('meta[name="viewport"]');
-  if (meta) meta.setAttribute("content", APP_VIEWPORT);
+  // iPhone app: + viewport-fit=cover and the status-bar rule (src/lib/native/safeArea.ts).
+  if (meta) meta.setAttribute("content", appViewport(APP_VIEWPORT));
+  installSafeArea();
 }
 
 let applied = false;

@@ -273,7 +273,7 @@ const LayoutInner = () => {
           home page still gets its overlaid, transparent treatment, but through
           a wrapper class rather than a second element, so React keeps one
           instance across every route.
-          The home-only wrapper carries `absolute top-0 left-0 right-0 z-50`
+          The home-only wrapper carries `absolute top-[var(--safe-top)] left-0 right-0 z-50`
           exactly as before — see the note above about /home and the hero. */}
       {/*
         THE HEADER STICKS TO THE TOP WHILE SCROLLING — WEB ONLY.
@@ -305,10 +305,10 @@ const LayoutInner = () => {
           ref={frameTopRef}
           className={
             isHome
-              ? "absolute top-0 left-0 right-0 z-50"
+              ? "absolute top-[var(--safe-top)] left-0 right-0 z-50"
               : isNativeCapacitorApp()
                 ? undefined
-                : "sticky top-0 z-50"
+                : "sticky top-[var(--safe-top)] z-50"
           }
         >
           <AnnouncementBar />

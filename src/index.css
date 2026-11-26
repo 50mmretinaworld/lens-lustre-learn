@@ -321,9 +321,47 @@
 }
 
 
+/* ── THE PHONE'S OWN STATUS BAR (src/lib/native/safeArea.ts) ──────────────────────────────────────────────────────
+   STAGING PORT of the main carry (same rule). Owner 26 Nov 2026 (iPhone app screenshots): the logo, the top bar and
+   page headers sat UNDER the time, the camera island and the battery — nothing reserved that strip on the iPhone app.
+   ONE rule, iPhone app only (`app-ios` on <html> + viewport-fit=cover): --safe-top = env(safe-area-inset-top); 0px on
+   the website and on Android, which render exactly as before. The page starts below the strip; the strip is plain dark
+   (Owner's choice); overlays covering the screen start below it; bars that stick to the top use top-[var(--safe-top)]
+   (ratchet src/__tests__/safeTopRatchet.test.ts); full-height rules subtract it; centred pop-ups (ui/dialog, ui/alert-dialog) centre between the strips. --safe-bottom = the home indicator. */
+:root {
+  --safe-top: 0px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html.app-ios {
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+html.app-ios body {
+  padding-top: var(--safe-top);
+}
+html.app-ios body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+  background: #0b1020;
+  z-index: 2147483646;
+  pointer-events: none;
+}
+html.app-ios .fixed.inset-0,
+html.app-ios .fixed.inset-y-0,
+html.app-ios .fixed.top-0 {
+  top: var(--safe-top);
+}
+html.app-ios .fixed.h-screen,
+html.app-ios .fixed.h-\[100dvh\] {
+  height: calc(100dvh - var(--safe-top));
+}
+
 .h-screen-safe {
   height: 100vh;
-  height: 100dvh;
+  height: calc(100dvh - var(--safe-top));
 }
 
 /* THE FRAME RULE (src/lib/appFrame.ts) — STAGING PORT of main #1237 + #1240. Inside Layout's frame a page's "whole
@@ -341,14 +379,21 @@
 .app-frame--no-bar {
   --frame-bottom: 0px;
 }
+html.app-ios .app-frame {
+  --frame-bottom: calc(3rem + var(--safe-bottom));
+}
+html.app-ios .app-frame--no-bar {
+  --frame-bottom: 0px;
+}
 @media (min-width: 1024px) {
-  .app-frame {
+  .app-frame,
+  html.app-ios .app-frame {
     --frame-bottom: 0px;
   }
 }
 .app-frame .min-h-screen {
-  min-height: calc(100vh - var(--banner-h, 0px) - var(--frame-top) - var(--frame-bottom));
-  min-height: calc(100dvh - var(--banner-h, 0px) - var(--frame-top) - var(--frame-bottom));
+  min-height: calc(100vh - var(--banner-h, 0px) - var(--safe-top) - var(--frame-top) - var(--frame-bottom));
+  min-height: calc(100dvh - var(--banner-h, 0px) - var(--safe-top) - var(--frame-top) - var(--frame-bottom));
 }
 
 /* Installed app only (the class is added by src/lib/native/zoomPolicy.ts): the page does not bounce past its top or
@@ -485,7 +530,7 @@ html.app-zoom-locked body {
 
 /* Safe area for bottom navigation on notched devices */
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safe-bottom);
 }
 
 /* ── THE BOTTOM DOCK (src/lib/ui/bottomDock.ts) ───────────────────────────────
@@ -514,7 +559,7 @@ html.app-zoom-locked body {
 }
 .dock-videos {
   --dock-videos-bottom: max(
-    calc(4.25rem + env(safe-area-inset-bottom, 0px)),
+    calc(4.25rem + var(--safe-bottom)),
     calc(var(--dock-consent, 0px) + 0.5rem),
     calc(var(--dock-update, 0px) + 0.5rem),
     calc(var(--dock-bar, 0px) + 0.5rem)
