@@ -984,6 +984,10 @@ jobs:
       # 2026-11-26: bumped 1.2.59 -> 1.2.60 (Owner approved the real renders, 26 Nov). Adds Sign in / Join without the
       # Back link (#1275), the shared status-bar rule (#1274: Android unchanged, --safe-top is 0 there) and the 320 px
       # Edit profile fix (long e-mail no longer scrolls the page sideways).
+      # 2026-11-27: bumped 1.2.60 -> 1.2.61 (Owner: "PC is ON and build"). Adds the floating footer (#1283, switch
+      # floating_footer, Off), notification tap + unread number (#1289), sender photo and message text in message
+      # notifications (#1292/#1295, photo has an off-switch), Premium Members (#1296), the sign-in lock speed fix
+      # (#1297) and no crash screen while reloading for a new version (#1301). For the Owner's phone test only.
       - name: Set app version (monotonic versionCode from run number)
         run: |
           VC=$(( 1000 + ${{ github.run_number }} ))
@@ -997,8 +1001,8 @@ jobs:
             exit 1
           fi
           # Version history + the versionCode rules: the comment block ABOVE this step. Kept out of this script on purpose: GitHub refuses a run step over 21,000 characters (1.2.59 run 45679260559, 25 Nov).
-          sed -i 's/versionName "1.0"/versionName "1.2.60"/' android/app/build.gradle
-          echo "versionCode=${VC} versionName=1.2.60 (1.2.59 is on Play - 26 Nov)"
+          sed -i 's/versionName "1.0"/versionName "1.2.61"/' android/app/build.gradle
+          echo "versionCode=${VC} versionName=1.2.61 (1.2.60 handed to the Owner 26 Nov)"
           grep -E "versionCode|versionName" android/app/build.gradle
           cat android/variables.gradle
           # S11: prove both edits landed — exactly one versionCode, the derived
