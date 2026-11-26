@@ -7,7 +7,7 @@
 --
 --   1. user_badges.citation   — the admin's ONE public line on why the member was honoured (≤ 140 letters).
 --                               Admins already manage user_badges (policy "Admins can manage badges"); no new policy.
---   2. featured_photos        — ONE Featured photo per Premium Member, chosen by the member. A new choice replaces the
+--   2. premium_featured_posts        — ONE Featured photo per Premium Member, chosen by the member. A new choice replaces the
 --                               old one (primary key = member). Readable by everyone (it only names a post id);
 --                               nobody writes it directly — only through set_featured_post() below.
 --   3. set_featured_post(id)  — the member marks one of their OWN PUBLIC photo posts as Featured (NULL = unmark).
@@ -46,20 +46,20 @@ COMMENT ON COLUMN public.user_badges.citation IS
   'Premium Members (20261126_6000): the admin''s one public line on why the member was honoured (verified badge only).';
 
 -- 2 · one Featured photo per member ───────────────────────────────────────────────────────────────────────────────
-CREATE TABLE public.featured_photos (
+CREATE TABLE public.premium_featured_posts (
   user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   post_id uuid NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
   set_at  timestamptz NOT NULL DEFAULT now()
 );
-COMMENT ON TABLE public.featured_photos IS
+COMMENT ON TABLE public.premium_featured_posts IS
   'Premium Members (20261126_6000): the one photo post a Verified member chose as Featured. Written only by set_featured_post().';
--- P28: featured_photos · one row per Premium Member (tens) · leading index for the post_id foreign key (post delete cascade).
-CREATE INDEX featured_photos_post_id_idx ON public.featured_photos (post_id);
+-- P28: premium_featured_posts · one row per Premium Member (tens) · leading index for the post_id foreign key (post delete cascade).
+CREATE INDEX premium_featured_posts_post_id_idx ON public.premium_featured_posts (post_id);
 
-ALTER TABLE public.featured_photos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can view featured photos" ON public.featured_photos FOR SELECT USING (true);
-REVOKE ALL ON public.featured_photos FROM anon, authenticated;
-GRANT SELECT ON public.featured_photos TO anon, authenticated;
+ALTER TABLE public.premium_featured_posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view premium featured posts" ON public.premium_featured_posts FOR SELECT USING (true);
+REVOKE ALL ON public.premium_featured_posts FROM anon, authenticated;
+GRANT SELECT ON public.premium_featured_posts TO anon, authenticated;
 
 -- 3 · the member marks / unmarks ──────────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION public.set_featured_post(_post_id uuid)
@@ -76,7 +76,7 @@ BEGIN
   END IF;
 
   IF _post_id IS NULL THEN
-    DELETE FROM public.featured_photos WHERE user_id = _uid;
+    DELETE FROM public.premium_featured_posts WHERE user_id = _uid;
     RETURN NULL;
   END IF;
 
@@ -95,7 +95,7 @@ BEGIN
     RAISE EXCEPTION 'Choose one of your own public photos.' USING ERRCODE = '42501';
   END IF;
 
-  INSERT INTO public.featured_photos (user_id, post_id, set_at)
+  INSERT INTO public.premium_featured_posts (user_id, post_id, set_at)
   VALUES (_uid, _post_id, now())
   ON CONFLICT (user_id) DO UPDATE SET post_id = EXCLUDED.post_id, set_at = EXCLUDED.set_at;
 
@@ -114,7 +114,7 @@ SET search_path = ''
 AS $fn$
 BEGIN
   IF OLD.badge_type = 'verified' THEN
-    DELETE FROM public.featured_photos WHERE user_id = OLD.user_id;
+    DELETE FROM public.premium_featured_posts WHERE user_id = OLD.user_id;
   END IF;
   RETURN OLD;
 END
@@ -173,7 +173,7 @@ AS $fn$
                  p.likes_count,
                  p.created_at
             FROM public.posts p
-            LEFT JOIN public.featured_photos fp ON fp.user_id = b.user_id AND fp.post_id = p.id
+            LEFT JOIN public.premium_featured_posts fp ON fp.user_id = b.user_id AND fp.post_id = p.id
            WHERE p.user_id = b.user_id
              AND p.privacy = 'public'
              AND p.post_kind = 'member'
