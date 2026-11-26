@@ -55,6 +55,11 @@ on:
         required: false
         default: macos-15-intel
         options: [macos-15-intel, macos-15]
+      notification_photo:
+        description: "Sender's round photo on message notifications (a notification service extension). Off = build without it, if it ever blocks a release."
+        type: boolean
+        required: false
+        default: true
   # push:
   #   branches: [main]
 
@@ -90,6 +95,7 @@ jobs:
     timeout-minutes: 60
     env:
       BUNDLE_ID: com.fiftymmretina.app
+      NOTIFICATION_PHOTO: ${{ inputs.notification_photo != false }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -386,6 +392,17 @@ jobs:
           '
           grep -c "capacitorDidRegisterForRemoteNotifications" ios/App/App/AppDelegate.swift
 
+      # The picture on a notification (the sender's round photo on a message): a notification service extension,
+      # added to the regenerated project the same way as the pieces above.
+      - name: Add the notification photo extension
+        if: steps.apple.outputs.push == 'true' && env.NOTIFICATION_PHOTO == 'true'
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          MARKETING_VERSION: ${{ inputs.marketing_version || '1.2' }}
+        run: |
+          set -euo pipefail
+          ruby tools/ios/add-notification-service.rb
+
       - name: Import Distribution Certificate + Provisioning Profile
         id: cert
         env:
@@ -465,6 +482,7 @@ jobs:
             echo "::warning::Could not read the certificate serial - using the saved profile."; exit 0
           fi
           echo "Distribution certificate $SERIAL"
+          echo "CERT_SERIAL=$SERIAL" >> "$GITHUB_ENV"
           MODE=""; [ "$PUSH" = "true" ] && MODE="push"
           OUT="$RUNNER_TEMP/asc.mobileprovision"
           if node tools/ios/asc-setup.mjs profile "$SERIAL" "$OUT" $MODE; then
@@ -476,6 +494,20 @@ jobs:
           else
             echo "::warning::App Store Connect refused - using the saved BUILD_PROVISION_PROFILE_BASE64 profile."
           fi
+
+      - name: App Store profile for the notification extension
+        if: steps.apple.outputs.push == 'true' && env.NOTIFICATION_PHOTO == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ steps.apple.outputs.asc_key_path }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/nse.mobileprovision"
+          BUNDLE_ID="$BUNDLE_ID.notificationservice" node tools/ios/asc-setup.mjs extension-profile "$CERT_SERIAL" "$OUT"
+          UUID=$(security cms -D -i "$OUT" | plutil -extract UUID raw -o - -)
+          cp "$OUT" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "NSE_UUID=$UUID" >> "$GITHUB_ENV"
 
       - name: Read provisioning profile UUID and Team ID
         id: profile
@@ -612,8 +644,18 @@ jobs:
               config.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = ENV["BUNDLE_ID"]
               config.build_settings["CODE_SIGN_ENTITLEMENTS"] = "App/App.entitlements" if ENV["PUSH"] == "true"
             end
+            ext = project.targets.find { |t| t.name == "NotificationService" }
+            if ext
+              abort("::error::No profile for the notification extension") if ENV["NSE_UUID"].to_s.empty?
+              ext.build_configurations.each do |config|
+                config.build_settings["CODE_SIGN_STYLE"] = "Manual"
+                config.build_settings["DEVELOPMENT_TEAM"] = ENV["TEAM_ID"]
+                config.build_settings["PROVISIONING_PROFILE_SPECIFIER"] = ENV["NSE_UUID"]
+                config.build_settings["CODE_SIGN_IDENTITY"] = ENV["SIGN_IDENTITY"]
+              end
+            end
             project.save
-            puts "Signing configured on App target only (#{target.build_configurations.size} configurations)."
+            puts "Signing configured on App target (and its notification extension when present)."
           '
 
           # GUARD: read the settings back out of the saved project and fail here
@@ -636,7 +678,7 @@ jobs:
               exit 1
             end
             puts "Verified on App/Release: #{expected.keys.join(", ")}."
-            others = project.targets.reject { |t| t.name == "App" }
+            others = project.targets.reject { |t| ["App", "NotificationService"].include?(t.name) }
             leaked = others.select { |t| t.build_configurations.any? { |c| c.build_settings["PROVISIONING_PROFILE_SPECIFIER"] } }
             unless leaked.empty?
               STDERR.puts "::error::Provisioning profile leaked onto non-app targets: #{leaked.map(&:name).join(", ")}"
@@ -711,6 +753,9 @@ jobs:
           # those trigger cloud signing, which is what build #14 failed on
           # ("Cloud signing permission error"). Everything needed is already
           # in the keychain.
+          # The notification extension (when built) is an app bundle of its own, so it needs its profile too.
+          NSE_ENTRY=""
+          if [ -n "${NSE_UUID:-}" ]; then NSE_ENTRY="<key>$BUNDLE_ID.notificationservice</key><string>$NSE_UUID</string>"; fi
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -728,6 +773,7 @@ jobs:
             <dict>
               <key>$BUNDLE_ID</key>
               <string>$PROFILE_UUID</string>
+              $NSE_ENTRY
             </dict>
           </dict>
           </plist>

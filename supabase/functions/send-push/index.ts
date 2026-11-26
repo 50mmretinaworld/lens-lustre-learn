@@ -149,7 +149,9 @@ Deno.serve(async (req) => {
       for (const { token, platform, caps } of tokens) {
         const input = {
           token, title, body, data,
-          imageUrl: image_url, category, groupKey: group_key, deliveryId,
+          // iPhone: the sender's photo goes as the picture its notification extension shows round.
+          imageUrl: image_url ?? (isMessage && platform === "ios" ? data?.sender_photo : null),
+          category, groupKey: group_key, deliveryId,
           imageHosts,
         };
         // A private message to a build that draws it itself (sender's round photo); everyone else as before.
