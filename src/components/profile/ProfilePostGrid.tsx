@@ -52,7 +52,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { memo, useState } from "react";
+import { createContext, memo, useContext, useState } from "react";
 import type React from "react";
 import { Link } from "react-router-dom";
 import { Images, Heart, MessageCircle } from "lucide-react";
@@ -68,7 +68,17 @@ import { postPathOf } from "@/lib/posts/postPath";
 
 interface Props {
   posts: UnifiedPost[];
+  /**
+   * Premium Members Part 2: the member's Featured photo. The caller puts it
+   * FIRST (featuredFirst, src/lib/premium/honour.ts) — index 0 is always a
+   * square tile — and that tile carries the "★ Featured" label.
+   */
+  featuredPostId?: string | null;
 }
+
+/** Which tile is Featured — a context, so the tile call sites (and the windowing ratchet on them) stay as they are. */
+const FeaturedIdContext = createContext<string | null>(null);
+
 
 /** Squares per block: three rows of three, exactly as in the owner's picture. */
 export const SQUARES_PER_BLOCK = 9;
@@ -213,6 +223,7 @@ const HoverCounts = ({ post, revealed = false }: { post: UnifiedPost; revealed?:
 
 /** One small square. Cropped to 1:1 on purpose — this is the scanning view. */
 const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
+  const featured = useContext(FeaturedIdContext) === post.id;
   const [failed, setFailed] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const photoSetV2 = usePhotoSetV2();
@@ -252,7 +263,7 @@ const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
     <Link
       to={postPathOf(post)}
       onClick={handleClick}
-      aria-label={tileLabel(post)}
+      aria-label={(featured ? "Featured. " : "") + tileLabel(post)}
       /* 4:5 PORTRAIT — MEASURED, not chosen.
          The written spec said "square cells by default", so square is what I
          built. The owner then sent a REAL Instagram profile and said "exactly
@@ -279,6 +290,8 @@ const GridTile = memo(function GridTile({ post }: { post: UnifiedPost }) {
           <Images className="h-6 w-6" />
         </div>
       )}
+      {/* The approved "★ Featured" label (Part 2). */}
+      {featured && <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-black/80 px-2 py-0.5 text-[11px] font-bold text-amber-400">★ Featured</span>}
       <MultiMarker count={count} />
       <HoverCounts post={post} />
     </Link>
@@ -375,7 +388,7 @@ const ShowcaseTile = memo(function ShowcaseTile({ post }: { post: UnifiedPost })
   );
 });
 
-const ProfilePostGrid = ({ posts }: Props) => (
+const ProfilePostGrid = ({ posts, featuredPostId = null }: Props) => (
   /**
    * FULL BLEED ON A PHONE — the grid is exactly the width of the screen.
    *
@@ -401,6 +414,7 @@ const ProfilePostGrid = ({ posts }: Props) => (
    * an infinite scroll is the kind of motion that reads as jank on a mid-range
    * Android, and the feed card already pays that cost once.
    */
+  <FeaturedIdContext.Provider value={featuredPostId}>
   <div className="relative left-1/2 w-screen -translate-x-1/2 md:left-0 md:w-full md:translate-x-0 grid grid-cols-3 gap-0 md:gap-1">
     {/* S6-c · PROFILE WINDOWING: the feed's own FeedCardWindow (not a copy) —
         each tile's contents (its <img>/<video> poster and decoded bitmap)
@@ -422,6 +436,7 @@ const ProfilePostGrid = ({ posts }: Props) => (
       ),
     )}
   </div>
+  </FeaturedIdContext.Provider>
 );
 
 export default ProfilePostGrid;

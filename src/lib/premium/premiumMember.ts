@@ -12,6 +12,17 @@ export function honouredLabel(iso: string | null | undefined): string | null {
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
+/** The tick card (Owner-approved wording, web and app — keep VERBATIM). */
+export const VERIFIED_CARD_TITLE = "Verified Photographer";
+export const VERIFIED_CARD_LINK_TEXT = "See all Verified Photographers";
+export const PREMIUM_MEMBERS_PATH = "/premium-members";
+
+/** "{Name} was honoured by the 50mm Retina World curators in {Mon YYYY}. This tick cannot be requested or bought." — the date clause left out when unknown. */
+export function verifiedTickMessage(name: string, assignedAt: string | null | undefined): string {
+  const when = honouredLabel(assignedAt);
+  return `${name} was honoured by the 50mm Retina World curators${when ? ` in ${when}` : ""}. This tick cannot be requested or bought.`;
+}
+
 /** The card's photo: a set photo's 600 copy; an old photo's stored thumbnail, else the photo itself. */
 export function premiumPhotoSrc(m: { photo_url: string | null; thumb_url: string | null }): string | null {
   const p = m.photo_url;

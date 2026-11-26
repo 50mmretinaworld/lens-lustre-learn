@@ -155,6 +155,7 @@ const EMPTY_BY_DESIGN: Record<string, string> = {
   //    and a row of featured photographs is a different screenshot and belongs
   //    in its own scene — not as the default every other check is read through.
   featured_photos: "a member who has not featured any photograph yet",
+  premium_featured_posts: "no member has marked a Featured photo; the grid keeps its own order",
   photo_albums: "no albums; the wall's default single-grid state",
   highlights: "no highlights ring, which is what a new wall looks like",
   // Nobody has reacted to a comment. The reaction pill is absent, which is the
