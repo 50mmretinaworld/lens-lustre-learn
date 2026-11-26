@@ -10,7 +10,7 @@ describe("footer classes", () => {
   it("classic is exactly the old bar", () => {
     const c = footerClasses(false, false);
     expect(c.nav).toBe("fixed bottom-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl backdrop-saturate-150 border-t border-border/25 lg:hidden safe-area-bottom");
-    expect(c.row.trim()).toBe("flex items-center justify-around px-1 relative h-12");
+    expect(c.row).toBe("flex items-center justify-around h-12 px-1 relative");
     expect(c.homeDisc).toBe("h-12 w-12");
     expect(c.avatar).toBe("h-7 w-7");
   });
