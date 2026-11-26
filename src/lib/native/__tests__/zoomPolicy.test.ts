@@ -13,9 +13,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 vi.mock("@/lib/native/authDeepLink", () => ({
   isNativeCapacitorApp: vi.fn(),
+  isNativeIOSApp: vi.fn(),
 }));
 
-import { isNativeCapacitorApp } from "@/lib/native/authDeepLink";
+import { isNativeCapacitorApp, isNativeIOSApp } from "@/lib/native/authDeepLink";
+import { SAFE_AREA_CLASS } from "@/lib/native/safeArea";
 import {
   installZoomPolicy,
   __resetZoomPolicyForTests,
@@ -26,11 +28,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const mockedIsNative = vi.mocked(isNativeCapacitorApp);
+const mockedIsIOS = vi.mocked(isNativeIOSApp);
 
 describe("installZoomPolicy", () => {
   beforeEach(() => {
     __resetZoomPolicyForTests();
     mockedIsNative.mockReset();
+    mockedIsIOS.mockReset();
+    mockedIsIOS.mockReturnValue(false);
+    document.documentElement.classList.remove(SAFE_AREA_CLASS);
   });
 
   it("locks pinch-zoom inside the installed app", () => {
@@ -72,6 +78,23 @@ describe("installZoomPolicy", () => {
     const indexHtml = readFileSync(join(process.cwd(), "index.html"), "utf8");
     const tag = indexHtml.match(/<meta name="viewport"[^>]*>/)?.[0] ?? "";
     expect(tag).not.toMatch(/maximum-scale|user-scalable/);
+  });
+
+  it("iPhone app: viewport-fit=cover + the status-bar class (Owner 26 Nov: logo under the time and battery)", () => {
+    document.head.innerHTML = '<meta name="viewport" content="width=device-width, initial-scale=1.0" />';
+    mockedIsNative.mockReturnValue(true);
+    mockedIsIOS.mockReturnValue(true);
+    installZoomPolicy();
+    expect(document.querySelector('meta[name="viewport"]')?.getAttribute("content")).toBe(`${APP_VIEWPORT}, viewport-fit=cover`);
+    expect(document.documentElement.classList.contains(SAFE_AREA_CLASS)).toBe(true);
+  });
+
+  it("Android app and website: no viewport-fit, no status-bar class (they render exactly as before)", () => {
+    document.head.innerHTML = '<meta name="viewport" content="width=device-width, initial-scale=1.0" />';
+    mockedIsNative.mockReturnValue(true);
+    installZoomPolicy();
+    expect(document.querySelector('meta[name="viewport"]')?.getAttribute("content")).not.toMatch(/viewport-fit/);
+    expect(document.documentElement.classList.contains(SAFE_AREA_CLASS)).toBe(false);
   });
 
   it("never throws — it runs during boot, before anything can catch for it", () => {

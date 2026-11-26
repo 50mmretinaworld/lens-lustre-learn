@@ -28,7 +28,7 @@ export default function MessagesRoutes() {
   const isGroup = !!chatId && (inbox.data ?? []).some((c) => c.conversationId === chatId && c.kind === "group");
 
   return (
-    <div className="mx-auto h-[calc(100dvh-7.5rem)] w-full max-w-[1180px] lg:h-[calc(100dvh-6.5rem)] lg:px-4 lg:py-3">
+    <div className="mx-auto h-[calc(100dvh-7.5rem-var(--safe-top)-var(--safe-bottom))] w-full max-w-[1180px] lg:h-[calc(100dvh-6.5rem-var(--safe-top))] lg:px-4 lg:py-3">
       <div className="flex h-full overflow-hidden bg-background lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl lg:shadow-black/10">
         <section aria-label={t("messages.title", "Messages")} className={`${hasChat ? "hidden lg:block" : "block"} h-full w-full shrink-0 lg:w-[380px] lg:border-r lg:border-border`}>
           <ConversationList activeId={chatId} onOpen={(id) => navigate(`/messages/${id}`)} />

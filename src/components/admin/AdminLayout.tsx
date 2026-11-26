@@ -136,7 +136,7 @@ const AdminLayout = ({ currentRoute, tabGroups, children, adminSubRoles }: Admin
       />
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-card/50 flex-col h-screen sticky top-0 overflow-hidden">
+      <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-card/50 flex-col h-screen sticky top-[var(--safe-top)] overflow-hidden">
         <div className="px-5 py-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2 mb-1">
             <img src={siteLogo} alt="Logo" className="h-7 w-7 object-contain" />

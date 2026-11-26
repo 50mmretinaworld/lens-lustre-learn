@@ -331,7 +331,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* ═══════ Tab Navigation ═══════ */}
-        <div className="flex items-center gap-0 border-b border-border mb-3 md:mb-4 overflow-x-auto scrollbar-hide sticky top-0 z-20 bg-background/95 backdrop-blur-md -mx-2 px-2 md:mx-0 md:px-0">
+        <div className="flex items-center gap-0 border-b border-border mb-3 md:mb-4 overflow-x-auto scrollbar-hide sticky top-[var(--safe-top)] z-20 bg-background/95 backdrop-blur-md -mx-2 px-2 md:mx-0 md:px-0">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             const badge = tab.key === "social" && friendRequests.length > 0 ? friendRequests.length : tab.key === "submissions" && myEntries.length > 0 ? myEntries.length : null;

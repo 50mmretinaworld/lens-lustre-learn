@@ -331,7 +331,7 @@ export default function MobileJudgeView({
   return (
     <div className="md:hidden flex flex-col min-h-screen bg-background">
       {/* ── Sticky Top Bar ── */}
-      <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
+      <div className="sticky top-[var(--safe-top)] z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Phase 10: 44×44 touch target for top back button. */}
           <button

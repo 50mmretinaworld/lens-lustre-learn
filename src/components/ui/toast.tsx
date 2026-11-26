@@ -16,7 +16,7 @@ const ToastViewport = React.forwardRef<
     className={cn(
       // Top-right placement on every viewport so toasts never overlap the
       // bottom-anchored Submit Evaluation button (mobile + desktop).
-      "fixed top-3 right-3 z-[200] flex max-h-screen w-auto max-w-[280px] flex-col gap-2 p-0 sm:top-4 sm:right-4",
+      "fixed top-[calc(var(--safe-top)+0.75rem)] right-3 z-[200] flex max-h-screen w-auto max-w-[280px] flex-col gap-2 p-0 sm:top-[calc(var(--safe-top)+1rem)] sm:right-4",
       className,
     )}
     {...props}

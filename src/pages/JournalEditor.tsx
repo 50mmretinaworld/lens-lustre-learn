@@ -436,7 +436,7 @@ const JournalEditor = () => {
         onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = ""; }} />
 
       {/* Header */}
-      <div className="bg-card border-b border-border sticky top-0 z-40">
+      <div className="bg-card border-b border-border sticky top-[var(--safe-top)] z-40">
         <div className="container mx-auto py-2 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
