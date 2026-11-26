@@ -143,14 +143,20 @@ Deno.serve(async (req) => {
       const isMessage = data?.type === "new_message";
       const imageHosts = image_url || isMessage ? laneImageHosts() : [];   // once per call, not per device
       let origin: string | null = null;
+      // Off-switch for the sender's photo (20261126_6900): false → every phone gets the ordinary notification.
+      let photoOn = false;
       if (isMessage) {
+        const { data: flag } = await admin.from("system_flags").select("value").eq("key", "message_push_photo").maybeSingle();
+        photoOn = flag?.value !== false;
+      }
+      if (photoOn) {
         try { origin = canonicalOrigin(); } catch { /* SITE_ORIGIN unset: the ordinary push goes */ }
       }
       for (const { token, platform, caps } of tokens) {
         const input = {
           token, title, body, data,
           // iPhone: the sender's photo goes as the picture its notification extension shows round.
-          imageUrl: image_url ?? (isMessage && platform === "ios" ? data?.sender_photo : null),
+          imageUrl: image_url ?? (photoOn && platform === "ios" ? data?.sender_photo : null),
           category, groupKey: group_key, deliveryId,
           imageHosts,
         };
