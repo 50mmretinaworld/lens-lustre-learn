@@ -72,7 +72,8 @@ describe("it scrolls left to right, like the reference", () => {
 
   it("cards keep their width inside the rail", () => {
     // Without shrink-0 the flex children would compress instead of scrolling.
-    expect(body).toMatch(/shrink-0 w-\[\d+px\]/);
+    // The width is an inline style since 26 Nov 2026 (P13: no new stylesheet rule).
+    expect(body).toMatch(/snap-start shrink-0 [^"]*"\s*style=\{CARD_W\}/);
   });
 });
 
@@ -121,14 +122,15 @@ describe("the member can SEE that there is more to the right (and to the left)",
   it("a tap moves exactly one card, not an arbitrary distance", () => {
     // 26 Nov 2026 fuller cards (Premium Members plan, Part 3): 156px card + 10px gap.
     expect(body).toMatch(/const CARD_STEP = 166;/);
-    expect(body).toMatch(/w-\[156px\]/);
+    expect(body).toMatch(/const CARD_W = \{ width: 156 \};/);
     expect(body).toMatch(/scrollBy\(\{ left: dir \* CARD_STEP, behavior: "smooth" \}\)/);
   });
 
   it("the arrows overlay the rail instead of taking space in it", () => {
     // If they were in the flow, showing or hiding one would shift every card.
-    expect(arrowsBlock).toMatch(/absolute left-0 top-\[82px\]/);
-    expect(arrowsBlock).toMatch(/absolute right-0 top-\[82px\]/);
+    // Sizes are inline styles (P13: no new rules in the shared stylesheet).
+    expect(arrowsBlock).toMatch(/absolute left-0 -translate-y-1\/2[^"]*"\s*style=\{ARROW_Y\}/);
+    expect(arrowsBlock).toMatch(/absolute right-0 -translate-y-1\/2[^"]*"\s*style=\{ARROW_Y\}/);
   });
 
   it("sits over the photo, not over the name", () => {
@@ -136,7 +138,7 @@ describe("the member can SEE that there is more to the right (and to the left)",
     // of the 156px square photo; fuller cards, 26 Nov 2026 — it was 52px over a
     // 64px avatar). At the rail's vertical midpoint the arrow covered the NAME —
     // the one line on the card that has to stay readable.
-    expect(arrowsBlock).toMatch(/top-\[82px\] -translate-y-1\/2/);
+    expect(body).toMatch(/const ARROW_Y = \{ top: 82 \};/);
     expect(arrowsBlock).not.toMatch(/top-1\/2 -translate-y-1\/2/);
   });
 

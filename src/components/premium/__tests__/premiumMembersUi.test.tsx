@@ -4,11 +4,11 @@
  */
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const h = vi.hoisted(() => ({ mutate: vi.fn(), invalidate: vi.fn() }));
+const h = vi.hoisted(() => ({ mutate: vi.fn(), invalidate: vi.fn(), submit: vi.fn(), toast: vi.fn(), blur: undefined as string | null | undefined, requested: [] as unknown[] }));
 
 vi.mock("@/components/ProfileLink", () => ({
   default: ({ children, className, "aria-label": al }: { children: React.ReactNode; className?: string; "aria-label"?: string }) =>
@@ -19,6 +19,14 @@ vi.mock("@/components/PresenceAvatar", () => ({ default: () => <span data-testid
 vi.mock("@/components/OptimizedImage", () => ({ default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} /> }));
 vi.mock("@/hooks/social/useFriendshipMutations", () => ({ useToggleFollow: () => ({ mutate: h.mutate }) }));
 vi.mock("@/lib/native/authDeepLink", () => ({ isNativeCapacitorApp: () => false }));
+vi.mock("@/hooks/core/useAuth", () => ({ useAuth: () => ({ user: { id: "me" } }) }));
+vi.mock("@/lib/offline/outbox", () => ({ submit: (...a: unknown[]) => { h.submit(...a); return Promise.resolve({ status: "sent" }); } }));
+vi.mock("@/hooks/core/use-toast", () => ({ toast: h.toast, useToast: () => ({ toast: h.toast }) }));
+vi.mock("@/lib/photoBlur", () => ({
+  usePhotoBlurVersion: () => 0,
+  photoBlurFor: () => h.blur,
+  requestPhotoBlurs: (...a: unknown[]) => { h.requested.push(a); },
+}));
 
 const { default: PremiumMemberCard } = await import("@/components/premium/PremiumMemberCard");
 const { default: GuestFollowPrompt } = await import("@/components/premium/GuestFollowPrompt");
@@ -80,6 +88,20 @@ describe("PremiumMemberCard — the line", () => {
     expect(document.body.textContent).not.toMatch(/follower/i);
   });
 
+  it("blur → sharp: asks the existing ThumbHash store by post + stored photo, draws the code behind", () => {
+    h.requested = [];
+    h.blur = "data:image/png;base64,AAAA";
+    inRouter(<PremiumMemberCard member={member()} following={false} onFollow={() => {}} />);
+    expect(h.requested).toEqual([["p1", ["https://cdn.example/x.jpg"]]]);
+    const blur = screen.getByTestId("premium-blur");
+    expect(blur.style.backgroundImage).toContain("data:image/png;base64,AAAA");
+    cleanup();
+    h.blur = null;
+    inRouter(<PremiumMemberCard member={member()} following={false} onFollow={() => {}} />);
+    expect(screen.queryByTestId("premium-blur")).toBeNull();
+    h.blur = undefined;
+  });
+
   it("no Follow button on the viewer's own card", () => {
     inRouter(<PremiumMemberCard member={member()} following={false} self onFollow={() => {}} />);
     expect(screen.queryByRole("button")).toBeNull();
@@ -127,23 +149,26 @@ describe("GuestFollowPrompt — a signed-out visitor taps Follow", () => {
 });
 
 describe("the remembered follow is done ONCE after sign-in", () => {
-  it("follows with the 'You're now following' toast, clears it, and never repeats", () => {
+  it("follows through the outbox with the 'You're now following' toast, clears it, and never repeats", async () => {
+    h.submit.mockClear(); h.toast.mockClear();
     savePendingFollow({ id: "u1", name: "Neil Basu" });
-    const view = inRouter(<PendingFollowRunner userId="me" />);
-    expect(h.mutate).toHaveBeenCalledTimes(1);
-    expect(h.mutate.mock.calls[0][0]).toEqual({ targetUserId: "u1", isCurrentlyFollowing: false, successTitle: "You're now following Neil Basu" });
+    const view = inRouter(<PendingFollowRunner />);
+    expect(h.submit).toHaveBeenCalledTimes(1);
+    expect(h.submit.mock.calls[0]).toEqual(["me", { kind: "follow", targetId: "u1" }]);
     expect(readPendingFollow()).toBeNull();
     expect(localStorage.getItem(PENDING_FOLLOW_KEY)).toBeNull();
-    view.rerender(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PendingFollowRunner userId="me" /></MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(h.toast).toHaveBeenCalledWith({ title: "You're now following Neil Basu" }));
+    view.rerender(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PendingFollowRunner /></MemoryRouter></QueryClientProvider>);
     cleanup();
-    inRouter(<PendingFollowRunner userId="me" />);
-    expect(h.mutate).toHaveBeenCalledTimes(1);
+    inRouter(<PendingFollowRunner />);
+    expect(h.submit).toHaveBeenCalledTimes(1);
   });
 
   it("never follows yourself", () => {
+    h.submit.mockClear();
     savePendingFollow({ id: "me", name: "Me" });
-    inRouter(<PendingFollowRunner userId="me" />);
-    expect(h.mutate).not.toHaveBeenCalled();
+    inRouter(<PendingFollowRunner />);
+    expect(h.submit).not.toHaveBeenCalled();
     expect(readPendingFollow()).toBeNull();
   });
 

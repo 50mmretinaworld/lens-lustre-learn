@@ -42,6 +42,10 @@ const MAX_CARDS = 12;
 
 /** Card width (156) + the gap between cards (gap-2.5 = 10px). One tap = one card. */
 const CARD_STEP = 166;
+/** One-off sizes inline: no new rules in the one shared stylesheet (P13 initial budget). */
+const CARD_W = { width: 156 };
+/** The photo's centre: 4px rail padding + half the 156px square. */
+const ARROW_Y = { top: 82 };
 
 /**
  * A few pixels of slack before "there is more this way" turns off. Browsers
@@ -246,7 +250,8 @@ const FeedFriendSuggestions = () => {
             <div
               key={s.id}
               data-testid="pymk-card"
-              className="relative snap-start shrink-0 w-[156px] overflow-hidden rounded-xl bg-card flex flex-col"
+              className="relative snap-start shrink-0 overflow-hidden rounded-xl bg-card flex flex-col"
+              style={CARD_W}
             >
               <ProfileLink userId={s.id} handle={handleFor(s)} className="block" aria-label={`${s.full_name || "Member"} — profile`}>
                 {s.avatar_url ? (
@@ -305,7 +310,7 @@ const FeedFriendSuggestions = () => {
               </p>
 
               {/* keeps every card's Add on one line, with or without award pills */}
-              <span className="min-h-2 flex-1" aria-hidden="true" />
+              <span className="flex-1 pt-2" aria-hidden="true" />
               <button
                 type="button"
                 disabled={isSent || sendRequest.isPending}
@@ -361,7 +366,8 @@ const FeedFriendSuggestions = () => {
               type="button"
               onClick={() => nudge(-1)}
               aria-label={t("feedSuggest.prev", "Previous")}
-              className="absolute left-0 top-[82px] -translate-y-1/2 flex h-11 w-11 items-center justify-center"
+              className="absolute left-0 -translate-y-1/2 flex h-11 w-11 items-center justify-center"
+              style={ARROW_Y}
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform"><ChevronLeft className="h-4 w-4" /></span>
             </button>
@@ -374,7 +380,8 @@ const FeedFriendSuggestions = () => {
               type="button"
               onClick={() => nudge(1)}
               aria-label={t("feedSuggest.next", "Next")}
-              className="absolute right-0 top-[82px] -translate-y-1/2 flex h-11 w-11 items-center justify-center"
+              className="absolute right-0 -translate-y-1/2 flex h-11 w-11 items-center justify-center"
+              style={ARROW_Y}
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform"><ChevronRight className="h-4 w-4" /></span>
             </button>

@@ -53,7 +53,7 @@ export function usePremiumFollow(members: readonly PremiumMember[]) {
     flip(!was);
     setBusyId(m.user_id);
     toggle.mutate(
-      { targetUserId: m.user_id, isCurrentlyFollowing: was, successTitle: `You're now following ${m.full_name}` },
+      { targetUserId: m.user_id, isCurrentlyFollowing: was },
       { onError: () => flip(was), onSettled: () => setBusyId(null) },
     );
   }, [me, following, navigate, qc, key, toggle]);

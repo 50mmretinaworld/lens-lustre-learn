@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./App.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { isNativeCapacitorApp, isNativeIOSApp } from "@/lib/native/authDeepLink";
-import { hasPendingFollow } from "@/lib/social/pendingFollowFlag";
 import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/core/useAuth";
 import OfflineDeviceStoreBridge from "@/components/OfflineDeviceStoreBridge";
@@ -154,7 +153,6 @@ const VerifyCertificate = lazyRetry(() => import("./pages/VerifyCertificate"), "
 const CertificateVerifyByToken = lazyRetry(() => import("./pages/CertificateVerifyByToken"), "CertificateVerifyByToken");
 const Winners = lazyRetry(() => import("./pages/Winners"), "Winners");
 const PremiumMembers = lazyRetry(() => import("./pages/PremiumMembers"), "PremiumMembers");
-const PendingFollowRunner = lazy(() => import("@/components/premium/PendingFollowRunner"));
 const JudgePanel = lazyRetry(() => import(/* webpackChunkName: "judge-panel", vite: { chunkName: "judge-panel" } */ "./pages/JudgePanel"), "JudgePanel");
 const Wallet = lazyRetry(() => import("./pages/Wallet"), "Wallet");
 const PublicProfile = lazyRetry(() => import("./pages/PublicProfile"), "PublicProfile");
@@ -326,12 +324,6 @@ const IndexGate = () => {
   return <Index />;
 };
 
-/** Premium Members 4b: a follow a signed-out visitor asked for is done once after sign-in (the runner loads only then). */
-const PendingFollowGate = () => {
-  const { user } = useAuth();
-  return user && hasPendingFollow() ? <Suspense fallback={null}><PendingFollowRunner userId={user.id} /></Suspense> : null;
-};
-
 const App = () => {
   const [allowSuspenseFallback, setAllowSuspenseFallback] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
@@ -411,7 +403,6 @@ const App = () => {
           <Suspense fallback={null}><PhotoUploadBridge /></Suspense>
           <PushNotificationsGate />
           {isNativeCapacitorApp() && <Suspense fallback={null}><AppLinkGate /></Suspense>}
-          <PendingFollowGate />
           <AdFullscreenProvider>
           <AppErrorBoundary>
           <Suspense fallback={allowSuspenseFallback ? <PageLoader /> : null}>

@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Heart } from "lucide-react";
+import { photoBlurFor, requestPhotoBlurs, usePhotoBlurVersion } from "@/lib/photoBlur";
 import ProfileLink from "@/components/ProfileLink";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -19,8 +21,11 @@ import type { PremiumMember } from "@/hooks/feed/usePremiumMembers";
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
 const VERIFIED = ["verified"];
+/** One-off sizes as inline styles: no new rules in the one shared stylesheet (P13 initial budget). */
+const AVATAR_POS = { bottom: -16 };
 
 interface Props {
+  style?: CSSProperties;
   member: PremiumMember;
   following: boolean;
   /** The viewer is this member: no Follow button on their own card. */
@@ -30,25 +35,57 @@ interface Props {
   className?: string;
 }
 
-export default function PremiumMemberCard({ member: m, following, self = false, busy = false, onFollow, className = "" }: Props) {
+export default function PremiumMemberCard({ member: m, following, self = false, busy = false, onFollow, className = "", style }: Props) {
   const photo = premiumPhotoSrc(m);
   const honoured = honouredLabel(m.honoured_at);
+
+  /*
+   * BLUR → SHARP with the EXISTING ThumbHash codes (lib/photoBlur.ts, as PostMedia):
+   * one batched read per tick for every card on screen, keyed by the stored
+   * photo address; the code is drawn behind, the sharp copy fades in on load.
+   */
+  usePhotoBlurVersion();
+  useEffect(() => {
+    if (m.post_id && m.photo_url) requestPhotoBlurs(m.post_id, [m.photo_url]);
+  }, [m.post_id, m.photo_url]);
+  const blur = photoBlurFor(m.photo_url);
+  const box = useRef<HTMLDivElement | null>(null);
+  const [sharp, setSharp] = useState(false);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const img = el.querySelector("img");
+    if (img?.complete && img.naturalWidth > 0) setSharp(true);
+    // load does not bubble, but a capture listener on the box still hears it
+    const on = () => setSharp(true);
+    el.addEventListener("load", on, true);
+    return () => el.removeEventListener("load", on, true);
+  }, [photo]);
 
   return (
     <article
       data-testid="premium-member-card"
       className={`flex flex-col overflow-hidden rounded-xl bg-card ${className}`}
+      style={style}
     >
       <div className="relative">
         <ProfileLink userId={m.user_id} handle={m.handle} aria-label={`${m.full_name} — profile`} className="block">
-          {photo ? (
-            <OptimizedImage src={photo} alt={`Photograph by ${m.full_name}`} loading="lazy" className="aspect-[4/5] w-full object-cover" />
-          ) : (
-            <div className="aspect-[4/5] w-full bg-muted" aria-hidden="true" />
-          )}
+          <div ref={box} className="relative aspect-[4/5] w-full overflow-hidden bg-muted">
+            {blur && (
+              <span aria-hidden="true" data-testid="premium-blur" className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${blur})` }} />
+            )}
+            {photo && (
+              <OptimizedImage
+                src={photo}
+                alt={`Photograph by ${m.full_name}`}
+                loading="lazy"
+                className={`relative h-full w-full object-cover transition-opacity duration-300 ${sharp ? "opacity-100" : "opacity-0"}`}
+              />
+            )}
+          </div>
         </ProfileLink>
         {/* the shared avatar (PresenceAvatar: photo, else initial); no online dot on this card */}
-        <span className="absolute -bottom-4 left-2.5 rounded-full bg-card p-0.5" aria-hidden="true">
+        <span className="absolute left-2.5 rounded-full bg-card p-0.5" style={AVATAR_POS} aria-hidden="true">
           <PresenceAvatar src={m.avatar_url} name={m.full_name} size={36} showRing={false} showDot={false} />
         </span>
       </div>

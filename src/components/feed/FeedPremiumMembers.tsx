@@ -20,6 +20,10 @@ import { usePremiumMembers } from "@/hooks/feed/usePremiumMembers";
 const CARD_STEP = 220;
 /** Fractional scroll offsets: slack before "there is more this way" turns off. */
 const EDGE_SLACK = 4;
+/** One-off sizes inline: no new rules in the one shared stylesheet (P13 initial budget). */
+const CARD_W = { width: 210 };
+/** Arrow centred on the 4:5 photo (4px rail padding + 262/2). */
+const ARROW_Y = { top: 135 };
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -49,7 +53,7 @@ export default function FeedPremiumMembers() {
 
   if (members.length === 0) return null;
 
-  const arrow = "absolute top-[140px] -translate-y-1/2 flex h-11 w-11 items-center justify-center";
+  const arrow = "absolute -translate-y-1/2 flex h-11 w-11 items-center justify-center";
   const arrowFace = "flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform";
 
   return (
@@ -58,7 +62,7 @@ export default function FeedPremiumMembers() {
       aria-label="Meet our Premium Members"
       data-testid="feed-premium-members"
     >
-      <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
+      <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
         <div className="min-w-0">
           <h2 className="flex items-center gap-1.5 text-[15px] font-bold text-foreground" style={headingFont}>
             <VerifiedBadge className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -89,14 +93,15 @@ export default function FeedPremiumMembers() {
               self={m.user_id === selfId}
               busy={busyId === m.user_id}
               onFollow={follow}
-              className="w-[210px] shrink-0 snap-start"
+              className="shrink-0 snap-start"
+              style={CARD_W}
             />
           ))}
         </div>
         {canLeft && (
           <>
             <div className="pointer-events-none absolute left-0 top-0 bottom-4 w-10 bg-gradient-to-r from-background to-transparent" />
-            <button type="button" onClick={() => nudge(-1)} aria-label="Previous Premium Members" className={`${arrow} left-0`}>
+            <button type="button" onClick={() => nudge(-1)} aria-label="Previous Premium Members" className={`${arrow} left-0`} style={ARROW_Y}>
               <span className={arrowFace}><ChevronLeft className="h-4 w-4" /></span>
             </button>
           </>
@@ -104,7 +109,7 @@ export default function FeedPremiumMembers() {
         {canRight && (
           <>
             <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-10 bg-gradient-to-l from-background to-transparent" />
-            <button type="button" onClick={() => nudge(1)} aria-label="More Premium Members" className={`${arrow} right-0`}>
+            <button type="button" onClick={() => nudge(1)} aria-label="More Premium Members" className={`${arrow} right-0`} style={ARROW_Y}>
               <span className={arrowFace}><ChevronRight className="h-4 w-4" /></span>
             </button>
           </>

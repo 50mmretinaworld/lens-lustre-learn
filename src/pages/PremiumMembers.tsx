@@ -2,7 +2,17 @@ import PageSEO from "@/components/PageSEO";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import PremiumMemberCard from "@/components/premium/PremiumMemberCard";
 import { usePremiumFollow } from "@/components/premium/usePremiumFollow";
+import { useRunPendingFollow } from "@/components/premium/PendingFollowRunner";
 import { usePremiumMembers } from "@/hooks/feed/usePremiumMembers";
+
+/*
+ * ONE PREMIUM CHUNK (P13 first-download ceiling): the feed row and the
+ * after-sign-in follow are re-exported here, and Feed / Dashboard load them
+ * from this module on demand — so all Premium Members code is one chunk and
+ * the first download names one file for it, not four.
+ */
+export { default as FeedPremiumMembers } from "@/components/feed/FeedPremiumMembers";
+export { default as PendingFollowRunner } from "@/components/premium/PendingFollowRunner";
 
 /**
  * /premium-members — THE PREMIUM MEMBERS PAGE (Owner-approved plan, Part 4).
@@ -32,6 +42,7 @@ const FAQ: ReadonlyArray<[string, string]> = [
 export default function PremiumMembers() {
   const { data: members = [], isLoading } = usePremiumMembers();
   const { isFollowing, follow, join, busyId, prompt, selfId, signedIn } = usePremiumFollow(members);
+  useRunPendingFollow();
   const n = members.length;
 
   return (
@@ -40,8 +51,8 @@ export default function PremiumMembers() {
         title="Premium Members"
         description="Each photographer here was chosen by the 50mm Retina World curators for original work and good conduct in our community. Nobody can apply for this tick, and nobody can buy it."
       />
-      <div className="mx-auto w-full max-w-5xl px-4 pb-12 pt-5 md:pt-12">
-        <header className="flex flex-col gap-3 md:max-w-2xl">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-12 pt-5 md:py-20">
+        <header className="flex max-w-2xl flex-col gap-3">
           <p className="flex items-center gap-1.5 text-[13px] font-semibold text-primary" style={headingFont}>
             <VerifiedBadge className="h-5 w-5 shrink-0" aria-hidden="true" />
             Premium Members · Verified Photographers
@@ -64,7 +75,7 @@ export default function PremiumMembers() {
             <button
               type="button"
               onClick={join}
-              className="mt-1 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary px-5 text-[15px] font-semibold text-primary-foreground hover:opacity-90 sm:w-auto sm:self-start"
+              className="mt-1 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary px-5 text-[15px] font-semibold text-primary-foreground hover:opacity-90"
               style={headingFont}
             >
               Join free
@@ -74,7 +85,7 @@ export default function PremiumMembers() {
 
         {isLoading ? (
           <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4" aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-[4/7] animate-pulse rounded-xl bg-muted" />)}
+            {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />)}
           </div>
         ) : n > 0 ? (
           <section aria-label="Premium Members" className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -100,7 +111,7 @@ export default function PremiumMembers() {
           ))}
         </section>
 
-        <section aria-label="Questions" className="mt-10 md:max-w-2xl">
+        <section aria-label="Questions" className="mt-10 max-w-2xl">
           <dl className="flex flex-col divide-y divide-border">
             {FAQ.map(([q, a]) => (
               <div key={q} className="py-4">

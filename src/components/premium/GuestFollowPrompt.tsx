@@ -23,6 +23,8 @@ import type { PremiumMember } from "@/hooks/feed/usePremiumMembers";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
+/** Inline, not a new stylesheet rule (P13 initial budget): clear of the phone's home bar. */
+const SHEET_PAD = { paddingBottom: "calc(1.5rem + var(--safe-bottom, 0px))" };
 const primaryBtn =
   "inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary px-4 text-[15px] font-semibold text-primary-foreground hover:opacity-90";
 const secondaryBtn =
@@ -87,7 +89,8 @@ export default function GuestFollowPrompt({ member, onClose, ua, touchPoints }: 
       <SheetContent
         side="bottom"
         data-testid="guest-follow-sheet"
-        className="flex flex-col gap-4 rounded-t-2xl px-4 pt-5 pb-[calc(1.5rem+var(--safe-bottom,0px))]"
+        className="flex flex-col gap-4 rounded-t-2xl px-4 pt-5"
+        style={SHEET_PAD}
       >
         <Header member={member} Title={SheetTitle} Description={SheetDescription} />
         <div className="flex flex-col gap-2">

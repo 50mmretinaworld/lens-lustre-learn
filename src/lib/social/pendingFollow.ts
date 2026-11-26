@@ -3,16 +3,14 @@
  * "After joining, the follow they asked for is done automatically."
  *
  * Kept on this device only, one at a time (the latest tap wins), and done ONCE
- * after sign-in by PendingFollowRunner, which then clears it. Every storage
+ * after sign-in by useRunPendingFollow, which then clears it. Every storage
  * call is guarded: a private window or blocked storage simply means no
  * remembered follow, never an error.
  *
- * The start-up gate in App.tsx (first download) reads only pendingFollowFlag.ts;
- * this file loads on demand.
+ * Nothing here is in the first download (P13): the screens a member lands on
+ * after signing in (Feed, Dashboard, this page) run it, all loaded on demand.
  */
-import { PENDING_FOLLOW_KEY } from "@/lib/social/pendingFollowFlag";
-
-export { PENDING_FOLLOW_KEY, hasPendingFollow } from "@/lib/social/pendingFollowFlag";
+export const PENDING_FOLLOW_KEY = "50mm.pendingFollow";
 
 export interface PendingFollow {
   id: string;
