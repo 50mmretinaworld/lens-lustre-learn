@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import MutualFriends from "@/components/MutualFriends";
 import { toast } from "@/hooks/core/use-toast";
 import WallPosts from "@/components/WallPosts";
+import ShareHonourButton from "@/components/premium/ShareHonourButton";
 import PhotoAlbums from "@/components/profile/PhotoAlbums";
 import { useAuth } from "@/hooks/core/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
@@ -745,6 +746,9 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
                       Edit Profile
                     </Link>
                   )}
+                  {isOwner && !isGuest && (
+                    <ShareHonourButton userId={userId!} name={displayName} handle={handle || null} isOwner />
+                  )}
                   {isGuest && (
                     <Link
                       to="/signup"
@@ -984,6 +988,12 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
                     Follow
                   </Link>
                 )}
+              </div>
+            )}
+            {/* Premium Members Part 5: draws nothing unless this is a Verified member's own profile. */}
+            {isOwner && !isGuest && (
+              <div className="mt-2 flex">
+                <ShareHonourButton userId={userId!} name={displayName} handle={handle || null} isOwner className="flex-1" />
               </div>
             )}
           </div>

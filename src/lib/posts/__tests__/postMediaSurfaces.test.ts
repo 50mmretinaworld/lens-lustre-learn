@@ -69,6 +69,7 @@ const SURFACES: Record<string, { what: string; must: RegExp[] }> = {
 const NOT_DRAWING_POST_MEDIA: Record<string, string> = {
   "src/pages/MyPhotos.tsx": "photographs-only page by design: its uploads query keeps only rows with image_url (.not(\"image_url\", \"is\", null)), so a video post is never drawn as an empty tile",
   "src/lib/profile/taggedPhotos.ts": "MyPhotos' Tagged tab query (moved here, S11): keeps only rows with image_url (.not(\"image_url\", \"is\", null)) and drops any without one, so a video post is never drawn as an empty tile",
+  "src/lib/premium/honourImage.ts": "Share my honour reads one photo address to paint on a canvas; a row with no photo (a video post) falls back to the get_premium_members card photo, so nothing is drawn empty",
 };
 
 /** A read of the posts table whose select names a media column (or every column). */
