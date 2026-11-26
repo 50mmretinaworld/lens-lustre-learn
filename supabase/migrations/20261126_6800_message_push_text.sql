@@ -47,6 +47,7 @@ DECLARE
   _name   text;
   _push   boolean;
   _line   text;
+  _photo  text;                                                           -- sender's picture; none for the brand
 BEGIN
   IF NEW.status <> 'sent' THEN RETURN NEW; END IF;
   IF TG_OP = 'UPDATE' AND OLD.status <> 'held' THEN RETURN NEW; END IF;
@@ -59,7 +60,8 @@ BEGIN
     IF public.has_role(NEW.sender_id, 'admin'::public.app_role) THEN
       _name := '50mm Retina World';                                       -- an admin always shows as the brand
     ELSE
-      SELECT coalesce(nullif(btrim(p.full_name), ''), 'Someone') INTO _name FROM public.profiles p WHERE p.id = NEW.sender_id;
+      SELECT coalesce(nullif(btrim(p.full_name), ''), 'Someone'), nullif(btrim(p.avatar_url), '')
+        INTO _name, _photo FROM public.profiles p WHERE p.id = NEW.sender_id;
       _name := coalesce(_name, 'Someone');
     END IF;
     _line := 'sent you a message';
@@ -87,7 +89,8 @@ BEGIN
           'user_id', _r.user_id,
           'title', _name,
           'body', CASE WHEN _r.folder = 'requests' THEN 'sent you a message request' ELSE _line END,
-          'data', jsonb_build_object('type', 'new_message', 'reference_id', NEW.conversation_id::text)),
+          'data', jsonb_strip_nulls(jsonb_build_object('type', 'new_message', 'reference_id', NEW.conversation_id::text,
+                                                       'sender_photo', _photo))),
         'message:' || NEW.id::text || ':' || _r.user_id::text));
     END LOOP;
   EXCEPTION WHEN OTHERS THEN

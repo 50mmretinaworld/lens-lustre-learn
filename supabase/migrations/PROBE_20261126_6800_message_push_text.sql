@@ -34,6 +34,11 @@ BEGIN
   INSERT INTO public.messages (conversation_id, sender_id, body, client_msg_id) VALUES (_c, _m1, E'  Hello\n\nthere  ', gen_random_uuid()) RETURNING id INTO _msg;
   SELECT j.payload INTO _p FROM public.jobs j WHERE j.kind = 'push.send' AND j.idempotency_key = 'message:' || _msg || ':' || _m2;
   IF _p ->> 'body' IS DISTINCT FROM 'Hello there' THEN _fail := _fail || 'text not shown on one line'; END IF;
+  IF _p #>> '{data,sender_photo}' IS DISTINCT FROM
+     (SELECT nullif(btrim(p.avatar_url), '') FROM public.profiles p WHERE p.id = _m1
+         AND NOT public.has_role(_m1, 'admin'::public.app_role)) THEN
+    _fail := _fail || 'sender photo missing or wrong';
+  END IF;
 
   INSERT INTO public.messages (conversation_id, sender_id, body, client_msg_id) VALUES (_c, _m1, repeat('a', 500), gen_random_uuid()) RETURNING id INTO _msg;
   SELECT j.payload INTO _p FROM public.jobs j WHERE j.kind = 'push.send' AND j.idempotency_key = 'message:' || _msg || ':' || _m2;
