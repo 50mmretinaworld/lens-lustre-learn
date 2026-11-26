@@ -53,7 +53,8 @@ CREATE TABLE public.featured_photos (
 );
 COMMENT ON TABLE public.featured_photos IS
   'Premium Members (20261126_6000): the one photo post a Verified member chose as Featured. Written only by set_featured_post().';
-CREATE INDEX featured_photos_post_id_idx ON public.featured_photos (post_id);
+-- No index on post_id on purpose: at most one row per Premium Member (tens of rows), so the cascade check on a post
+-- delete reads the whole table in microseconds; an index would cost more than it saves (P28).
 
 ALTER TABLE public.featured_photos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can view featured photos" ON public.featured_photos FOR SELECT USING (true);
