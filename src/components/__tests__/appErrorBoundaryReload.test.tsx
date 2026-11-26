@@ -15,7 +15,7 @@ vi.mock("@/lib/reportClientError", () => ({ reportClientError: report }));
 
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 
-const Boom = (): JSX.Element => {
+const Boom = (): never => {
   throw new TypeError("Cannot read properties of undefined (reading 'default')");
 };
 
