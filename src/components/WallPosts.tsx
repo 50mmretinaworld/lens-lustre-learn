@@ -53,6 +53,8 @@ import InfiniteScrollSentinel from "@/components/InfiniteScrollSentinel";
 import { useUserPostsQuery, flattenUserPosts } from "@/hooks/feed/useUserPostsQuery";
 import { useBlockedUsers } from "@/hooks/core/useBlockedUsers";
 import ProfilePostGrid from "@/components/profile/ProfilePostGrid";
+import { useWallFeaturedPost } from "@/hooks/profile/useFeaturedPost";
+import { featuredFirst } from "@/lib/premium/featuredRead";
 import WallViewToggle, { type WallView } from "@/components/profile/WallViewToggle";
 import { useFeedRealtime } from "@/hooks/feed/useRealtimeFeed";
 import { reportClientError, memberFacingMessage, memberFacingFailure, describeThrown } from "@/lib/reportClientError";
@@ -142,6 +144,16 @@ const WallPosts = ({ targetUserId, isOwnWall, composerOnly }: WallPostsProps) =>
     const all = flattenUserPosts(data?.pages);
     return blockedIds.size === 0 ? all : all.filter((p) => !blockedIds.has(p.user_id));
   }, [data?.pages, blockedIds]);
+
+  /**
+   * Premium Members Part 2: a Premium Member's Featured photo ALWAYS opens the
+   * grid, for every viewer, until they unmark it — fetched on its own when it is
+   * not on the pages loaded so far. No Featured photo (or SQL 6000 not here):
+   * the grid is exactly as before.
+   */
+  const { data: featured } = useWallFeaturedPost(targetUserId, user?.id);
+  const featuredPostId = featured?.id ?? null; // always the member's own post (set_featured_post checks)
+  const gridPosts = useMemo(() => featuredFirst(posts, featuredPostId, featured), [posts, featuredPostId, featured]);
 
   /**
    * Grid or feed. GRID IS THE DEFAULT because every one of the 210 posts on
@@ -2560,7 +2572,7 @@ const WallPosts = ({ targetUserId, isOwnWall, composerOnly }: WallPostsProps) =>
               <WallViewToggle value={wallView} onChange={setWallView} className="mb-1" />
 
               {wallView === "grid" ? (
-                <ProfilePostGrid posts={posts} />
+                <ProfilePostGrid posts={gridPosts} featuredPostId={featuredPostId} />
               ) : (
               <AnimatePresence mode="popLayout">
                 {posts.map((post, i) => (

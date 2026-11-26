@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import PendingMark from "@/components/offline/PendingMark";
+import { canOfferFeatured } from "@/lib/premium/featuredRead";
 import { submit } from "@/lib/offline/outbox";
 import ProfileLink from "@/components/ProfileLink";
 import { copyAddress, shareAddress, sharePostToWall } from "@/lib/share/shareActions";
@@ -48,6 +49,9 @@ import { photoSetMarker } from "@/lib/imageLadder";
 import { useOldPhotoCreditRead } from "@/lib/photoOldCredit";
 import { useFeedCopiesRead } from "@/lib/photoFeedCopies";
 import { usePhotoBlursRead } from "@/lib/photoBlur";
+
+// Premium Members Part 2: loaded only when an owner opens the ⋯ menu of their own public photo.
+const FeaturedPhotoMenuItem = lazy(() => import("@/components/premium/FeaturedPhotoMenuItem"));
 
 const displayFont = { fontFamily: "var(--font-display)" };
 const headingFont = { fontFamily: "var(--font-heading)" };
@@ -533,6 +537,11 @@ const PostCard = ({
             <DropdownMenuContent align="end" className="min-w-[200px]">
               {currentUserId === post.user_id ? (
                 <>
+                  {canOfferFeatured(post, currentUserId, !!media.video) && (
+                    <Suspense fallback={null}>
+                      <FeaturedPhotoMenuItem userId={currentUserId} postId={post.id} />
+                    </Suspense>
+                  )}
                   <DropdownMenuItem
                     onClick={() => { setEditDraft(post.content || ""); setIsEditing(true); }}
                     className="py-2.5"
