@@ -129,7 +129,7 @@ describe("App Store review compliance — final iOS round", () => {
 
   it("push — send-push skips iOS devices for money notification types", () => {
     const fn = read("supabase/functions/send-push/index.ts");
-    expect(fn).toMatch(/select\("token, platform"\)/);
+    expect(fn).toMatch(/select\("token, platform, caps"\)/);
     expect(fn).toMatch(/!\(walletType && t\.platform === "ios"\)/);
     // The server's list and the app's list are the same rule.
     const re = /\/\^\(deposit_\|withdrawal_\|gift_\|referral_\|wallet_\)\|\^vote_reward\$\//;
