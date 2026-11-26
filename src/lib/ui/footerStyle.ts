@@ -56,9 +56,9 @@ export const footerClasses = (floating: boolean, compact: boolean) => ({
   nav: floating
     ? `fixed z-50 bg-card/70 backdrop-blur-2xl backdrop-saturate-150 border border-border/50 shadow-[0_8px_30px_rgba(0,0,0,0.45)] lg:hidden transition-all duration-300 bottom-[max(8px,calc(var(--safe-bottom)-14px))] ${compact ? "left-12 right-12 rounded-[12px]" : "left-3 right-3 rounded-[14px]"}`
     : "fixed bottom-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl backdrop-saturate-150 border-t border-border/25 lg:hidden safe-area-bottom",
-  row: `flex items-center justify-around px-1 relative ${
-    floating ? `transition-all duration-300 ${compact ? "h-[36px] [&_svg]:h-[18px] [&_svg]:w-[18px]" : "h-[44px] [&_svg]:h-[22px] [&_svg]:w-[22px]"}` : "h-12"
-  }`,
+  row: floating
+    ? `flex items-center justify-around px-1 relative transition-all duration-300 ${compact ? "h-[36px] [&_svg]:h-[18px] [&_svg]:w-[18px]" : "h-[44px] [&_svg]:h-[22px] [&_svg]:w-[22px]"}`
+    : "flex items-center justify-around h-12 px-1 relative",
   homeLink: `flex flex-col items-center flex-1 relative group ${
     floating ? `self-end mb-1 justify-end transition-all duration-300 ${compact ? "-mt-5" : "-mt-6"}` : "justify-end -mt-4"
   }`,
