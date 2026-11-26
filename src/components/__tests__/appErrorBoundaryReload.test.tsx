@@ -7,8 +7,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 let pending = false;
-const fatal = vi.fn();
-const report = vi.fn();
+// vi.mock is hoisted above plain consts, so the spies must be hoisted too.
+const { fatal, report } = vi.hoisted(() => ({ fatal: vi.fn(), report: vi.fn() }));
 vi.mock("@/lib/staleChunkReload", () => ({ isStaleReloadPending: () => pending }));
 vi.mock("@/lib/logger", () => ({ logger: { fatal } }));
 vi.mock("@/lib/reportClientError", () => ({ reportClientError: report }));
