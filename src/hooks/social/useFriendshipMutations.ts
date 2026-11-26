@@ -136,10 +136,11 @@ export function useToggleFollow() {
     // S7b-5: follow / unfollow go through the OFF-2 outbox. With no network the
     // action is kept on the phone, shown at once (marked "Will send when
     // online") and sent once when the network is back — never "Failed".
-    mutationFn: async ({ targetUserId, isCurrentlyFollowing }: { targetUserId: string; isCurrentlyFollowing: boolean }) => {
+    // successTitle: a caller's own words for a sent follow (Premium Members: "You're now following {name}").
+    mutationFn: async ({ targetUserId, isCurrentlyFollowing, successTitle }: { targetUserId: string; isCurrentlyFollowing: boolean; successTitle?: string }) => {
       if (!user) throw new Error("Not authenticated");
       const r = await submit(user.id, { kind: isCurrentlyFollowing ? "unfollow" : "follow", targetId: targetUserId });
-      return { followed: !isCurrentlyFollowing, queued: r.status === "queued", targetUserId };
+      return { followed: !isCurrentlyFollowing, queued: r.status === "queued", targetUserId, successTitle };
     },
     networkMode: "always",
     onSuccess: (result) => {
@@ -154,7 +155,7 @@ export function useToggleFollow() {
         toast({ title: result.followed ? `Following — ${later}` : `Unfollowed — ${later}` });
         return;
       }
-      toast({ title: result.followed ? "Following!" : "Unfollowed" });
+      toast({ title: result.followed ? result.successTitle ?? "Following!" : "Unfollowed" });
       qc.invalidateQueries({ queryKey: queryKeys.follows(), exact: false });
     },
     onError: (err: Error) => {
