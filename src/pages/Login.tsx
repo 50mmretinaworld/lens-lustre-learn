@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useSiteLogo } from "@/hooks/core/useSiteLogo";
 import { useT } from "@/i18n/I18nContext";
-import { ArrowLeft, Loader2, Mail, ShieldCheck, ShieldX, Timer } from "lucide-react";
+import { Loader2, Mail, ShieldCheck, ShieldX, Timer } from "lucide-react";
 import PasswordEyeToggle from "@/components/auth/PasswordEyeToggle";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -291,18 +291,13 @@ const Login = () => {
           top is never cut off (justify-center + overflow-hidden used to hide the logo, the fields
           and the checkbox with no way to scroll to them: Owner 23 Nov 2026, iPhone sign-in/sign-up). */}
       <div className="w-full lg:w-1/2 flex flex-col items-center px-6 md:px-12 lg:px-16 py-3 overflow-y-auto overscroll-contain before:content-[''] before:flex-1 after:content-[''] after:flex-1">
-        {/* min-h-11 = 44px; reported at 45x17. This is the ONLY way back out of
-            the sign-in screen, so it is the last control that should be hard
-            to hit. `-mt-3` takes the added height off the top, keeping the gap
-            above the card unchanged, and `self-start` already keeps the target
-            the width of the words. */}
-        <Link to="/" className="self-start inline-flex min-h-11 -mt-3 items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors mb-3" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Back
-        </Link>
-
         <div className="flex flex-col items-center text-center mb-3">
+          {/* The logo is the way home: the "← Back" link was removed (Owner 26 Nov 2026, all three platforms).
+              The iPhone app has no back gesture, so without this a member could not leave this screen. */}
           {cfg.show_logo && (
-            <img loading="eager" decoding="async" fetchPriority="high" src={siteLogo} alt="50mm Retina World" style={{ height: 128, width: 128 }} className="object-contain mb-2" />
+            <Link to="/" aria-label="50mm Retina World home" className="mb-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <img loading="eager" decoding="async" fetchPriority="high" src={siteLogo} alt="50mm Retina World" style={{ height: 128, width: 128 }} className="object-contain" />
+            </Link>
           )}
           <h1 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
             {cfg.heading} <em className="italic text-primary">{cfg.heading_accent}</em>

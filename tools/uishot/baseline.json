@@ -14581,13 +14581,6 @@
   ],
   "screen-login--android-360": [
     {
-      "path": "a.self-start.inline-flex",
-      "w": 45,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
-    {
       "path": "button.w-full.bg-foreground",
       "w": 312,
       "h": 44,
@@ -14617,13 +14610,6 @@
     }
   ],
   "screen-login--iphone-390": [
-    {
-      "path": "a.self-start.inline-flex",
-      "w": 45,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
     {
       "path": "button.w-full.bg-foreground",
       "w": 342,
@@ -14655,13 +14641,6 @@
   ],
   "screen-login--desktop-1280": [
     {
-      "path": "a.self-start.inline-flex",
-      "w": 45,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
-    {
       "path": "button.w-full.bg-foreground",
       "w": 384,
       "h": 44,
@@ -14691,13 +14670,6 @@
     }
   ],
   "screen-login--app-360": [
-    {
-      "path": "a.self-start.inline-flex",
-      "w": 45,
-      "h": 44,
-      "reachable": true,
-      "options": null
-    },
     {
       "path": "button.w-full.bg-foreground",
       "w": 312,
