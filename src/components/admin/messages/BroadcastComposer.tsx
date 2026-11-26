@@ -215,7 +215,7 @@ export default function BroadcastComposer({ onBack, onSent }: { onBack: () => vo
 
           <section className="space-y-3 rounded-xl border border-border bg-card p-3" aria-label="Delivery">
             <label className="flex items-center justify-between gap-3 text-sm" htmlFor="bc-push">
-              <span><b>Push notification</b><span className="block text-xs text-muted-foreground">Each member's phone shows "50mm Retina World · sent you a message" — never the text.</span></span>
+              <span><b>Push notification</b><span className="block text-xs text-muted-foreground">Each member's phone shows "50mm Retina World" and the start of the message.</span></span>
               <Switch id="bc-push" checked={push} onCheckedChange={setPush} />
             </label>
             <label className="flex items-center justify-between gap-3 text-sm" htmlFor="bc-announce">
