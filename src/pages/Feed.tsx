@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { Fragment, Suspense, lazy, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useScreenReady } from "@/lib/screenTiming";
 import { feedPreviewUrl, preloadImage } from "@/components/post/PostMedia";
 import { usePhotoTier } from "@/lib/net/photoTier";
@@ -55,6 +55,12 @@ import type { UnifiedPost } from "@/types/post";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
+
+// Premium Members (26 Nov 2026): on demand, all from the ONE premium chunk (the page module re-exports
+// them), so the first download carries one chunk name, not four (P13).
+const FeedPremiumMembers = lazy(() => import("@/pages/PremiumMembers").then((m) => ({ default: m.FeedPremiumMembers })));
+// 4b: a follow asked for before signing in is done once here (Login lands on /feed).
+const PendingFollowRunner = lazy(() => import("@/pages/PremiumMembers").then((m) => ({ default: m.PendingFollowRunner })));
 
 const Feed = () => {
   const { user, loading: authLoading } = useAuth();
@@ -422,6 +428,7 @@ const Feed = () => {
 
   return (
     <PullToRefresh onRefresh={async () => { await refetch(); }}>
+    <Suspense fallback={null}><PendingFollowRunner /></Suspense>
     <div className="pb-3 md:py-14">
       <div className="min-w-0">
         {/* Stage D — the category strip.
@@ -700,6 +707,9 @@ const Feed = () => {
                       <TrendingWeekCard variant="feed" data={trendingQ.data ?? null} loading={false} />
                     </div>
                   )}
+
+                  {/* Owner 26 Nov 2026 (Premium Members, approved plan Parts 3 + 7): directly below Trending, at EVERY width — phone, app and the computer's centre column. Nothing when the list is empty. */}
+                  {i === FEED_INSERTS.trending && <Suspense fallback={null}><FeedPremiumMembers /></Suspense>}
 
                   {(() => {
                     // Picture #N in the Story Card library owns a fixed place:

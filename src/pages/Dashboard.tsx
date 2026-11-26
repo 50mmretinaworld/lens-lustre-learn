@@ -15,7 +15,7 @@ import UserNextStepPanel from "@/components/UserNextStepPanel";
 import JudgingStampBadge from "@/components/JudgingStampBadge";
 import PhaseWatermark from "@/components/competition/PhaseWatermark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { Suspense, lazy, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/core/useAuth";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,6 +77,9 @@ const TABS: { key: TabKey; labelKey: string; icon: React.ElementType; }[] = [
 ];
 
 /* ================================================================ */
+// Premium Members 4b: a follow asked for before joining is done once here (Sign-up lands on /dashboard). On demand (P13).
+const PendingFollowRunner = lazy(() => import("@/pages/PremiumMembers").then((m) => ({ default: m.PendingFollowRunner })));
+
 const Dashboard = () => {
   const t = useT();
   const { user, loading: authLoading } = useAuth();
@@ -234,6 +237,7 @@ const Dashboard = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      <Suspense fallback={null}><PendingFollowRunner /></Suspense>
       <div className="container mx-auto py-3 md:py-10 max-w-6xl">
 {/* ═══════ Profile Header Bar ═══════ */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0}

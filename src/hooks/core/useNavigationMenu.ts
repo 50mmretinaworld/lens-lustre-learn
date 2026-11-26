@@ -34,6 +34,7 @@ export const SYSTEM_PAGES: Omit<MenuItem, "id" | "sort_order">[] = [
   { label: "Journal", path: "/journal", icon: "Newspaper", description: "Photography journal & articles", type: "system", parent_id: null, visibility: "all", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: true, open_new_tab: false },
   { label: "Courses", path: "/courses", icon: "BookOpen", description: "Learn photography skills", type: "system", parent_id: null, visibility: "all", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: true, open_new_tab: false },
   { label: "Winners", path: "/winners", icon: "Award", description: "Competition winners showcase", type: "system", parent_id: null, visibility: "all", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: true, open_new_tab: false },
+  { label: "Premium Members", path: "/premium-members", icon: "Star", description: "Honoured members", type: "system", parent_id: null, visibility: "all", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: true, open_new_tab: false },
   { label: "Certificates", path: "/certificates", icon: "FileCheck", description: "Verify & view certificates", type: "system", parent_id: null, visibility: "all", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: false, open_new_tab: false },
   { label: "Discover", path: "/discover", icon: "Compass", description: "Discover photographers & portfolios", type: "system", parent_id: null, visibility: "all", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: false, open_new_tab: false },
   { label: "Feed", path: "/feed", icon: "Rss", description: "Community news feed", type: "system", parent_id: null, visibility: "authenticated", meta_title: "", meta_description: "", og_image: "", noindex: false, show_in_nav: false, open_new_tab: false },
@@ -69,6 +70,25 @@ export function buildMenuTree(items: MenuItem[]): MenuTree[] {
   return roots;
 }
 
+/**
+ * A system page added to the code AFTER the admin saved the menu (Premium
+ * Members, 26 Nov 2026) is appended to the saved menu, so it shows without an
+ * admin re-saving. System pages cannot be deleted in the menu builder, so a
+ * missing one was never there — never one the admin removed. The admin can
+ * still hide or move it; once saved it is in the stored menu like the rest.
+ */
+export function withNewSystemPages(saved: MenuItem[]): MenuItem[] {
+  if (!Array.isArray(saved) || saved.length === 0) return saved;
+  const have = new Set(saved.map((i) => i.path));
+  const top = saved.reduce((m, i) => Math.max(m, i.sort_order ?? 0), 0);
+  const added = SYSTEM_PAGES.filter((sp) => !have.has(sp.path)).map((sp, k) => ({
+    ...sp,
+    id: `system:${sp.path}`,
+    sort_order: top + 1 + k,
+  }));
+  return added.length ? [...saved, ...added] : saved;
+}
+
 async function fetchMenuItems(): Promise<MenuItem[]> {
   // N3 · the ONE settings reader (edge copy first, batched): no separate round trip to the database.
   const value = await getSiteSetting("navigation_menu");
@@ -98,6 +118,8 @@ export function useNavigationMenu() {
       if (seeded && seeded.length > 0) return seeded;
       return fetchMenuItems();
     },
+    // however the menu arrived (this read, dashboard-init's seed, the admin live sync)
+    select: withNewSystemPages,
     staleTime: 5 * 60_000,
   });
 

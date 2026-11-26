@@ -26,6 +26,8 @@ import { SITE_APEX_HOST, SITE_HOST } from "@/lib/env";
 
 export const APP_PACKAGE = "com.fiftymmretina.app";
 export const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${APP_PACKAGE}`;
+/** The iPhone / iPad app's App Store page (Premium Members "Join via App", Owner 26 Nov 2026). */
+export const APP_STORE_URL = "https://apps.apple.com/app/id6809751061";
 
 /** Hosts whose links the app opens: this lane's site host (the one Android
  *  verifies) and its apex. From env.ts — no host literal in src/, so a staging
@@ -123,4 +125,20 @@ export function appOfferForThisDevice(
   // iPadOS Safari says "Macintosh" — a Mac with a touch screen is an iPad.
   if (/Macintosh/i.test(ua) && touchPoints > 1) return null;
   return "desktop";
+}
+
+/**
+ * "Join via App" on a phone / tablet browser (Premium Members, Part 4b):
+ *   Android → the intent link: the installed app opens `path`, else the Play Store.
+ *   iPhone / iPad (iPadOS Safari says "Macintosh" + touch) → the App Store page.
+ *   anything else → null (no app button; "Continue on website" still works).
+ */
+export function joinViaAppUrl(
+  path: string,
+  ua: string = typeof navigator !== "undefined" ? navigator.userAgent : "",
+  touchPoints: number = typeof navigator !== "undefined" ? navigator.maxTouchPoints ?? 0 : 0,
+): string | null {
+  if (/Android/i.test(ua)) return androidAppIntentUrl(path);
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1)) return APP_STORE_URL;
+  return null;
 }
