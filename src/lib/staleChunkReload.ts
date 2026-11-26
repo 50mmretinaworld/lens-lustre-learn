@@ -78,6 +78,17 @@ export function isStaleChunkError(reason: unknown): boolean {
   );
 }
 
+let reloading = false;
+
+/**
+ * True once a reload for a missing chunk is under way. The cancelled import then
+ * resolves to nothing and React throws "reading 'default'" on the page that is
+ * about to be replaced: not a crash to record or show (Error Log SYS-9002, 26 Nov).
+ */
+export function isStaleReloadPending(): boolean {
+  return reloading;
+}
+
 /** Reload once, and only once, per tab per cooldown window. True when a reload was started. */
 function reloadOnce(): boolean {
   try {
@@ -94,6 +105,7 @@ function reloadOnce(): boolean {
     // own reload button beats a reload loop they cannot escape.
     return false;
   }
+  reloading = true;
   window.location.reload();
   return true;
 }

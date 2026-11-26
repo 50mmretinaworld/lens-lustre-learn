@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportClientError } from "@/lib/reportClientError";
 import { logger } from "@/lib/logger";
+import { isStaleReloadPending } from "@/lib/staleChunkReload";
 
 const FILE = "src/components/AppErrorBoundary.tsx";
 
@@ -25,6 +26,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: bo
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    if (isStaleReloadPending()) return;
     // BOTH sinks on purpose, and they are not duplicates.
     //
     // reportClientError() is the older path that feeds Admin → Health →
@@ -60,6 +62,8 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: bo
 
   render() {
     if (!this.state.hasError) return this.props.children;
+    // The page is already reloading itself (a new version went live): wait quietly.
+    if (isStaleReloadPending()) return null;
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
