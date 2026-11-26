@@ -1,4 +1,4 @@
--- ROLLBACK · 20261126_6600. Puts the two member INSERT policies back exactly as they were (live snapshot 17 Oct).
+-- ROLLBACK · 20261126_6600. Gives members back the two ways in: own 'registered_photographer' role, own application.
 BEGIN;
 
 DO $lane_guard$
@@ -12,13 +12,12 @@ $lane_guard$;
 
 SET LOCAL lock_timeout = '5s';
 
-DROP POLICY IF EXISTS "Users can self-assign photographer role" ON public.user_roles;
-CREATE POLICY "Users can self-assign photographer role"
-  ON public.user_roles FOR INSERT TO authenticated
-  WITH CHECK (user_id = (SELECT auth.uid()) AND role::text = 'registered_photographer');
+ALTER POLICY x1_merged_insert ON public.user_roles
+  WITH CHECK (public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+              OR (user_id = (SELECT auth.uid()) AND role::text = 'registered_photographer'));
 
-DROP POLICY IF EXISTS "Users can create applications" ON public.role_applications;
-CREATE POLICY "Users can create applications"
+DROP POLICY IF EXISTS x1_merged_insert ON public.role_applications;
+CREATE POLICY x1_merged_insert
   ON public.role_applications FOR INSERT TO authenticated
   WITH CHECK (user_id = (SELECT auth.uid()));
 
