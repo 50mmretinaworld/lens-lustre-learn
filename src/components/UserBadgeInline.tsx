@@ -1,5 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import VerifiedTick from "@/components/VerifiedTick";
 import { useBadgeDefinitions } from "@/hooks/profile/useBadgeDefinitions";
 import { solidPillClass, BADGE_ICON_SIZE, BADGE_ROW_SHRINK } from "@/lib/badgePalette";
 
@@ -18,10 +18,17 @@ interface Props {
    * Default "all" — every existing caller keeps today's single-row behaviour.
    */
   only?: "all" | "verified" | "pills";
+  /**
+   * Whose badges these are. With it, the blue tick opens the Verified
+   * Photographer card (VerifiedTick) naming this member; without it the tick
+   * is drawn plain. Every name-rendering caller passes it.
+   */
+  userId?: string | null;
+  /** The member's name, when the caller has it — saves the card a lookup. */
+  name?: string | null;
 }
 
 const BADGE_DESCRIPTIONS: Record<string, string> = {
-  verified: "Verified Profile — Authenticated identity",
   top_rated: "Top Rated — Recognized for exceptional quality",
   most_popular: "Most Popular — Loved by the community",
   most_trusted: "Most Trusted — A reliable community member",
@@ -33,7 +40,7 @@ const getBadgeDescription = (key: string, label: string, icon: string) => {
   return `${icon} ${label} — Awarded by 50mm Retina`;
 };
 
-const UserBadgeInline = ({ badges, size = "compact", only = "all" }: Props) => {
+const UserBadgeInline = ({ badges, size = "compact", only = "all", userId, name }: Props) => {
   const defs = useBadgeDefinitions();
 
   if (!badges || badges.length === 0) return null;
@@ -53,18 +60,7 @@ const UserBadgeInline = ({ badges, size = "compact", only = "all" }: Props) => {
 
   return (
     <span className={`inline-flex items-center gap-1 align-middle ${BADGE_ROW_SHRINK}`}>
-      {isVerified && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex shrink-0 cursor-default">
-              <VerifiedBadge className={tickSize} />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs font-medium px-3 py-2 max-w-[220px]">
-            ✓ Verified Profile — Authenticated identity
-          </TooltipContent>
-        </Tooltip>
-      )}
+      {isVerified && <VerifiedTick userId={userId} name={name} className={tickSize} />}
       {otherBadges.map((b) => {
         const cfg = defs.get(b);
         if (!cfg) return null;

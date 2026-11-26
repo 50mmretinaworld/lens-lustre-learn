@@ -74,7 +74,7 @@ import type { TaggedPerson } from "@/types/post";
  */
 const TagBadge = ({ person }: { person: TaggedPerson }) =>
   person.badges
-    ? <UserBadgeInline badges={person.badges} size="compact" only="verified" />
+    ? <UserBadgeInline badges={person.badges} size="compact" only="verified" userId={person.id} name={person.name} />
     : <AutoBadge userId={person.id} size="compact" only="verified" />;
 
 interface Props {

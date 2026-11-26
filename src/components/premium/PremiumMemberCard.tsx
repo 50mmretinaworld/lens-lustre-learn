@@ -101,7 +101,7 @@ export default function PremiumMemberCard({ member: m, following, self = false, 
             {m.full_name}
           </ProfileLink>
           <span className="shrink-0">
-            <UserBadgeInline badges={VERIFIED} only="verified" />
+            <UserBadgeInline badges={VERIFIED} only="verified" userId={m.user_id} name={m.full_name} />
           </span>
         </div>
         {m.line && (

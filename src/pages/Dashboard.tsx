@@ -276,7 +276,7 @@ const Dashboard = () => {
                 * "missing" is nobody having decided.
                 */}
               <h1 className="text-lg md:text-xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }} data-unlinked="deliberate">{displayName}</h1>
-              {userBadges.length > 0 && <UserBadgeInline badges={userBadges} size="full" />}
+              {userBadges.length > 0 && <UserBadgeInline badges={userBadges} size="full" userId={user?.id} name={profile?.full_name ?? null} />}
               <TooltipProvider>
                 {hasRole("admin") && (
                   <Tooltip><TooltipTrigger><span className="text-[8px] tracking-[0.2em] uppercase px-2 py-0.5 bg-primary text-primary-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>{t("msheet.admin")}</span></TooltipTrigger><TooltipContent>Since {getRoleDate("admin")}</TooltipContent></Tooltip>

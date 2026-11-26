@@ -214,7 +214,7 @@ const UserIdentityBlock = ({
   const badgeEl = (only: "all" | "verified" | "pills") => (
     <SafeRender>
       {badges ? (
-        <UserBadgeInline badges={badges} size={size} only={only} />
+        <UserBadgeInline badges={badges} size={size} only={only} userId={userId} name={known} />
       ) : (
         <AutoBadge userId={userId} size={size} only={only} />
       )}
