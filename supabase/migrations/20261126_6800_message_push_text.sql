@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- 20261126_6600 · Message notification shows the message. Lanes: staging, production.
+-- 20261126_6800 · Message notification shows the message. Lanes: staging, production.
 -- Owner 26 Nov 2026: "showing photo like instagram and msg when msg comes".
 --   title = sender name (an admin shows as the brand, unchanged)
 --   body  = the first 160 characters of the message · a photo without words: "sent a photo"
@@ -7,8 +7,8 @@
 --   DB switch system_flags.message_push_text: false → the old line "sent you a message" (no new build either way).
 -- The text then sits in the push job's payload until the job engine's own clean-up (done 14 days, failed 90).
 -- Admin job lists never return payloads. Replaces only public.messages_push() (as of 20261118_2300).
--- Rollback: supabase/rollback/20261126_6600_message_push_text_ROLLBACK.sql
--- PROBE:    supabase/migrations/PROBE_20261126_6600_message_push_text.sql
+-- Rollback: supabase/rollback/20261126_6800_message_push_text_ROLLBACK.sql
+-- PROBE:    supabase/migrations/PROBE_20261126_6800_message_push_text.sql
 -- ═══════════════════════════════════════════════════════════════════════════
 BEGIN;
 
@@ -25,13 +25,13 @@ SET LOCAL lock_timeout = '5s';
 DO $pre$
 BEGIN
   IF to_regprocedure('public.messages_push()') IS NULL THEN
-    RAISE EXCEPTION 'PT-6600-PRE-001: messages_push is missing';
+    RAISE EXCEPTION 'PT-6800-PRE-001: messages_push is missing';
   END IF;
   IF pg_get_functiondef(to_regprocedure('public.messages_push()')) NOT LIKE '%messages.skip_push%' THEN
-    RAISE EXCEPTION 'PT-6600-PRE-002: messages_push is not the 20261118_2300 version';
+    RAISE EXCEPTION 'PT-6800-PRE-002: messages_push is not the 20261118_2300 version';
   END IF;
   IF EXISTS (SELECT 1 FROM public.system_flags WHERE key = 'message_push_text') THEN
-    RAISE EXCEPTION 'PT-6600-PRE-003: already applied — roll back first';
+    RAISE EXCEPTION 'PT-6800-PRE-003: already applied — roll back first';
   END IF;
 END
 $pre$;

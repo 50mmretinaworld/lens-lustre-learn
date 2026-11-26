@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- PROBE · 20261126_6600 message push text. One transaction, ROLLBACK: nothing is kept, no push leaves.
+-- PROBE · 20261126_6800 message push text. One transaction, ROLLBACK: nothing is kept, no push leaves.
 -- FAILS before apply. PASS = switch on: the text (160 cap, one line), "sent a photo" for a wordless photo,
 -- the request line for a stranger; switch off: the old fixed line and no text anywhere in the job.
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -17,7 +17,7 @@ BEGIN
     RAISE EXCEPTION 'PROBE REFUSED — p32.lane is not asserted';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM public.system_flags WHERE key = 'message_push_text') THEN
-    RAISE EXCEPTION 'PROBE FAIL: switch message_push_text missing (6600 not applied)';
+    RAISE EXCEPTION 'PROBE FAIL: switch message_push_text missing (6800 not applied)';
   END IF;
 
   SELECT p.id INTO _m1 FROM public.profiles p JOIN auth.users u ON u.id = p.id
@@ -28,7 +28,7 @@ BEGIN
 
   UPDATE public.system_flags SET value = true WHERE key IN ('job_engine', 'job_engine_push', 'message_push_text');
   DELETE FROM public.notification_preferences WHERE user_id IN (_m1, _m2);
-  INSERT INTO public.conversations (kind, direct_key, created_by) VALUES ('direct', 'pt6600:' || gen_random_uuid(), _m1) RETURNING id INTO _c;
+  INSERT INTO public.conversations (kind, direct_key, created_by) VALUES ('direct', 'pt6800:' || gen_random_uuid(), _m1) RETURNING id INTO _c;
   INSERT INTO public.conversation_members (conversation_id, user_id, folder) VALUES (_c, _m1, 'inbox'), (_c, _m2, 'inbox');
 
   INSERT INTO public.messages (conversation_id, sender_id, body, client_msg_id) VALUES (_c, _m1, E'  Hello\n\nthere  ', gen_random_uuid()) RETURNING id INTO _msg;
@@ -57,7 +57,7 @@ BEGIN
   IF array_length(_fail, 1) IS NOT NULL THEN
     RAISE EXCEPTION 'PROBE FAIL (% problem(s)): %', array_length(_fail, 1), array_to_string(_fail, ' | ');
   END IF;
-  RAISE NOTICE 'PROBE PASS: 6600 message push text — shown, cut, photo line, requests hidden, switch works';
+  RAISE NOTICE 'PROBE PASS: 6800 message push text — shown, cut, photo line, requests hidden, switch works';
 END
 $p$;
 

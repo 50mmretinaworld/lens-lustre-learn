@@ -1,4 +1,4 @@
--- Rollback of 20261126_6600: messages_push goes back to the 20261118_2300 version (fixed line, no message text).
+-- Rollback of 20261126_6800: messages_push goes back to the 20261118_2300 version (fixed line, no message text).
 BEGIN;
 
 DO $lane_guard$
