@@ -71,7 +71,8 @@ async function deviceInfo(): Promise<{ version: string | null; caps: string[] }>
     /* unknown version is fine */
   }
   if (version && !/^[0-9A-Za-z._-]{1,32}$/.test(version)) version = null;
-  return { version, caps: pushCentre() ? ["rich"] : [] };
+  const chat = (await pushStatus())?.chat === true;
+  return { version, caps: pushCentre() ? (chat ? ["rich", "chat"] : ["rich"]) : [] };
 }
 
 /**

@@ -9,6 +9,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
@@ -57,6 +62,70 @@ final class PushRichNotifier {
     private static final long PICTURE_BUDGET_MS = 9000;
 
     private PushRichNotifier() {}
+
+    /** A private message (supabase/functions/_shared/pushMessage.ts buildChatMessage). */
+    static final String CHAT_TYPE = "chat_rich";
+    private static final String CHAT_CHANNEL_ID = "messages";
+    private static final String CHAT_TAG = "chat";
+
+    /**
+     * Sender's round photo, name and message (Owner 26 Nov 2026). One notification per chat: the newest
+     * message replaces the earlier one. No photo, or one that cannot be fetched → the same without it.
+     * Data: title, body, link ("/messages/<id>"), origin, chat_id, image (optional), delivery_id (optional).
+     */
+    static void showChat(Context ctx, Map<String, String> d) {
+        String title = d.get("title");
+        if (title == null || title.trim().isEmpty()) return;
+        if (Build.VERSION.SDK_INT >= 33
+            && ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        try {
+            NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                nm.createNotificationChannel(
+                    new NotificationChannel(CHAT_CHANNEL_ID, "Messages", NotificationManager.IMPORTANCE_HIGH));
+            }
+            String body = d.get("body") == null ? "" : d.get("body");
+            String chat = d.get("chat_id") == null ? "" : d.get("chat_id");
+            int id = chat.hashCode();
+            // ping makes each tap's address new, so the app opens the chat every time, not only the first
+            String link = d.get("link") == null ? null : d.get("link") + "?ping=" + System.currentTimeMillis();
+            int icon = ctx.getResources().getIdentifier("ic_notification", "drawable", ctx.getPackageName());
+            int colorRes = ctx.getResources().getIdentifier("notification_accent", "color", ctx.getPackageName());
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHAT_CHANNEL_ID)
+                .setSmallIcon(icon != 0 ? icon : ctx.getApplicationInfo().icon)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setContentIntent(openWith(ctx, d, link, id));
+            if (colorRes != 0) b.setColor(ctx.getColor(colorRes));
+            String image = d.get("image");
+            Bitmap photo = image == null ? null : fetch(image, 192);
+            if (photo != null) b.setLargeIcon(circle(photo));
+            nm.notify(CHAT_TAG, id, b.build());
+        } catch (Throwable ignored) {
+            // a push must never crash the service
+        }
+    }
+
+    /** The middle square of a picture, cut to a circle. */
+    private static Bitmap circle(Bitmap src) {
+        int size = Math.min(src.getWidth(), src.getHeight());
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(out);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        int left = (src.getWidth() - size) / 2;
+        int top = (src.getHeight() - size) / 2;
+        canvas.drawBitmap(src, new Rect(left, top, left + size, top + size), new Rect(0, 0, size, size), paint);
+        return out;
+    }
 
     static void show(Context ctx, Map<String, String> d) {
         String title = d.get("title");
@@ -186,6 +255,11 @@ final class PushRichNotifier {
      * is not "/…" on an https origin just opens the app.
      */
     private static PendingIntent open(Context ctx, Map<String, String> d, String link, int slot) {
+        // one PendingIntent per broadcast and slot (0 = the push itself, 1-2 = its buttons)
+        return openWith(ctx, d, link, notificationId(d) * 4 + slot);
+    }
+
+    private static PendingIntent openWith(Context ctx, Map<String, String> d, String link, int code) {
         Intent i = new Intent(ctx, MainActivity.class);
         String origin = d.get("origin");
         boolean inSite = link != null && link.startsWith("/") && !link.startsWith("//")
@@ -203,8 +277,6 @@ final class PushRichNotifier {
             i.addCategory(Intent.CATEGORY_LAUNCHER);
         }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        // one PendingIntent per broadcast and slot (0 = the push itself, 1-2 = its buttons)
-        int code = notificationId(d) * 4 + slot;
         return PendingIntent.getActivity(ctx, code, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 

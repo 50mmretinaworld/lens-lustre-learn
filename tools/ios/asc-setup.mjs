@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const API = "https://api.appstoreconnect.apple.com/v1";
 const PROFILE_NAME = "50mm Retina World App Store CI";
+const EXTENSION_PROFILE_NAME = "50mm Retina World Notification Service CI";
 const { ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH, BUNDLE_ID } = process.env;
 
 function fail(msg) {
@@ -96,13 +97,26 @@ async function certificateFor(serial) {
   return hit;
 }
 
-async function profile(serial, outPath, wantPush) {
+/** The notification service extension's App ID: made once, then found. */
+async function extensionBundleId() {
+  const r = await call("GET", `/bundleIds?filter[identifier]=${encodeURIComponent(BUNDLE_ID)}&limit=20`);
+  const hit = (r.data || []).find((b) => b.attributes?.identifier === BUNDLE_ID);
+  if (hit) return hit;
+  const made = await call("POST", "/bundleIds", {
+    data: { type: "bundleIds", attributes: { identifier: BUNDLE_ID, name: "50mm Retina World Notification Service", platform: "IOS" } },
+  });
+  console.log("App ID registered: " + BUNDLE_ID);
+  return made.data;
+}
+
+async function profile(serial, outPath, wantPush, extension = false) {
   if (!serial || !outPath) fail("usage: asc-setup.mjs profile <cert-serial-hex> <out.mobileprovision> [push]");
-  const bid = await bundleId();
+  const name = extension ? EXTENSION_PROFILE_NAME : PROFILE_NAME;
+  const bid = extension ? await extensionBundleId() : await bundleId();
   if (wantPush) await ensurePush(bid);
   const cert = await certificateFor(serial);
 
-  const existing = await call("GET", `/profiles?filter[name]=${encodeURIComponent(PROFILE_NAME)}&limit=20`);
+  const existing = await call("GET", `/profiles?filter[name]=${encodeURIComponent(name)}&limit=20`);
   for (const p of existing.data || []) {
     const content = Buffer.from(p.attributes?.profileContent || "", "base64");
     const fresh = p.attributes?.profileState === "ACTIVE"
@@ -111,17 +125,17 @@ async function profile(serial, outPath, wantPush) {
       && content.includes(BUNDLE_ID);
     if (fresh) {
       writeFileSync(outPath, content);
-      console.log(`Profile: reused "${PROFILE_NAME}" (${p.attributes.uuid}), expires ${p.attributes.expirationDate}`);
+      console.log(`Profile: reused "${name}" (${p.attributes.uuid}), expires ${p.attributes.expirationDate}`);
       return;
     }
     await call("DELETE", `/profiles/${p.id}`);
-    console.log(`Profile: removed out-of-date "${PROFILE_NAME}" (${p.attributes?.uuid ?? p.id})`);
+    console.log(`Profile: removed out-of-date "${name}" (${p.attributes?.uuid ?? p.id})`);
   }
 
   const made = await call("POST", "/profiles", {
     data: {
       type: "profiles",
-      attributes: { name: PROFILE_NAME, profileType: "IOS_APP_STORE" },
+      attributes: { name, profileType: "IOS_APP_STORE" },
       relationships: {
         bundleId: { data: { type: "bundleIds", id: bid.id } },
         certificates: { data: [{ type: "certificates", id: cert.id }] },
@@ -131,10 +145,11 @@ async function profile(serial, outPath, wantPush) {
   const content = Buffer.from(made.data.attributes.profileContent, "base64");
   if (wantPush && !content.includes("aps-environment")) fail("The new App Store profile has no aps-environment — Push is not on for the App ID yet");
   writeFileSync(outPath, content);
-  console.log(`Profile: made "${PROFILE_NAME}" (${made.data.attributes.uuid}), expires ${made.data.attributes.expirationDate}`);
+  console.log(`Profile: made "${name}" (${made.data.attributes.uuid}), expires ${made.data.attributes.expirationDate}`);
 }
 
 const [cmd, ...args] = process.argv.slice(2);
 if (cmd === "app-id") await appId();
 else if (cmd === "profile") await profile(args[0], args[1], args[2] === "push");
-else fail("usage: asc-setup.mjs app-id | profile <cert-serial-hex> <out.mobileprovision> [push]");
+else if (cmd === "extension-profile") await profile(args[0], args[1], false, true);   // BUNDLE_ID = the extension's
+else fail("usage: asc-setup.mjs app-id | profile <cert-serial-hex> <out.mobileprovision> [push] | extension-profile <cert-serial-hex> <out>");

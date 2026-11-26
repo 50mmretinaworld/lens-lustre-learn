@@ -38,6 +38,7 @@ public class PushCentrePlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("enabled", NotificationManagerCompat.from(getContext()).areNotificationsEnabled());
         ret.put("rich", true);
+        ret.put("chat", true); // draws a message push with the sender's round photo (PushRichNotifier.showChat)
         call.resolve(ret);
     }
 

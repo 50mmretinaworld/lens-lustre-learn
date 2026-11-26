@@ -102,3 +102,38 @@ export function buildFcmMessage(p: PushInput): FcmMessage {
   if (Object.keys(androidNote).length) msg.android.notification = androidNote;
   return msg;
 }
+
+/** Builds that registered this draw a private-message push themselves, with the sender's round photo. */
+export const CHAT_CAP = "chat";
+
+export interface ChatDataMessage {
+  token: string;
+  data: Record<string, string>;
+  android: { priority: "high" };
+}
+
+/**
+ * A private message for an Android build with CHAT_CAP: DATA ONLY, so the app draws it
+ * (resources/android/java/.../PushRichNotifier.showChat). Every other phone keeps buildFcmMessage.
+ * null = not such a push or not such a phone.
+ */
+export function buildChatMessage(
+  p: PushInput & { platform?: string | null; caps?: string[] | null; origin?: string | null },
+): ChatDataMessage | null {
+  const chat = p.data?.type === "new_message" ? p.data.reference_id : null;
+  if (p.platform !== "android" || !(p.caps ?? []).includes(CHAT_CAP)) return null;
+  if (typeof chat !== "string" || !/^[0-9a-f-]{36}$/i.test(chat)) return null;
+  if (!p.origin || !/^https:\/\/[a-z0-9.-]+$/i.test(p.origin)) return null;
+  const photo = p.data?.sender_photo;
+  const data: Record<string, string> = {
+    type: "chat_rich",
+    title: p.title,
+    body: p.body || "",
+    link: `/messages/${chat}`,
+    origin: p.origin,
+    chat_id: chat,
+  };
+  if (typeof photo === "string" && isSafeImageUrl(photo, p.imageHosts ?? [])) data.image = photo;
+  if (p.deliveryId !== undefined && p.deliveryId !== null) data.delivery_id = String(p.deliveryId);
+  return { token: p.token, data, android: { priority: "high" } };
+}
