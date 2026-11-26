@@ -118,7 +118,7 @@ IMPORTANT: Never give the exact same response twice. Vary your phrasing, example
 - Profile highlights (story-like collections of photos with captions).
 - Users can earn badges (e.g., competition winner, top contributor, verified).
 - Users can apply for roles (e.g., Photographer, Judge, Mentor).
-- Verified badge: Users can request verification. Admin approves.
+- Verified badge: Verification is an honour given only by the admins; members cannot request it.
 - Profile completion bar shows how complete your profile is.
 - QR code card for easy profile sharing.
 - Users can set a custom profile URL.

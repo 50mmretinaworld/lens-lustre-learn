@@ -59,18 +59,8 @@ export interface RecentPost {
   comment_count: number;
 }
 
-export interface RoleApplication {
-  id: string;
-  requested_role: string;
-  status: string;
-  reason: string | null;
-  admin_message: string | null;
-  created_at: string;
-}
-
 export interface DashboardData {
   roles: { role: string; created_at: string }[];
-  applications: RoleApplication[];
   friendRequests: FriendRequest[];
   recentPosts: RecentPost[];
   myEntries: MyCompEntry[];
@@ -115,9 +105,8 @@ export const useDashboardData = (userId: string | undefined) => {
     queryFn: async (): Promise<DashboardData> => {
       if (!userId) throw new Error("No user");
 
-      const [rolesRes, appsRes, friendReqRes, postsRes, profileMapRes, adminIds] = await Promise.all([
+      const [rolesRes, friendReqRes, postsRes, profileMapRes, adminIds] = await Promise.all([
         supabase.from("user_roles").select("role, created_at").eq("user_id", userId),
-        supabase.from("role_applications").select("id, requested_role, status, reason, admin_message, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("friendships").select("id, requester_id, created_at").eq("addressee_id", userId).eq("status", "pending").order("created_at", { ascending: false }),
         supabase.from("posts").select("id, content, privacy, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(3),
         fetchProfileMap([userId]),
@@ -127,7 +116,6 @@ export const useDashboardData = (userId: string | undefined) => {
       const entry = profileMapRes.get(userId);
       const userBadges = resolveBadges(userId, entry?.badges || [], adminIds);
       const roles = rolesRes.data || [];
-      const applications = (appsRes.data || []) as RoleApplication[];
 
       // Friend requests with profiles
       let friendRequests: FriendRequest[] = [];
@@ -336,7 +324,6 @@ export const useDashboardData = (userId: string | undefined) => {
 
       return {
         roles,
-        applications,
         friendRequests,
         recentPosts,
         myEntries,
