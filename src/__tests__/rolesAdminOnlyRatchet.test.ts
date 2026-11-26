@@ -2,7 +2,7 @@
  * ROLES AND BADGES ARE AN HONOUR (Owner, 26 Nov 2026) — RATCHET.
  *
  * No member gives themselves a role or a badge, and nobody requests one: only an
- * admin grants. The database refuses it (20261126_6700); this stops a screen
+ * admin grants. The database refuses it (20261126_6600); this stops a screen
  * that offers it from coming back. A new writer has to be an ADMIN screen and be
  * added here on purpose.
  */

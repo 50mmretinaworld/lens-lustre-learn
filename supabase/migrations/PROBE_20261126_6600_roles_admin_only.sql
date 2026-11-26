@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
--- PROBE · 20261126_6700 roles are admin-only. WRITES NOTHING (everything ends in ROLLBACK). FAILS before apply.
+-- PROBE · 20261126_6600 roles are admin-only. WRITES NOTHING (everything ends in ROLLBACK). FAILS before apply.
 --   C1  no permissive INSERT/ALL policy on user_roles, role_applications or user_badges lets a non-admin write.
 --   C2  as an ordinary signed-in member: giving yourself a role, a request and a badge are all refused.
 --   C3  as an admin: giving a role still works.
@@ -71,7 +71,7 @@ BEGIN
   INSERT INTO public.user_roles (user_id, role) VALUES (_m, 'registered_photographer');
   RESET ROLE;
 
-  RAISE NOTICE 'PROBE PASS 6700: members cannot give or request a role or badge; an admin still can.';
+  RAISE NOTICE 'PROBE PASS 6600: members cannot give or request a role or badge; an admin still can.';
 END
 $p$;
 

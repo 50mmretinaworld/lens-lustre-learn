@@ -1,4 +1,4 @@
--- ROLLBACK · 20261126_6700. Puts the two member INSERT policies back exactly as they were (live snapshot 17 Oct).
+-- ROLLBACK · 20261126_6600. Puts the two member INSERT policies back exactly as they were (live snapshot 17 Oct).
 BEGIN;
 
 DO $lane_guard$
