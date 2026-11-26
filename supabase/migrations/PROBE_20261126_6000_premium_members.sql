@@ -1,6 +1,6 @@
 -- ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 -- PROBE · 20261126_6000 premium members. WRITES NOTHING (everything ends in ROLLBACK). FAILS before apply.
---   A1  structure: citation column + 140 check; featured_photos with RLS, SELECT-only for anon/authenticated;
+--   A1  structure: citation column + 140 check; premium_featured_posts with RLS, SELECT-only for anon/authenticated;
 --       set_featured_post DEFINER, search_path '', authenticated only (never anon); get_premium_members DEFINER,
 --       search_path '', anon + authenticated; the unverify trigger exists.
 --   A2  get_premium_members as a signed-out visitor (anon): rows = verified members minus admins minus banned /
@@ -40,18 +40,18 @@ BEGIN
                   WHERE table_schema = 'public' AND table_name = 'user_badges' AND column_name = 'citation') THEN
     RAISE EXCEPTION 'PROBE FAIL A1: user_badges.citation missing (6000 not applied)';
   END IF;
-  IF to_regclass('public.featured_photos') IS NULL THEN RAISE EXCEPTION 'PROBE FAIL A1: featured_photos missing'; END IF;
-  IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.featured_photos'::regclass) THEN
-    RAISE EXCEPTION 'PROBE FAIL A1: featured_photos RLS off';
+  IF to_regclass('public.premium_featured_posts') IS NULL THEN RAISE EXCEPTION 'PROBE FAIL A1: premium_featured_posts missing'; END IF;
+  IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.premium_featured_posts'::regclass) THEN
+    RAISE EXCEPTION 'PROBE FAIL A1: premium_featured_posts RLS off';
   END IF;
-  IF has_table_privilege('anon', 'public.featured_photos', 'INSERT')
-     OR has_table_privilege('authenticated', 'public.featured_photos', 'INSERT')
-     OR has_table_privilege('authenticated', 'public.featured_photos', 'UPDATE')
-     OR has_table_privilege('authenticated', 'public.featured_photos', 'DELETE') THEN
-    RAISE EXCEPTION 'PROBE FAIL A1: featured_photos writable directly';
+  IF has_table_privilege('anon', 'public.premium_featured_posts', 'INSERT')
+     OR has_table_privilege('authenticated', 'public.premium_featured_posts', 'INSERT')
+     OR has_table_privilege('authenticated', 'public.premium_featured_posts', 'UPDATE')
+     OR has_table_privilege('authenticated', 'public.premium_featured_posts', 'DELETE') THEN
+    RAISE EXCEPTION 'PROBE FAIL A1: premium_featured_posts writable directly';
   END IF;
-  IF NOT has_table_privilege('anon', 'public.featured_photos', 'SELECT') THEN
-    RAISE EXCEPTION 'PROBE FAIL A1: featured_photos not readable by visitors';
+  IF NOT has_table_privilege('anon', 'public.premium_featured_posts', 'SELECT') THEN
+    RAISE EXCEPTION 'PROBE FAIL A1: premium_featured_posts not readable by visitors';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid = 'public.set_featured_post(uuid)'::regprocedure
                     AND prosecdef AND proconfig @> ARRAY['search_path=""']) THEN
@@ -139,8 +139,8 @@ BEGIN
   END IF;
 
   PERFORM public.set_featured_post(_p2);
-  IF (SELECT count(*) FROM public.featured_photos f WHERE f.user_id = _v) <> 1
-     OR NOT EXISTS (SELECT 1 FROM public.featured_photos f WHERE f.user_id = _v AND f.post_id = _p2) THEN
+  IF (SELECT count(*) FROM public.premium_featured_posts f WHERE f.user_id = _v) <> 1
+     OR NOT EXISTS (SELECT 1 FROM public.premium_featured_posts f WHERE f.user_id = _v AND f.post_id = _p2) THEN
     RESET ROLE; RAISE EXCEPTION 'PROBE FAIL A3: photo 2 did not replace photo 1';
   END IF;
 
@@ -155,11 +155,11 @@ BEGIN
   END IF;
 
   _ok := false;
-  BEGIN INSERT INTO public.featured_photos (user_id, post_id) VALUES (_v, _p1); EXCEPTION WHEN insufficient_privilege THEN _ok := true; END;
-  IF NOT _ok THEN RESET ROLE; RAISE EXCEPTION 'PROBE FAIL A3: direct write to featured_photos was allowed'; END IF;
+  BEGIN INSERT INTO public.premium_featured_posts (user_id, post_id) VALUES (_v, _p1); EXCEPTION WHEN insufficient_privilege THEN _ok := true; END;
+  IF NOT _ok THEN RESET ROLE; RAISE EXCEPTION 'PROBE FAIL A3: direct write to premium_featured_posts was allowed'; END IF;
 
   PERFORM public.set_featured_post(NULL);
-  IF EXISTS (SELECT 1 FROM public.featured_photos f WHERE f.user_id = _v) THEN
+  IF EXISTS (SELECT 1 FROM public.premium_featured_posts f WHERE f.user_id = _v) THEN
     RESET ROLE; RAISE EXCEPTION 'PROBE FAIL A3: unmark did not remove the mark';
   END IF;
   RESET ROLE;
@@ -187,9 +187,9 @@ BEGIN
   IF NOT _ok THEN RAISE EXCEPTION 'PROBE FAIL A5: a 141-letter line was accepted'; END IF;
 
   -- A6 ── badge removed → mark removed ─────────────────────────────────────────────────────────────────────────
-  INSERT INTO public.featured_photos (user_id, post_id) VALUES (_v, _p1);  -- as the owner role (setup only)
+  INSERT INTO public.premium_featured_posts (user_id, post_id) VALUES (_v, _p1);  -- as the owner role (setup only)
   DELETE FROM public.user_badges WHERE user_id = _v AND badge_type = 'verified';
-  IF EXISTS (SELECT 1 FROM public.featured_photos f WHERE f.user_id = _v) THEN
+  IF EXISTS (SELECT 1 FROM public.premium_featured_posts f WHERE f.user_id = _v) THEN
     RAISE EXCEPTION 'PROBE FAIL A6: Featured mark survived the badge removal';
   END IF;
 

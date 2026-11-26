@@ -540,7 +540,7 @@ async function premiumItems(site: string): Promise<Array<{ url: string; name: st
   const [{ data: admins }, { data: profiles }, { data: featured }, moderated] = await Promise.all([
     supabase.from("user_roles").select("user_id").eq("role", "admin").in("user_id", ids),
     supabase.from("profiles").select("id, full_name, custom_url, bio, indexing_disabled").in("id", ids),
-    supabase.from("featured_photos").select("user_id, post_id").in("user_id", ids),
+    supabase.from("premium_featured_posts").select("user_id, post_id").in("user_id", ids),
     moderatedIds(ids),
   ]);
   const hidden = new Set<string>([...((admins ?? []) as any[]).map((r) => r.user_id), ...moderated]);
