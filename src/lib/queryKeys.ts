@@ -207,4 +207,12 @@ export const queryKeys = {
   photoOfTheDay: () => ["photo-of-the-day"] as const,
   featuredArtistActive: () => ["featured-artist-active"] as const,
   footerPages: () => ["footer-pages"] as const,
+
+  /* ── Premium Members (20261126_6000) — usePremiumHonour.ts ── */
+  /** One member's Verified honour: held or not, and since when (user_badges 'verified'). */
+  premiumHonour: (userId: string) => ["premium-honour", userId] as const,
+  /** One member's Featured photo post id (premium_featured_posts). */
+  premiumFeatured: (userId: string) => ["premium-featured", userId] as const,
+  /** One member's Featured post itself, shaped for the wall grid (useFeaturedPost.ts). */
+  premiumFeaturedPost: (userId: string) => ["premium-featured-post", userId] as const,
 } as const;

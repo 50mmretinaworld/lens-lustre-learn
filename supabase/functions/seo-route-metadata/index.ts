@@ -313,6 +313,10 @@ async function resolveProfile(customUrl: string, meta: Metadata, global: any) {
     return true;
   }
   const items = (data as any).indexing_disabled === true ? [] : await publicPostItems({ userId: (data as any).id }, customUrl, 24);
+  // Premium Members (Owner 26 Nov 2026): tell search a Verified member was honoured by the curators.
+  const { data: vb } = await supabase.from("user_badges").select("id")
+    .eq("user_id", (data as any).id).eq("badge_type", "verified").maybeSingle();
+  const award = vb ? { award: `Verified Photographer, honoured by the ${SITE_NAME_FALLBACK} curators` } : {};
   meta.title = applyTitleTemplate(`${name} (@${customUrl}) — photographer`, global);
   meta.jsonLd = [
     {
@@ -326,6 +330,7 @@ async function resolveProfile(customUrl: string, meta: Metadata, global: any) {
         url: meta.canonical,
         ...(data.bio ? { description: data.bio } : {}),
         ...(data.avatar_url ? { image: data.avatar_url } : {}),
+        ...award,
       },
       ...(items.length ? {
         hasPart: items.map((it) => ({ "@type": "SocialMediaPosting", url: it.url, headline: it.title })),
@@ -518,6 +523,94 @@ async function resolveHashtag(raw: string, meta: Metadata, global: any) {
   return true;
 }
 
+/**
+ * Premium Members (Owner 26 Nov 2026): /premium-members — the honour list, readable without JavaScript.
+ * PLAIN READS ONLY (this endpoint is open and holds the service key, so it calls no database function). The
+ * filters are the same as the app's public list (SQL 6000): Verified badge, never the admin account, never a
+ * banned or suspended member, only public member photos — and a member who turned search off is left out.
+ * If SQL 6000 is not applied yet, the reads of its new column / table fail and the page keeps the defaults.
+ */
+async function premiumItems(site: string): Promise<Array<{ url: string; name: string; line: string; image?: string }> | null> {
+  const { data: badges, error } = await supabase.from("user_badges")
+    .select("user_id, citation, assigned_at").eq("badge_type", "verified")
+    .order("assigned_at", { ascending: false }).limit(60);
+  if (error) return null;
+  const ids = ((badges ?? []) as any[]).map((b) => b.user_id);
+  if (!ids.length) return [];
+  const [{ data: admins }, { data: profiles }, { data: featured }, moderated] = await Promise.all([
+    supabase.from("user_roles").select("user_id").eq("role", "admin").in("user_id", ids),
+    supabase.from("profiles").select("id, full_name, custom_url, bio, indexing_disabled").in("id", ids),
+    supabase.from("premium_featured_posts").select("user_id, post_id").in("user_id", ids),
+    moderatedIds(ids),
+  ]);
+  const hidden = new Set<string>([...((admins ?? []) as any[]).map((r) => r.user_id), ...moderated]);
+  const byId = new Map<string, any>(((profiles ?? []) as any[]).map((p) => [p.id, p]));
+  const marked = new Map<string, string>(((featured ?? []) as any[]).map((f) => [f.user_id, f.post_id]));
+  const shown = ((badges ?? []) as any[]).filter((b) => {
+    const p = byId.get(b.user_id);
+    return p && !hidden.has(b.user_id) && p.indexing_disabled !== true;
+  });
+  return await Promise.all(shown.map(async (b) => {
+    const p = byId.get(b.user_id);
+    const photos = () => supabase.from("posts").select("image_url, image_urls")
+      .eq("user_id", b.user_id).eq("privacy", "public").eq("post_kind", "member");
+    const mark = marked.get(b.user_id);
+    let post: any = mark ? (await photos().eq("id", mark).maybeSingle()).data : null;
+    if (!post) {
+      post = (await photos().not("image_url", "is", null)
+        .order("likes_count", { ascending: false }).limit(1).maybeSingle()).data;
+    }
+    const bioLine = String(p.bio ?? "").split("\n")[0].trim().slice(0, 140);
+    return {
+      url: p.custom_url ? `${site}/${p.custom_url}` : `${site}/profile/${b.user_id}`,
+      name: String(p.full_name || p.custom_url || "Photographer"),
+      line: String(b.citation ?? "").trim() || bioLine,
+      image: post?.image_url || post?.image_urls?.[0] || undefined,
+    };
+  }));
+}
+
+async function resolvePremiumMembers(meta: Metadata) {
+  const site = SITE_URL();
+  const items = await premiumItems(site);
+  if (!items) { meta.source = "premium-members-unavailable"; return; }
+  const n = items.length;
+  const heading = "Premium Members · Verified Photographers";
+  const intro = `Honoured by our curators. Never requested. Never sold. ${n} photographer${n === 1 ? "" : "s"} chosen by the ${SITE_NAME_FALLBACK} curators for original work and good conduct. Nobody can apply for this tick, and nobody can buy it.`;
+  meta.title = `${clampTitle("Premium Members · Verified Photographers", SITE_NAME_FALLBACK)} | ${SITE_NAME_FALLBACK}`;
+  meta.description = clampDesc(intro);
+  if (items[0]?.image) meta.ogImage = items[0].image;
+  meta.jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      url: meta.canonical,
+      name: `Premium Members on ${SITE_NAME_FALLBACK}`,
+      description: intro,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: n,
+        itemListElement: items.map((it, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Person",
+            name: it.name,
+            url: it.url,
+            ...(it.image ? { image: it.image } : {}),
+            ...(it.line ? { description: it.line } : {}),
+            award: `Verified Photographer, honoured by the ${SITE_NAME_FALLBACK} curators`,
+          },
+        })),
+      },
+    },
+    breadcrumbs([[SITE_NAME_FALLBACK, `${site}/`], ["Premium Members", meta.canonical]]),
+  ];
+  meta.body = listBody("premium-members", heading, intro,
+    items.map((it) => ({ url: it.url, title: it.line ? `${it.name} — ${it.line}` : it.name, image: it.image })), site);
+  meta.source = "premium-members";
+}
+
 /** AEO (Owner 2026-11-10): /help and /help/<slug> — no database, the one answer list. */
 function resolveHelp(slug: string | undefined, meta: Metadata) {
   const site = SITE_URL();
@@ -572,6 +665,8 @@ async function resolve(path: string): Promise<Metadata> {
       await resolvePost(segments[1], meta, global);
     } else if (segments[0] === "hashtag" && segments[1] && segments.length === 2) {
       await resolveHashtag(segments[1], meta, global); // B: hashtag pages readable
+    } else if (segments[0] === "premium-members" && segments.length === 1) {
+      await resolvePremiumMembers(meta); // Premium Members honour list (SQL 6000)
     } else if (segments[0] === "help" && segments.length <= 2) {
       resolveHelp(segments[1], meta); // AEO answer pages
     } else if (segments.length === 3 && segments[1] === "post" && segments[2]) {

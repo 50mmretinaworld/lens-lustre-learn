@@ -79,7 +79,7 @@ const AutoBadge = ({ userId, size = "compact", only = "all" }: AutoBadgeProps) =
 
   if (!userId) return null;
   if (badges.length === 0) return null;
-  return <UserBadgeInline badges={badges} size={size} only={only} />;
+  return <UserBadgeInline badges={badges} size={size} only={only} userId={userId} name={entry?.full_name ?? null} />;
 };
 
 export default React.memo(AutoBadge);

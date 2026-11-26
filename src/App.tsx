@@ -152,6 +152,7 @@ const Certificates = lazyRetry(() => import("./pages/Certificates"), "Certificat
 const VerifyCertificate = lazyRetry(() => import("./pages/VerifyCertificate"), "VerifyCertificate");
 const CertificateVerifyByToken = lazyRetry(() => import("./pages/CertificateVerifyByToken"), "CertificateVerifyByToken");
 const Winners = lazyRetry(() => import("./pages/Winners"), "Winners");
+const PremiumMembers = lazyRetry(() => import("./pages/PremiumMembers"), "PremiumMembers");
 const JudgePanel = lazyRetry(() => import(/* webpackChunkName: "judge-panel", vite: { chunkName: "judge-panel" } */ "./pages/JudgePanel"), "JudgePanel");
 const Wallet = lazyRetry(() => import("./pages/Wallet"), "Wallet");
 const PublicProfile = lazyRetry(() => import("./pages/PublicProfile"), "PublicProfile");
@@ -452,6 +453,7 @@ const App = () => {
                 <Route path="/verify/:token" element={<CertificateVerifyByToken />} />
                 <Route path="/certificate/:token" element={<CertificateVerifyByToken />} />
                 <Route path="/winners" element={<Winners />} />
+                <Route path="/premium-members" element={<PremiumMembers />} />
                 <Route path="/wallet" element={isNativeIOSApp() ? <Navigate to="/dashboard" replace /> : <Wallet />} />
                 <Route path="/featured-artist/:slug" element={<FeaturedArtistPage />} />
                 <Route path="/referrals" element={isNativeIOSApp() ? <Navigate to="/dashboard" replace /> : <Referrals />} />

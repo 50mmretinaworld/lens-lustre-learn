@@ -40,8 +40,12 @@ import { useT } from "@/i18n/I18nContext";
 /** How many cards to render. Enough to scroll, not enough to feel like a wall. */
 const MAX_CARDS = 12;
 
-/** Card width (132) + the gap between cards (gap-2.5 = 10px). One tap = one card. */
-const CARD_STEP = 142;
+/** Card width (156) + the gap between cards (gap-2.5 = 10px). One tap = one card. */
+const CARD_STEP = 166;
+/** One-off sizes inline: no new rules in the one shared stylesheet (P13 initial budget). */
+const CARD_W = { width: 156 };
+/** The photo's centre: 4px rail padding + half the 156px square. */
+const ARROW_Y = { top: 82 };
 
 /**
  * A few pixels of slack before "there is more this way" turns off. Browsers
@@ -237,21 +241,19 @@ const FeedFriendSuggestions = () => {
         {people.map((s: any) => {
           const isSent = sent.has(s.id);
           return (
+            /*
+              FULLER CARD (Owner-approved Premium Members plan, Part 3 "After ·
+              after post 10", 26 Nov 2026): the photo fills the top square edge
+              to edge, × on the photo's corner, bold name, sub-line, full-width
+              Add. Placement, data and behaviour are unchanged.
+            */
             <div
               key={s.id}
-              className="relative snap-start shrink-0 w-[132px] border border-border bg-background/40 p-3 pt-4 flex flex-col items-center text-center"
+              data-testid="pymk-card"
+              className="relative snap-start shrink-0 overflow-hidden rounded-xl bg-card flex flex-col"
+              style={CARD_W}
             >
-              <button
-                type="button"
-                onClick={() => setDismissed((prev) => new Set(prev).add(s.id))}
-                aria-label={t("feedSuggest.dismiss", "Not interested")}
-                /* 28px target in the corner — small on screen, still hittable. */
-                className="absolute right-0.5 top-0.5 flex h-7 w-7 items-center justify-center text-muted-foreground/70 hover:text-foreground transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-
-              <ProfileLink userId={s.id} handle={handleFor(s)} className="shrink-0" aria-label={`${s.full_name || "Member"} — profile`}>
+              <ProfileLink userId={s.id} handle={handleFor(s)} className="block" aria-label={`${s.full_name || "Member"} — profile`}>
                 {s.avatar_url ? (
                   <img
                     referrerPolicy="no-referrer"
@@ -259,41 +261,56 @@ const FeedFriendSuggestions = () => {
                     decoding="async"
                     src={s.avatar_url}
                     alt=""
-                    className="h-16 w-16 rounded-full object-cover"
+                    className="aspect-square w-full object-cover"
                   />
                 ) : (
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-lg text-primary" style={{ fontFamily: "var(--font-display)" }}>
+                  <div className="aspect-square w-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-4xl text-primary" style={{ fontFamily: "var(--font-display)" }}>
                       {(s.full_name || "?")[0]?.toUpperCase()}
                     </span>
                   </div>
                 )}
               </ProfileLink>
 
+              {/* 44px target; the visible mark is the small dark circle on the photo. */}
+              <button
+                type="button"
+                onClick={() => setDismissed((prev) => new Set(prev).add(s.id))}
+                aria-label={t("feedSuggest.dismiss", "Not interested")}
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
+                  <X className="h-3.5 w-3.5" />
+                </span>
+              </button>
+
+              <div className="flex flex-1 flex-col p-2.5">
+
               {/* Same identity block as everywhere else, so badges and the
                   name-outranks-badge rule apply here too without restating them.
 
-                  `stack` puts the badge on its own line: this card is 132px
-                  wide, and inline the badge would be squeezed to nothing beside
-                  the name — a card with a name and no badge. The standing rule
-                  is that the badge shows wherever the name shows. */}
-              <div className="mt-2 w-full flex justify-center">
+                  `stack` puts the award pills on their own line (the blue tick
+                  stays beside the name): the card is narrow, and inline the
+                  pills would be squeezed to nothing. The standing rule is that
+                  the badge shows wherever the name shows. */}
+              <div className="w-full">
                 <UserIdentityBlock
                   userId={s.id}
                   name={s.full_name}
                   handle={handleFor(s)}
                   stack
-                  align="center"
-                  nameClassName="text-[11px] font-semibold text-foreground hover:text-primary transition-colors"
+                  nameClassName="text-sm font-bold text-foreground hover:text-primary transition-colors"
                 />
               </div>
 
-              <p className="mt-0.5 text-[9px] text-muted-foreground truncate w-full" style={{ fontFamily: "var(--font-body)" }}>
+              <p className="mt-0.5 text-xs text-muted-foreground truncate w-full" style={{ fontFamily: "var(--font-body)" }}>
                 {s.mutual_count > 0
                   ? `${s.mutual_count} ${s.mutual_count === 1 ? t("feedSuggest.mutual", "mutual friend") : t("feedSuggest.mutuals", "mutual friends")}`
                   : t("feedSuggest.suggested", "Suggested for you")}
               </p>
 
+              {/* keeps every card's Add on one line, with or without award pills */}
+              <span className="flex-1 pt-2" aria-hidden="true" />
               <button
                 type="button"
                 disabled={isSent || sendRequest.isPending}
@@ -311,7 +328,7 @@ const FeedFriendSuggestions = () => {
                       }),
                   });
                 }}
-                className={`mt-2.5 w-full inline-flex items-center justify-center gap-1 rounded-sm px-2 py-1.5 text-[9px] tracking-[0.15em] uppercase transition-all disabled:cursor-default ${
+                className={`w-full inline-flex h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold transition-all disabled:cursor-default ${
                   isSent
                     ? "border border-border text-muted-foreground"
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -320,14 +337,15 @@ const FeedFriendSuggestions = () => {
               >
                 {isSent ? (
                   <>
-                    <Check className="h-3 w-3" /> {t("feedSuggest.sent", "Sent")}
+                    <Check className="h-4 w-4" /> {t("feedSuggest.sent", "Sent")}
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-3 w-3" /> {t("feedSuggest.add", "Add")}
+                    <UserPlus className="h-4 w-4" /> {t("feedSuggest.add", "Add")}
                   </>
                 )}
               </button>
+              </div>
             </div>
           );
         })}
@@ -348,9 +366,10 @@ const FeedFriendSuggestions = () => {
               type="button"
               onClick={() => nudge(-1)}
               aria-label={t("feedSuggest.prev", "Previous")}
-              className="absolute left-1 top-[52px] -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform"
+              className="absolute left-0 -translate-y-1/2 flex h-11 w-11 items-center justify-center"
+              style={ARROW_Y}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform"><ChevronLeft className="h-4 w-4" /></span>
             </button>
           </>
         )}
@@ -361,9 +380,10 @@ const FeedFriendSuggestions = () => {
               type="button"
               onClick={() => nudge(1)}
               aria-label={t("feedSuggest.next", "Next")}
-              className="absolute right-1 top-[52px] -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform"
+              className="absolute right-0 -translate-y-1/2 flex h-11 w-11 items-center justify-center"
+              style={ARROW_Y}
             >
-              <ChevronRight className="h-4 w-4" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform"><ChevronRight className="h-4 w-4" /></span>
             </button>
           </>
         )}
