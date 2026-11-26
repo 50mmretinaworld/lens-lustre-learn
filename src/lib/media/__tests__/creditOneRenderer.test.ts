@@ -28,6 +28,7 @@ const FILLTEXT_ALLOWED: Record<string, string> = {
   "src/components/profile/QRCodeCard.tsx": "the member's own QR card, an image they generate on purpose",
   "src/lib/certificateCanvas.ts": "competition certificates",
   "src/lib/deviceFingerprint.ts": "a canvas fingerprint, never shown or stored as a picture",
+  "src/lib/premium/honourImage.ts": "the Share my honour card (honour line, member name, address, brand): a shareable image, not a photo credit",
   "tools/uishot/app-video-cors-journey.mjs": "a test tool's throwaway video frame, never a member photo",
   // Owner order, 4 Nov 2026: a FEED photo's credit is never stored — it is drawn in
   // the browser at save time. This is the ONE browser file that may draw it, from

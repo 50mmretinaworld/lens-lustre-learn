@@ -42,7 +42,8 @@ vi.mock("@/components/video/VideoPoster", () => ({ default: () => <span /> }));
 
 import { verifiedTickMessage, VERIFIED_CARD_TITLE, VERIFIED_CARD_LINK_TEXT } from "@/lib/premium/premiumMember";
 import { featuredFirst, canOfferFeatured } from "@/lib/premium/featuredRead";
-import VerifiedTick, { BRAND_TICK_TOOLTIP } from "@/components/VerifiedTick";
+import VerifiedTick from "@/components/VerifiedTick";
+import { BRAND_TICK_TOOLTIP } from "@/components/premium/VerifiedTickMember";
 import VerifiedTickCard from "@/components/premium/VerifiedTickCard";
 import FeaturedPhotoMenuItem, { SET_FEATURED_TEXT, REMOVE_FEATURED_TEXT } from "@/components/premium/FeaturedPhotoMenuItem";
 import ProfilePostGrid from "@/components/profile/ProfilePostGrid";
@@ -99,18 +100,19 @@ describe("the tick inside a name link", () => {
         </a>
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Verified Photographer" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Verified Photographer" }));
     expect(followed).not.toHaveBeenCalled();
     const card = await screen.findByTestId("verified-tick-card");
     fireEvent.click(within(card).getByText(/was honoured/));
     expect(followed).not.toHaveBeenCalled();
   });
 
-  it("the 50mm brand/admin account keeps its old tooltip and opens no card", () => {
+  it("the 50mm brand/admin account keeps its old tooltip and opens no card", async () => {
     admins = new Set(["brand"]);
     render(<VerifiedTick userId="brand" name="50mm Retina World" />);
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByTestId("tooltip").textContent).toBe(BRAND_TICK_TOOLTIP);
+    expect((await screen.findByTestId("tooltip")).textContent).toBe(BRAND_TICK_TOOLTIP);
+    expect(screen.queryByRole("button")).toBeNull();
   });
 });
 
