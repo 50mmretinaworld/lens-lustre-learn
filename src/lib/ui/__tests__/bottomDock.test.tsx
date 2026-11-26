@@ -92,7 +92,7 @@ describe("every floating layer takes its place from the dock", () => {
   it("one order in CSS: banner → update prompt → card → round buttons; nothing published = the old offsets", () => {
     expect(css).toMatch(/\.dock-update\s*\{\s*bottom:\s*max\(5rem,\s*calc\(var\(--dock-consent, 0px\) \+ 0\.5rem\)\);/);
     const videos = /\.dock-videos\s*\{([^}]*)\}/.exec(css)![1];
-    expect(videos).toMatch(/calc\(4\.25rem \+ env\(safe-area-inset-bottom, 0px\)\)/); // was 3.75rem — review #423 finding 6, below
+    expect(videos).toMatch(/calc\(4\.25rem \+ var\(--safe-bottom\)\)/); // was 3.75rem — review #423 finding 6, below
     expect(videos).toMatch(/var\(--dock-consent, 0px\)/);
     expect(videos).toMatch(/var\(--dock-update, 0px\)/);
     const fab = /\.dock-fab\s*\{([^}]*)\}/.exec(css)![1];
@@ -136,7 +136,7 @@ describe("review #423 · the dock", () => {
 
   it("(6) phone: the card sits 4.25rem above the safe area — clear of the bottom bar's raised Home disc, its ring and its breathing", () => {
     const videos = /\.dock-videos\s*\{([^}]*)\}/.exec(css)![1];
-    expect(videos).toMatch(/calc\(4\.25rem \+ env\(safe-area-inset-bottom, 0px\)\)/);
+    expect(videos).toMatch(/calc\(4\.25rem \+ var\(--safe-bottom\)\)/);
     expect(videos).not.toMatch(/3\.75rem/);
   });
 

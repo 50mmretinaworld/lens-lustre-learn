@@ -47,7 +47,8 @@ describe("viewport height budget (status bars never push a screen's bottom off)"
       const rel = relative(SRC, file).replace(/\\/g, "/");
       readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
         if (isComment(line) || !EXACT.test(line)) return;
-        if (line.includes("var(--banner-h)")) return;
+        // …and the iPhone's own status bar (--safe-top, 0 off the iPhone app — src/lib/native/safeArea.ts)
+        if (line.includes("var(--banner-h)") && line.includes("var(--safe-top)")) return;
         if (/(?<![\w-])fixed(?![\w-])/.test(line)) return;
         if (ALLOWED.some((a) => a.file === rel && line.includes(a.has))) return;
         bad.push(`${rel}:${i + 1}  ${line.trim().slice(0, 140)}`);

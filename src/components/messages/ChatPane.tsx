@@ -472,7 +472,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
       {/* Hold a message (phone) / right-click (computer): its own small menu, from the bottom like WhatsApp */}
       {menuFor && (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/40" onClick={() => setMenuFor(null)} data-testid="message-menu">
-          <div className="w-full rounded-t-2xl border-t border-border bg-background pb-[max(8px,env(safe-area-inset-bottom))] pt-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full rounded-t-2xl border-t border-border bg-background pb-[max(8px,var(--safe-bottom))] pt-1.5" onClick={(e) => e.stopPropagation()}>
             <p className="line-clamp-2 px-4 pb-1.5 pt-1 text-[12px] text-muted-foreground">{menuFor.body || t("messages.photo", "Photo")}</p>
             {allowed && !inRequests && (
               <button type="button" className="flex h-12 w-full items-center gap-3 px-4 text-left text-[15px] hover:bg-foreground/5" onClick={() => { setReplyTo(menuFor); setMenuFor(null); areaRef.current?.focus(); }}>

@@ -368,7 +368,7 @@ const MobileProfileSheet = ({ open, onOpenChange }: Props) => {
             before; a wrong number on screen is worse than none. */}
         <div
           className="shrink-0 px-4 pt-2 flex items-center gap-2 border-t border-border/40"
-          style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+          style={{ paddingBottom: "calc(1rem + var(--safe-bottom))" }}
         >
           <AppVersionLabel />
           <button

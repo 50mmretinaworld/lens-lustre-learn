@@ -672,7 +672,7 @@ const EditProfile = () => {
     <main className="min-h-screen bg-background text-foreground relative">
       {/* Floating saved indicator */}
       {saveStatus === "saved" && (
-        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 px-4 py-1.5 rounded-full text-[10px] tracking-[0.15em] uppercase animate-in fade-in slide-in-from-top-2 duration-300" style={{ fontFamily: "var(--font-heading)" }}>
+        <div className="fixed top-[calc(var(--safe-top)+0.75rem)] left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 px-4 py-1.5 rounded-full text-[10px] tracking-[0.15em] uppercase animate-in fade-in slide-in-from-top-2 duration-300" style={{ fontFamily: "var(--font-heading)" }}>
           <CheckCircle2 className="h-3 w-3" />
           Saved
         </div>
@@ -1446,9 +1446,9 @@ const EditProfile = () => {
                 <PrivacyToggle value={privacySettings.email || "only_me"} onChange={(v) => setFieldPrivacy("email", v)} />
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-3.5 w-3.5" />
-                <span style={{ fontFamily: "var(--font-body)" }}>{user?.email}</span>
-                <span className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/60 ml-2" style={{ fontFamily: "var(--font-heading)" }}>
+                <Mail className="h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 truncate" style={{ fontFamily: "var(--font-body)" }}>{user?.email}</span>
+                <span className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/60 ml-2 shrink-0" style={{ fontFamily: "var(--font-heading)" }}>
                   Registered
                 </span>
               </div>

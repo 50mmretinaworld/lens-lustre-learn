@@ -188,13 +188,13 @@ export const CommentsBox = ({ source, ownerHandle, subjectLabel, highlightId = n
         />
       </div>
 
-      {/* THE PINNED COMPOSER. `env(safe-area-inset-bottom)` matters only on the
+      {/* THE PINNED COMPOSER. `var(--safe-bottom)` matters only on the
           app's bottom sheet — on the web modal it evaluates to 0 and costs
           nothing. */}
       {currentUserId && (
         <div
           className="shrink-0 border-t border-border px-3 py-2.5 bg-background"
-          style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
+          style={{ paddingBottom: "max(0.625rem, var(--safe-bottom))" }}
         >
           <CommentComposer
             currentUserId={currentUserId}

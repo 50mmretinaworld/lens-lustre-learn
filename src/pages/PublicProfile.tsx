@@ -1099,7 +1099,7 @@ export const PublicProfileInner = ({ userId }: { userId: string }) => {
        * there is room for a real tab bar, and a hamburger on a 1280px screen
        * is hiding things for no reason. `sm:block` is the whole difference.
        */}
-      <div className="hidden sm:block bg-background sticky top-0 z-20 border-b border-border">
+      <div className="hidden sm:block bg-background sticky top-[var(--safe-top)] z-20 border-b border-border">
         <div className="container mx-auto max-w-7xl">
           <div className="flex items-center gap-0">
             {tabs.map((tab) => (

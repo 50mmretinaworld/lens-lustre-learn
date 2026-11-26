@@ -185,7 +185,7 @@ const Profile = () => {
         {user?.id && <ProfileStories userId={user.id} isOwner={true} />}
 
         {/* Compact tabs */}
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
+        <div className="sticky top-[var(--safe-top)] z-20 bg-background/95 backdrop-blur-md border-b border-border">
           <div className="flex">
             {(["about", "settings"] as const).map(tab => (
               <button

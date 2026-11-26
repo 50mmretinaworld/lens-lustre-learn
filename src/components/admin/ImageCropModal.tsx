@@ -819,7 +819,7 @@ export default function ImageCropModal({
             Safe-area padding so the confirm button clears a gesture bar. */}
         <div
           className="shrink-0 border-t border-border bg-card/50 px-3 pt-2 sm:flex sm:items-center sm:justify-between sm:gap-3"
-          style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
+          style={{ paddingBottom: "calc(0.5rem + var(--safe-bottom))" }}
         >
           <span className="mb-1.5 block text-[12px] text-muted-foreground sm:mb-0">
             {completedCrop
