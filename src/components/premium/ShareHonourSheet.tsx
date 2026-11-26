@@ -82,7 +82,8 @@ const ShareHonourSheet = ({ userId, name, handle, onClose }: Props) => {
     <div className="flex min-w-0 flex-1 flex-col gap-2">
       <div className={`w-full overflow-hidden rounded-md bg-muted ${aspect}`}>
         {made ? (
-          <img src={made[size].url} alt={`${label} preview`} className="h-full w-full object-cover" />
+          // A local blob: preview of the image just drawn — not a CDN photo, so no OptimizedImage (P11).
+          <div role="img" aria-label={`${label} preview`} className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url("${made[size].url}")` }} />
         ) : (
           <div className="flex h-full w-full items-center justify-center" aria-busy="true">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
