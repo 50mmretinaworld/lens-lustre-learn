@@ -313,6 +313,10 @@ async function resolveProfile(customUrl: string, meta: Metadata, global: any) {
     return true;
   }
   const items = (data as any).indexing_disabled === true ? [] : await publicPostItems({ userId: (data as any).id }, customUrl, 24);
+  // Premium Members (Owner 26 Nov 2026): tell search a Verified member was honoured by the curators.
+  const { data: vb } = await supabase.from("user_badges").select("id")
+    .eq("user_id", (data as any).id).eq("badge_type", "verified").maybeSingle();
+  const award = vb ? { award: `Verified Photographer, honoured by the ${SITE_NAME_FALLBACK} curators` } : {};
   meta.title = applyTitleTemplate(`${name} (@${customUrl}) — photographer`, global);
   meta.jsonLd = [
     {
@@ -326,6 +330,7 @@ async function resolveProfile(customUrl: string, meta: Metadata, global: any) {
         url: meta.canonical,
         ...(data.bio ? { description: data.bio } : {}),
         ...(data.avatar_url ? { image: data.avatar_url } : {}),
+        ...award,
       },
       ...(items.length ? {
         hasPart: items.map((it) => ({ "@type": "SocialMediaPosting", url: it.url, headline: it.title })),
@@ -518,6 +523,58 @@ async function resolveHashtag(raw: string, meta: Metadata, global: any) {
   return true;
 }
 
+/**
+ * Premium Members (Owner 26 Nov 2026): /premium-members — the honour list, readable without JavaScript.
+ * Reads the SAME public list the app shows (SQL 6000 get_premium_members: no admin account, no banned or
+ * suspended member, only public photos). If the function is missing (not applied yet), the page keeps defaults.
+ */
+async function resolvePremiumMembers(meta: Metadata) {
+  const site = SITE_URL();
+  const { data, error } = await supabase.rpc("get_premium_members", { _limit: 200 });
+  if (error) { meta.source = "premium-members-unavailable"; return; }
+  const rows = (data ?? []) as any[];
+  const items = rows.map((r) => {
+    const url = r.handle ? `${site}/${r.handle}` : `${site}/profile/${r.user_id}`;
+    const name = String(r.full_name || r.handle || "Photographer");
+    return { url, name, line: r.line ? String(r.line) : "", image: r.photo_url ? String(r.photo_url) : undefined };
+  });
+  const n = items.length;
+  const heading = "Premium Members · Verified Photographers";
+  const intro = `Honoured by our curators. Never requested. Never sold. ${n} photographer${n === 1 ? "" : "s"} chosen by the ${SITE_NAME_FALLBACK} curators for original work and good conduct. Nobody can apply for this tick, and nobody can buy it.`;
+  meta.title = `${clampTitle("Premium Members · Verified Photographers", SITE_NAME_FALLBACK)} | ${SITE_NAME_FALLBACK}`;
+  meta.description = clampDesc(intro);
+  if (items[0]?.image) meta.ogImage = items[0].image;
+  meta.jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      url: meta.canonical,
+      name: `Premium Members on ${SITE_NAME_FALLBACK}`,
+      description: intro,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: n,
+        itemListElement: items.map((it, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Person",
+            name: it.name,
+            url: it.url,
+            ...(it.image ? { image: it.image } : {}),
+            ...(it.line ? { description: it.line } : {}),
+            award: `Verified Photographer, honoured by the ${SITE_NAME_FALLBACK} curators`,
+          },
+        })),
+      },
+    },
+    breadcrumbs([[SITE_NAME_FALLBACK, `${site}/`], ["Premium Members", meta.canonical]]),
+  ];
+  meta.body = listBody("premium-members", heading, intro,
+    items.map((it) => ({ url: it.url, title: it.line ? `${it.name} — ${it.line}` : it.name, image: it.image })), site);
+  meta.source = "premium-members";
+}
+
 /** AEO (Owner 2026-11-10): /help and /help/<slug> — no database, the one answer list. */
 function resolveHelp(slug: string | undefined, meta: Metadata) {
   const site = SITE_URL();
@@ -572,6 +629,8 @@ async function resolve(path: string): Promise<Metadata> {
       await resolvePost(segments[1], meta, global);
     } else if (segments[0] === "hashtag" && segments[1] && segments.length === 2) {
       await resolveHashtag(segments[1], meta, global); // B: hashtag pages readable
+    } else if (segments[0] === "premium-members" && segments.length === 1) {
+      await resolvePremiumMembers(meta); // Premium Members honour list (SQL 6000)
     } else if (segments[0] === "help" && segments.length <= 2) {
       resolveHelp(segments[1], meta); // AEO answer pages
     } else if (segments.length === 3 && segments[1] === "post" && segments[2]) {

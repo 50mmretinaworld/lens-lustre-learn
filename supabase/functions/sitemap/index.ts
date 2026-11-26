@@ -22,6 +22,8 @@ const staticRoutes = [
   { path: "/journal", priority: "0.8", changefreq: "daily" },
   { path: "/winners", priority: "0.7", changefreq: "weekly" },
   { path: "/discover", priority: "0.7", changefreq: "daily" },
+  // Premium Members (Owner 26 Nov 2026): the public honour list (SQL 6000 get_premium_members).
+  { path: "/premium-members", priority: "0.8", changefreq: "weekly" },
   { path: "/feed", priority: "0.6", changefreq: "daily" },
   { path: "/certificates", priority: "0.5", changefreq: "monthly" },
   { path: "/signup", priority: "0.5", changefreq: "monthly" },
