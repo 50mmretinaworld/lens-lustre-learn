@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/core/use-toast";
 import AdZone from "@/components/ads/AdZone";
 import FeedFriendSuggestions from "@/components/feed/FeedFriendSuggestions";
+import FeedPremiumMembers from "@/components/feed/FeedPremiumMembers";
 import { TrendingWeekCard } from "@/components/feed/TrendingWeekCard";
 import { useTrendingWeek } from "@/hooks/feed/useTrendingWeek";
 import { FEED_INSERTS } from "@/lib/feed/feedInserts";
@@ -700,6 +701,9 @@ const Feed = () => {
                       <TrendingWeekCard variant="feed" data={trendingQ.data ?? null} loading={false} />
                     </div>
                   )}
+
+                  {/* Owner 26 Nov 2026 (Premium Members, approved plan Parts 3 + 7): directly below Trending, at EVERY width — phone, app and the computer's centre column. Nothing when the list is empty. */}
+                  {i === FEED_INSERTS.trending && <FeedPremiumMembers />}
 
                   {(() => {
                     // Picture #N in the Story Card library owns a fixed place:

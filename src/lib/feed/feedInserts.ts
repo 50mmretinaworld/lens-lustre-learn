@@ -9,6 +9,8 @@
  *
  *   trending  below the 4th post, ONCE per feed, wherever the computer's left
  *             column (≥ 1280 px) is not on screen: the phone, the app, tablets
+ *             — and directly under it "Meet our Premium Members"
+ *             (FeedPremiumMembers), at EVERY width (Owner 26 Nov 2026)
  *   people    below the 10th post, app only (FeedFriendSuggestions decides)
  */
 export const FEED_INSERTS = {
