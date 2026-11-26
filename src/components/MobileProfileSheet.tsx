@@ -118,6 +118,7 @@ const MobileProfileSheet = ({ open, onOpenChange }: Props) => {
         { icon: ImageLucide, label: "Photos", to: "/photos", show: true },
         { icon: Aperture, label: "My Stories", to: "/my-stories", show: true },
         { icon: Crown, label: "Winners", to: "/winners", show: true },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true },
         { icon: Trophy, label: "Compete", to: "/competitions", show: true },
         { icon: HelpCircle, label: "Help", to: "/help-support", show: true },
       ]
