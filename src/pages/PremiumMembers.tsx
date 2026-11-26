@@ -43,7 +43,7 @@ export default function PremiumMembers() {
       <div className="mx-auto w-full max-w-5xl px-4 pb-12 pt-5 md:pt-12">
         <header className="flex flex-col gap-3 md:max-w-2xl">
           <p className="flex items-center gap-1.5 text-[13px] font-semibold text-primary" style={headingFont}>
-            <VerifiedBadge className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+            <VerifiedBadge className="h-5 w-5 shrink-0" aria-hidden="true" />
             Premium Members · Verified Photographers
           </p>
           <h1 className="text-[28px] font-light leading-tight tracking-tight md:text-5xl" style={displayFont}>
@@ -74,7 +74,7 @@ export default function PremiumMembers() {
 
         {isLoading ? (
           <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4" aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-[4/7] animate-pulse rounded-[14px] bg-muted" />)}
+            {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-[4/7] animate-pulse rounded-xl bg-muted" />)}
           </div>
         ) : n > 0 ? (
           <section aria-label="Premium Members" className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -93,7 +93,7 @@ export default function PremiumMembers() {
 
         <section aria-label="About the tick" className="mt-10 grid gap-3 md:grid-cols-3">
           {BLOCKS.map(([title, text]) => (
-            <div key={title} className="rounded-[14px] bg-card p-4">
+            <div key={title} className="rounded-xl bg-card p-4">
               <h2 className="text-[15px] font-bold" style={headingFont}>{title}</h2>
               <p className="mt-1 text-sm leading-relaxed text-foreground/80" style={bodyFont}>{text}</p>
             </div>

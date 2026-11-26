@@ -16,7 +16,7 @@ import {
 import {
   LogOut, Shield, Scale, Wallet, LayoutDashboard, User, ImageIcon,
   Users, Rss, UserPlus, HelpCircle, Settings, Trophy, Edit2, Compass,
-  Sun, Moon, Globe, BookOpen, Award, FileText, Download, Image as ImageLucide, Crown, Bell, Aperture, MessageCircle, BadgeCheck,
+  Sun, Moon, Globe, BookOpen, Award, FileText, Download, Image as ImageLucide, Crown, Bell, Aperture, MessageCircle,
 } from "lucide-react";
 import { isNativeIOSApp } from "@/lib/native/authDeepLink";
 import { useTheme } from "@/hooks/core/useTheme";
@@ -118,7 +118,7 @@ const MobileProfileSheet = ({ open, onOpenChange }: Props) => {
         { icon: ImageLucide, label: "Photos", to: "/photos", show: true },
         { icon: Aperture, label: "My Stories", to: "/my-stories", show: true },
         { icon: Crown, label: "Winners", to: "/winners", show: true },
-        { icon: BadgeCheck, label: "Premium Members", to: "/premium-members", show: true },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true },
         { icon: Trophy, label: "Compete", to: "/competitions", show: true },
         { icon: HelpCircle, label: "Help", to: "/help-support", show: true },
       ]
@@ -141,7 +141,7 @@ const MobileProfileSheet = ({ open, onOpenChange }: Props) => {
         { icon: ImageLucide, label: "Photos", to: "/photos", show: true },
         { icon: Aperture, label: "My Stories", to: "/my-stories", show: true },
         { icon: Crown, label: "Winners", to: "/winners", show: true },
-        { icon: BadgeCheck, label: "Premium Members", to: "/premium-members", show: true },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true },
         { icon: Trophy, label: "Compete", to: "/competitions", show: true },
         { icon: FileText, label: "Journal", to: "/journal", show: true },
         { icon: BookOpen, label: "Courses", to: "/courses", show: true },

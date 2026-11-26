@@ -21,7 +21,7 @@ import {
 import {
   LogOut, Shield, Scale, Wallet, LayoutDashboard, User, ImageIcon,
   Users, MessageSquare, Compass, Rss, UserPlus, HelpCircle, Settings,
-  Trophy, Edit2, Award, Camera, Bell, Trash2, Aperture, BadgeCheck,
+  Trophy, Edit2, Award, Camera, Bell, Trash2, Aperture,
 } from "lucide-react";
 import { isNativeIOSApp } from "@/lib/native/authDeepLink";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +111,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         { icon: Bell, label: "Notifications", to: "/notifications", show: true, tooltip: "Everything you have missed" },
         { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true, tooltip: "Competition entries" },
         { icon: Trophy, label: "Competitions", to: "/competitions", show: true, tooltip: "Browse & enter" },
-        { icon: BadgeCheck, label: "Premium Members", to: "/premium-members", show: true, tooltip: "Honoured by our curators" },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true, tooltip: "Honoured members" },
         { icon: HelpCircle, label: "Help & Support", to: "/help-support", show: true, tooltip: "Get assistance" },
       ],
     },
@@ -131,7 +131,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         { icon: Bell, label: "Notifications", to: "/notifications", show: true, tooltip: "Everything you have missed" },
         { icon: Rss, label: "Feed", to: "/feed", show: true, tooltip: "Latest updates" },
         { icon: Compass, label: "Discover", to: "/discover", show: true, tooltip: "Find photographers" },
-        { icon: BadgeCheck, label: "Premium Members", to: "/premium-members", show: true, tooltip: "Honoured by our curators" },
+        { icon: Award, label: "Premium Members", to: "/premium-members", show: true, tooltip: "Honoured members" },
       ],
     },
     {

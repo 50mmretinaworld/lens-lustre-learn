@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./App.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { isNativeCapacitorApp, isNativeIOSApp } from "@/lib/native/authDeepLink";
-import { hasPendingFollow } from "@/lib/social/pendingFollow";
+import { hasPendingFollow } from "@/lib/social/pendingFollowFlag";
 import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/core/useAuth";
 import OfflineDeviceStoreBridge from "@/components/OfflineDeviceStoreBridge";

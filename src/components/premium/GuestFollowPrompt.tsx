@@ -64,7 +64,7 @@ export default function GuestFollowPrompt({ member, onClose, ua, touchPoints }: 
   if (desktop) {
     return (
       <Dialog open onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-sm rounded-[14px]" data-testid="guest-follow-dialog">
+        <DialogContent className="max-w-sm rounded-xl" data-testid="guest-follow-dialog">
           <Header member={member} Title={DialogTitle} Description={DialogDescription} />
           <div className="flex flex-col gap-2">
             <Link to="/signup" onClick={onClose} className={primaryBtn} style={headingFont}>Join free</Link>
@@ -87,7 +87,7 @@ export default function GuestFollowPrompt({ member, onClose, ua, touchPoints }: 
       <SheetContent
         side="bottom"
         data-testid="guest-follow-sheet"
-        className="flex flex-col gap-4 rounded-t-[20px] px-4 pt-5 pb-[calc(1.5rem+var(--safe-bottom,0px))]"
+        className="flex flex-col gap-4 rounded-t-2xl px-4 pt-5 pb-[calc(1.5rem+var(--safe-bottom,0px))]"
       >
         <Header member={member} Title={SheetTitle} Description={SheetDescription} />
         <div className="flex flex-col gap-2">

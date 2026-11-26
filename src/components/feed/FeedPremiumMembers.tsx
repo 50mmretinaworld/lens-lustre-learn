@@ -61,7 +61,7 @@ export default function FeedPremiumMembers() {
       <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
         <div className="min-w-0">
           <h2 className="flex items-center gap-1.5 text-[15px] font-bold text-foreground" style={headingFont}>
-            <VerifiedBadge className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+            <VerifiedBadge className="h-5 w-5 shrink-0" aria-hidden="true" />
             Meet our Premium Members
           </h2>
           <p className="mt-0.5 text-[13px] text-muted-foreground" style={bodyFont}>Honoured by our curators</p>

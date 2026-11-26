@@ -37,7 +37,7 @@ export default function PremiumMemberCard({ member: m, following, self = false, 
   return (
     <article
       data-testid="premium-member-card"
-      className={`flex flex-col overflow-hidden rounded-[14px] bg-card ${className}`}
+      className={`flex flex-col overflow-hidden rounded-xl bg-card ${className}`}
     >
       <div className="relative">
         <ProfileLink userId={m.user_id} handle={m.handle} aria-label={`${m.full_name} — profile`} className="block">
@@ -48,8 +48,8 @@ export default function PremiumMemberCard({ member: m, following, self = false, 
           )}
         </ProfileLink>
         {/* the shared avatar (PresenceAvatar: photo, else initial); no online dot on this card */}
-        <span className="absolute -bottom-[18px] left-2.5 rounded-full bg-card p-[3px]" aria-hidden="true">
-          <PresenceAvatar src={m.avatar_url} name={m.full_name} size={34} showRing={false} showDot={false} />
+        <span className="absolute -bottom-4 left-2.5 rounded-full bg-card p-0.5" aria-hidden="true">
+          <PresenceAvatar src={m.avatar_url} name={m.full_name} size={36} showRing={false} showDot={false} />
         </span>
       </div>
 
@@ -83,7 +83,7 @@ export default function PremiumMemberCard({ member: m, following, self = false, 
           </p>
         )}
         {/* the spacer keeps Follow on one line across a row of cards with and without a line */}
-        <span className="min-h-1 flex-1" aria-hidden="true" />
+        <span className="flex-1" aria-hidden="true" />
         {!self && (
           <button
             type="button"

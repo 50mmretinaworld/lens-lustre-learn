@@ -7,10 +7,12 @@
  * call is guarded: a private window or blocked storage simply means no
  * remembered follow, never an error.
  *
- * Tiny on purpose: `hasPendingFollow` is read by the start-up gate in App.tsx
- * (first download); everything else loads on demand.
+ * The start-up gate in App.tsx (first download) reads only pendingFollowFlag.ts;
+ * this file loads on demand.
  */
-export const PENDING_FOLLOW_KEY = "50mm.pendingFollow";
+import { PENDING_FOLLOW_KEY } from "@/lib/social/pendingFollowFlag";
+
+export { PENDING_FOLLOW_KEY, hasPendingFollow } from "@/lib/social/pendingFollowFlag";
 
 export interface PendingFollow {
   id: string;
@@ -21,14 +23,6 @@ export function savePendingFollow(p: PendingFollow): void {
   try {
     localStorage.setItem(PENDING_FOLLOW_KEY, JSON.stringify({ id: p.id, name: p.name }));
   } catch { /* storage blocked: nothing remembered */ }
-}
-
-export function hasPendingFollow(): boolean {
-  try {
-    return !!localStorage.getItem(PENDING_FOLLOW_KEY);
-  } catch {
-    return false;
-  }
 }
 
 export function readPendingFollow(): PendingFollow | null {
