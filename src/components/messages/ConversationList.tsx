@@ -69,7 +69,9 @@ function Row({ c, active, meId, onOpen }: { c: ConversationSummary; active: bool
           </span>
         </span>
         {unread && (
-          <span aria-label={`${c.unread} unread`} data-testid="unread-dot" className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+          <span aria-label={`${c.unread} unread`} data-testid="unread-count" className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-bold leading-none text-primary-foreground">
+            {c.unread > 99 ? "99+" : c.unread}
+          </span>
         )}
       </button>
     </li>
