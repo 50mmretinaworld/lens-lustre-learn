@@ -119,6 +119,25 @@ export function retryPushSetup(): Promise<void> {
   return initPushNotifications(lastOnOpen);
 }
 
+/** One tap listener per app run (it survives a refused permission or a failed registration). */
+let listening = false;
+
+/** Tap on a notification → hand the payload to the latest caller's handler for deep-linking. */
+async function listenForTaps(fm: FirebaseMessagingPlugin): Promise<void> {
+  if (listening) return;
+  listening = true;
+  try {
+    await fm.addListener("notificationActionPerformed", (e: Record<string, unknown>) => {
+      const notification = (e as { notification?: { data?: Record<string, unknown> } })?.notification;
+      lastOnOpen?.(notification?.data ?? {});
+      void reportPushOpened(notification?.data ?? {});   // N4 receipt; no-op without delivery_id
+    });
+  } catch (err) {
+    listening = false;
+    throw err;
+  }
+}
+
 /**
  * Ask for notification permission (once), register this device's FCM token so
  * the server can reach it, and route taps on a delivered notification.
@@ -139,6 +158,10 @@ export async function initPushNotifications(
 
   started = true;
   try {
+    // Taps FIRST. Everything below waits on a permission answer and the network; a tap that opened the app must
+    // not wait for that, and must still open its page when the token calls fail (Owner 26 Nov 2026).
+    await listenForTaps(fm);
+
     // Android 13+ / iOS show the OS permission prompt here. Declining is final
     // until the user changes it in system settings, so we never re-prompt —
     // the "Turn on notifications" card (PushPermissionCard) is the way back.
@@ -160,13 +183,6 @@ export async function initPushNotifications(
     await fm.addListener("tokenReceived", async (e: Record<string, unknown>) => {
       const t = (e as { token?: string })?.token;
       if (t) await registerToken(t);
-    });
-
-    // Tap on a notification → hand the payload to the caller for deep-linking.
-    await fm.addListener("notificationActionPerformed", (e: Record<string, unknown>) => {
-      const notification = (e as { notification?: { data?: Record<string, unknown> } })?.notification;
-      onOpen?.(notification?.data ?? {});
-      void reportPushOpened(notification?.data ?? {});   // N4 receipt; no-op without delivery_id
     });
   } catch (err) {
     logger.error({
@@ -208,5 +224,6 @@ export async function unregisterPushNotifications(): Promise<void> {
   } catch {
     /* noop */
   }
+  listening = false;
   started = false;
 }
