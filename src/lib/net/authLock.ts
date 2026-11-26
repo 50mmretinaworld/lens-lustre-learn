@@ -19,8 +19,7 @@ export const OTHER_TAB_WAIT_MS = 800;
 export function makeAuthLock(shared: LockFn, own: LockFn): LockFn {
   let stuck = false;
   return async function authLock<R>(name: string, acquireTimeout: number, fn: () => Promise<R>): Promise<R> {
-    const hasLocks = typeof globalThis.navigator !== "undefined" && !!(globalThis.navigator as Navigator & { locks?: unknown }).locks;
-    if (!hasLocks) return own(name, acquireTimeout, fn);
+    if (!(globalThis.navigator as (Navigator & { locks?: unknown }) | undefined)?.locks) return own(name, acquireTimeout, fn);
     if (acquireTimeout === 0) return shared(name, 0, fn);
     const wait = stuck ? 0 : acquireTimeout < 0 ? OTHER_TAB_WAIT_MS : Math.min(acquireTimeout, OTHER_TAB_WAIT_MS);
     try {
