@@ -28,7 +28,7 @@ const CookieConsentBanner = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed inset-x-0 bottom-[calc(3rem+env(safe-area-inset-bottom))] lg:inset-x-auto lg:left-4 lg:right-auto lg:bottom-4 z-[60] px-4 md:px-6 lg:px-0 pointer-events-none"
+            className="fixed inset-x-0 bottom-[calc(3rem+var(--safe-bottom))] lg:inset-x-auto lg:left-4 lg:right-auto lg:bottom-4 z-[60] px-4 md:px-6 lg:px-0 pointer-events-none"
           >
             <div className="max-w-2xl lg:max-w-md mx-auto lg:mx-0 rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-[0_-8px_40px_-12px_hsl(var(--primary)/0.15)] overflow-hidden pointer-events-auto">
               <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-transparent" />

@@ -100,7 +100,9 @@ installFakeBackend({ routes: fixtureRoutes, signedIn: !isSignedOutScene(name), c
 if (params.get("native") === "1") {
   (window as unknown as { Capacitor?: unknown }).Capacitor = {
     isNativePlatform: () => true,
-    getPlatform: () => "android",
+    // `&ios=1`: the iPhone app (isNativeIOSApp). Its status-bar rule (src/lib/native/safeArea.ts) is drawn with the
+    // phone's strips set below — a desktop WebKit reports env(safe-area-inset-*) as 0.
+    getPlatform: () => (params.get("ios") === "1" ? "ios" : "android"),
     Plugins: {
       /**
        * THE BUILD LABEL BESIDE LOGOUT — stubbed 2026-08-16, and the owner had
@@ -140,6 +142,17 @@ if (params.get("native") === "1") {
         : {}),
     },
   };
+  /**
+   * `&ios=1` — the iPhone's own strips, as iOS reports them to the app (iPhone 15: 59 px status bar, 34 px home
+   * indicator; `&safetop=` / `&safebottom=` for other phones). The class is the one safeArea.ts puts on <html>; the
+   * two numbers stand in for env(safe-area-inset-*), which only a real iPhone fills in.
+   */
+  if (params.get("ios") === "1") {
+    const root = document.documentElement;
+    root.classList.add("app-ios");
+    root.style.setProperty("--safe-top", `${Number(params.get("safetop") ?? 59)}px`);
+    root.style.setProperty("--safe-bottom", `${Number(params.get("safebottom") ?? 34)}px`);
+  }
 }
 
 const { SCENES, A11Y_ONLY_SCENES } = await import("./scenes");
