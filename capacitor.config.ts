@@ -17,6 +17,16 @@ const config: CapacitorConfig = {
     // "may not display for all users" + "deprecated APIs or parameters").
     adjustMarginsForEdgeToEdge: 'auto',
   },
+  ios: {
+    // The iPhone status bar (time, signal, battery, notch) must never sit on top of the app's
+    // header, the "+" button or a story's top bar. Capacitor's default ('never') lets the web
+    // page run under it and nothing in the CSS reserves that strip (Owner photos, 23 Nov 2026:
+    // clock and battery drawn over "50mm Retina World", the "+" and the story name). 'always'
+    // makes the page start below the status bar and above the home bar, on every screen at once.
+    // Android is untouched. backgroundColor = the dark app background, so the strip matches.
+    contentInset: 'always',
+    backgroundColor: '#0f172a',
+  },
   plugins: {
     // FCM presentation while the app is foregrounded
     FirebaseMessaging: {
