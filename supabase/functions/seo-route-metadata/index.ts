@@ -525,19 +525,55 @@ async function resolveHashtag(raw: string, meta: Metadata, global: any) {
 
 /**
  * Premium Members (Owner 26 Nov 2026): /premium-members — the honour list, readable without JavaScript.
- * Reads the SAME public list the app shows (SQL 6000 get_premium_members: no admin account, no banned or
- * suspended member, only public photos). If the function is missing (not applied yet), the page keeps defaults.
+ * PLAIN READS ONLY (this endpoint is open and holds the service key, so it calls no database function). The
+ * filters are the same as the app's public list (SQL 6000): Verified badge, never the admin account, never a
+ * banned or suspended member, only public member photos — and a member who turned search off is left out.
+ * If SQL 6000 is not applied yet, the reads of its new column / table fail and the page keeps the defaults.
  */
+async function premiumItems(site: string): Promise<Array<{ url: string; name: string; line: string; image?: string }> | null> {
+  const { data: badges, error } = await supabase.from("user_badges")
+    .select("user_id, citation, assigned_at").eq("badge_type", "verified")
+    .order("assigned_at", { ascending: false }).limit(60);
+  if (error) return null;
+  const ids = ((badges ?? []) as any[]).map((b) => b.user_id);
+  if (!ids.length) return [];
+  const [{ data: admins }, { data: profiles }, { data: featured }, moderated] = await Promise.all([
+    supabase.from("user_roles").select("user_id").eq("role", "admin").in("user_id", ids),
+    supabase.from("profiles").select("id, full_name, custom_url, bio, indexing_disabled").in("id", ids),
+    supabase.from("featured_photos").select("user_id, post_id").in("user_id", ids),
+    moderatedIds(ids),
+  ]);
+  const hidden = new Set<string>([...((admins ?? []) as any[]).map((r) => r.user_id), ...moderated]);
+  const byId = new Map<string, any>(((profiles ?? []) as any[]).map((p) => [p.id, p]));
+  const marked = new Map<string, string>(((featured ?? []) as any[]).map((f) => [f.user_id, f.post_id]));
+  const shown = ((badges ?? []) as any[]).filter((b) => {
+    const p = byId.get(b.user_id);
+    return p && !hidden.has(b.user_id) && p.indexing_disabled !== true;
+  });
+  return await Promise.all(shown.map(async (b) => {
+    const p = byId.get(b.user_id);
+    const photos = () => supabase.from("posts").select("image_url, image_urls")
+      .eq("user_id", b.user_id).eq("privacy", "public").eq("post_kind", "member");
+    const mark = marked.get(b.user_id);
+    let post: any = mark ? (await photos().eq("id", mark).maybeSingle()).data : null;
+    if (!post) {
+      post = (await photos().not("image_url", "is", null)
+        .order("likes_count", { ascending: false }).limit(1).maybeSingle()).data;
+    }
+    const bioLine = String(p.bio ?? "").split("\n")[0].trim().slice(0, 140);
+    return {
+      url: p.custom_url ? `${site}/${p.custom_url}` : `${site}/profile/${b.user_id}`,
+      name: String(p.full_name || p.custom_url || "Photographer"),
+      line: String(b.citation ?? "").trim() || bioLine,
+      image: post?.image_url || post?.image_urls?.[0] || undefined,
+    };
+  }));
+}
+
 async function resolvePremiumMembers(meta: Metadata) {
   const site = SITE_URL();
-  const { data, error } = await supabase.rpc("get_premium_members", { _limit: 200 });
-  if (error) { meta.source = "premium-members-unavailable"; return; }
-  const rows = (data ?? []) as any[];
-  const items = rows.map((r) => {
-    const url = r.handle ? `${site}/${r.handle}` : `${site}/profile/${r.user_id}`;
-    const name = String(r.full_name || r.handle || "Photographer");
-    return { url, name, line: r.line ? String(r.line) : "", image: r.photo_url ? String(r.photo_url) : undefined };
-  });
+  const items = await premiumItems(site);
+  if (!items) { meta.source = "premium-members-unavailable"; return; }
   const n = items.length;
   const heading = "Premium Members · Verified Photographers";
   const intro = `Honoured by our curators. Never requested. Never sold. ${n} photographer${n === 1 ? "" : "s"} chosen by the ${SITE_NAME_FALLBACK} curators for original work and good conduct. Nobody can apply for this tick, and nobody can buy it.`;
