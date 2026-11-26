@@ -5,6 +5,7 @@ import type { Database } from './types';
 // src/lib/sessionLossRecorder.ts. A logger import here would close a cycle.
 import { noteRequest } from '@/lib/sessionLossRecorder';
 import { noteOutcome } from '@/lib/offline/networkQuality';
+import { makeAuthLock } from '@/lib/net/authLock';
 // N1: edge functions run in the database's region (imports nothing).
 import { pinFunctionRegion } from '@/lib/net/functionRegion';
 
@@ -114,29 +115,8 @@ const timeoutFetch: typeof fetch = (rawInput, init) => {
     .finally(() => clearTimeout(timer));
 };
 
-/**
- * THE SIGN-IN LOCK, WITHOUT THE STALL. Owner 24 Nov 2026 (Admin → Users, screenshot): "Could not load members: Error:
- * Acquiring an exclusive Navigator LockManager lock "lock:sb-…-auth-token" timed out waiting 10000ms".
- *
- * supabase-js makes every tab of the site take turns on ONE browser lock around the saved session. When another tab
- * holds it and does not let go — typically a background tab Chrome has frozen in the middle of a token refresh — every
- * other tab waits 10 s and then FAILS the read it was doing. Now: wait at most 5 s for the other tab, then carry on
- * with this tab's own lock. The worst case is two tabs refreshing the same session at once, which the server accepts
- * (a refresh token may be reused for a few seconds). The background refresh's "is anyone refreshing? then skip"
- * (acquireTimeout 0) is kept exactly as before.
- */
-const OTHER_TAB_WAIT_MS = 5_000;
-async function authLock<R>(name: string, acquireTimeout: number, fn: () => Promise<R>): Promise<R> {
-  const hasLocks = typeof globalThis.navigator !== 'undefined' && !!(globalThis.navigator as Navigator & { locks?: unknown }).locks;
-  if (!hasLocks) return processLock(name, acquireTimeout, fn);
-  if (acquireTimeout === 0) return navigatorLock(name, 0, fn);
-  try {
-    return await navigatorLock(name, acquireTimeout < 0 ? OTHER_TAB_WAIT_MS : Math.min(acquireTimeout, OTHER_TAB_WAIT_MS), fn);
-  } catch (err) {
-    if ((err as { isAcquireTimeout?: unknown } | null)?.isAcquireTimeout === true) return processLock(name, -1, fn);
-    throw err;
-  }
-}
+/** The sign-in lock: src/lib/net/authLock.ts (a tab that does not let go must not stall the others). */
+const authLock = makeAuthLock(navigatorLock, processLock);
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
