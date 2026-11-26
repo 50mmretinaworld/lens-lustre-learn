@@ -13,6 +13,7 @@ SET LOCAL statement_timeout = '60s';
 DO $p$
 DECLARE
   _m      uuid;   -- a member without the verified badge
+  _admin  uuid;
   _other  text;   -- a badge type that member does not hold, not 'verified'
   _bid    uuid;
   _title  text;
@@ -46,9 +47,12 @@ BEGIN
    ORDER BY p.created_at
    LIMIT 1;
   IF _m IS NULL THEN RAISE EXCEPTION 'PROBE FAIL: no member without the verified badge to test with'; END IF;
+  -- user_badges.assigned_by is NOT NULL: an admin gives badges.
+  SELECT r.user_id INTO _admin FROM public.user_roles r WHERE r.role = 'admin' ORDER BY r.user_id LIMIT 1;
+  IF _admin IS NULL THEN RAISE EXCEPTION 'PROBE FAIL: no admin to stand as assigned_by'; END IF;
 
   -- B2 ── verified → the honour words ───────────────────────────────────────────────────────────────────────────
-  INSERT INTO public.user_badges (user_id, badge_type) VALUES (_m, 'verified') RETURNING id INTO _bid;
+  INSERT INTO public.user_badges (user_id, badge_type, assigned_by) VALUES (_m, 'verified', _admin) RETURNING id INTO _bid;
   SELECT count(*) INTO _n FROM public.user_notifications WHERE reference_id = _bid AND type = 'badge_awarded';
   IF _n <> 1 THEN RAISE EXCEPTION 'PROBE FAIL B2: % notifications for one verified badge (want 1)', _n; END IF;
   SELECT title, message INTO _title, _msg FROM public.user_notifications WHERE reference_id = _bid AND type = 'badge_awarded';
@@ -68,7 +72,7 @@ BEGIN
   IF _other IS NULL THEN
     RAISE NOTICE 'PROBE B3 skipped: no other badge type free for the test member';
   ELSE
-    INSERT INTO public.user_badges (user_id, badge_type) VALUES (_m, _other) RETURNING id INTO _bid;
+    INSERT INTO public.user_badges (user_id, badge_type, assigned_by) VALUES (_m, _other, _admin) RETURNING id INTO _bid;
     SELECT title, message INTO _title, _msg FROM public.user_notifications WHERE reference_id = _bid AND type = 'badge_awarded';
     IF _title IS DISTINCT FROM 'New Badge!' OR _msg NOT LIKE 'You''ve been awarded the "%" badge! 🏅' THEN
       RAISE EXCEPTION 'PROBE FAIL B3: other badges lost their wording';
