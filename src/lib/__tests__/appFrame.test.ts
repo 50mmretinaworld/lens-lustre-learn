@@ -22,7 +22,7 @@ describe("the app frame: a page's whole screen = the screen minus the frame", ()
   it("the bottom-bar room is 3rem on phones and 0 on a phone chat and from lg up", () => {
     expect(css).toMatch(/\.app-frame\s*\{\s*--frame-bottom:\s*3rem;/);
     expect(css).toMatch(/\.app-frame--no-bar\s*\{\s*--frame-bottom:\s*0px;/);
-    expect(css).toMatch(/@media \(min-width: 1024px\)\s*\{\s*\.app-frame\s*\{\s*--frame-bottom:\s*0px;/);
+    expect(css).toMatch(/@media \(min-width: 1024px\)\s*\{\s*\.app-frame,\s*html\.app-ios \.app-frame\s*\{\s*--frame-bottom:\s*0px;/);
   });
 
   it("Layout wraps every page in the frame and publishes the top bar's height", () => {
