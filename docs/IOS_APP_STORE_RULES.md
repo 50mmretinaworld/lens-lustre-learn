@@ -23,6 +23,17 @@ A rejection costs days. Treat this list as law.
 | 10 | Push: money notification types are never sent to iOS tokens. | 3.1.1 | `supabase/functions/send-push`, kept in step with `iosReview.ts` |
 | 11 | Binary: 1024x1024 icon with NO alpha channel; `ITSAppUsesNonExemptEncryption=false`; privacy purpose strings in Info.plist; real logo, never the Capacitor placeholder. | 2.1 / 5.1.1 / 90683 | `.github/workflows/ios-build.yml` (icon step has guards) |
 
+## Build tool: Xcode 27 only (Owner order, 2026-11-27) — no exceptions
+
+**B1. Every iOS build and every iOS update is built with Xcode 27 (iOS 27 SDK) or newer.** Never Xcode 26 or
+older, not as a fallback, not for a test, not "just this once". Apple requires it from April 2027
+(notice ITMS-90725); the Owner requires it from now.
+
+- `ios-build.yml` runs on `xcode-27` and pins `xcode-version: '27.0'`. There is no machine choice.
+- `src/__tests__/iosXcode27Rule.test.ts` fails the checks if any iOS workflow goes back.
+- If an Xcode 27 build fails, fix the build. Do not change the tool.
+- A newer Xcode (28, …) replaces 27 by updating the workflow, this rule and the test together.
+
 ## How to keep the rule (mandatory, every change)
 
 1. **New feature touching money, login, ads, analytics, cookies, external payment links, or

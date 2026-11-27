@@ -39,7 +39,7 @@ permissions:
 
 jobs:
   record:
-    runs-on: macos-15
+    runs-on: xcode-27 # Xcode 27 only (docs/IOS_APP_STORE_RULES.md rule B1)
     timeout-minutes: 90
     steps:
       - name: Checkout
