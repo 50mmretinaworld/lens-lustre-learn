@@ -28,7 +28,7 @@ name: iOS Build
 #
 # NODE 22, NOT 20 - matches android-build.yml. @capacitor/cli 8.5.0 requires it.
 #
-# TOOLCHAIN: Xcode 27 ONLY (Owner order 27 Nov 2026, docs/IOS_APP_STORE_RULES.md rule 8).
+# TOOLCHAIN: Xcode 27 ONLY (Owner order 27 Nov 2026, docs/IOS_APP_STORE_RULES.md rule B1).
 #
 # Trigger: manual only (workflow_dispatch) until a first build is verified
 # end-to-end. Once a build lands cleanly in TestFlight, uncomment the `push`
@@ -62,7 +62,7 @@ concurrency:
 jobs:
   build-ios:
     # XCODE 27 ONLY (Owner order 27 Nov 2026; Apple notice 90725). No fallback to Xcode 26 and no machine choice:
-    # docs/IOS_APP_STORE_RULES.md rule 8, held by src/__tests__/iosXcode27Rule.test.ts. Xcode 27 runs on Apple
+    # docs/IOS_APP_STORE_RULES.md rule B1, held by src/__tests__/iosXcode27Rule.test.ts. Xcode 27 runs on Apple
     # silicon only; the xcode-27 label is GitHub's image for it (probe run 45922307810, build 45922410650).
     # Never move below Swift 6.2: Capacitor 8.5.0's prebuilt iOS runtime hides its plugin API from older compilers.
     runs-on: xcode-27

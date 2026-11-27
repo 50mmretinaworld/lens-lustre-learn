@@ -1,6 +1,6 @@
 /**
  * Owner order 27 Nov 2026: every iOS build and update uses Xcode 27 or newer — no exceptions
- * (docs/IOS_APP_STORE_RULES.md rule 8, Apple notice ITMS-90725). This fails if a workflow goes back.
+ * (docs/IOS_APP_STORE_RULES.md rule B1, Apple notice ITMS-90725). This fails if a workflow goes back.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
