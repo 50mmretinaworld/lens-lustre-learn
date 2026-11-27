@@ -3,7 +3,7 @@
  *
  * Owner 26 Nov 2026 (sample A approved): in the Android and iPhone apps the bar floats above the bottom edge, thin and
  * classic (44 px, 36 px while reading down the page), soft corners, a blue line on the current tab, and the big 50mm
- * button rises out of it and beats like a heart. The website is unchanged.
+ * button rises out of it and zooms smoothly in and out. The website is unchanged.
  *
  * Who gets it: Admin → Features → "App footer: floating" (switch `floating_footer`, 20261126_6500) — Off / Selected
  * members / All members, read from the database, so it changes without a new build. Signed out: classic.
@@ -73,11 +73,13 @@ export const footerClasses = (floating: boolean, compact: boolean) => ({
   tab: floating ? "self-stretch" : "",
 });
 
-/** The 50mm button's motion. Floating: a double heartbeat then a rest. Reduced motion: still. */
+/**
+ * The 50mm button's motion: a smooth zoom in and out. Floating: slow and gentle, 3.2 s (Owner 27 Nov 2026, sample A —
+ * replaces the heartbeat). Reduced motion: still.
+ */
 export function homePulse(floating: boolean, reduceMotion: boolean) {
   if (reduceMotion && floating) return { glow: {}, disc: {}, transition: { duration: 0 } };
-  const transition = { repeat: Infinity, duration: floating ? 1.6 : 2.8, ease: "easeInOut" as const };
-  return floating
-    ? { glow: { scale: [1, 1.35, 1.05, 1.25, 1, 1], opacity: [0.35, 0.85, 0.45, 0.7, 0.35, 0.35] }, disc: { scale: [1, 1.14, 1, 1.09, 1, 1], y: [0, -4, 0, -2, 0, 0] }, transition }
-    : { glow: { scale: [1, 1.18, 1], opacity: [0.35, 0.7, 0.35] }, disc: { scale: [1, 1.08, 1] }, transition };
+  const transition = { repeat: Infinity, duration: floating ? 3.2 : 2.8, ease: "easeInOut" as const };
+  const glow = floating ? { scale: [1, 1.16, 1], opacity: [0.35, 0.6, 0.35] } : { scale: [1, 1.18, 1], opacity: [0.35, 0.7, 0.35] };
+  return { glow, disc: { scale: [1, 1.08, 1] }, transition };
 }
