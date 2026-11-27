@@ -54,7 +54,7 @@ on:
         type: choice
         required: false
         default: macos-15-intel
-        options: [macos-15-intel, macos-15]
+        options: [macos-15-intel, macos-15, xcode-27]
       notification_photo:
         description: "Sender's round photo on message notifications (a notification service extension). Off = build without it, if it ever blocks a release."
         type: boolean
@@ -577,7 +577,8 @@ jobs:
           # the note on runs-on above); Xcode 26.x is the first line that
           # provides it. `latest-stable` is what silently selected Xcode 16.2
           # on the old macos-14 runner and caused the compile failures.
-          xcode-version: '26.3'
+          # runner xcode-27 = Apple silicon with Xcode 27 (iOS 27 SDK; Apple requires it from April 2027, notice 90725).
+          xcode-version: ${{ inputs.runner == 'xcode-27' && '27.0' || '26.3' }}
 
       - name: Prepare App Store Connect API key
         id: asckey
