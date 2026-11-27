@@ -1,28 +1,16 @@
 import { useMemo } from "react";
 import { useRoleDefinitions } from "@/hooks/profile/useRoleDefinitions";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import LazyBadgeTrigger from "@/components/badges/LazyBadgeTrigger";
 import { solidPillClass, BADGE_ICON_SIZE, BADGE_ROW_SHRINK } from "@/lib/badgePalette";
 
 interface Props {
   roles: string[];
   size?: "compact" | "full";
+  /** Whose roles these are — "{name}" in the role's popup. */
+  userId?: string | null;
 }
 
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  admin: "🛡 Administrator — Platform management & oversight",
-  judge: "⚖ Judge — Official competition jury member",
-  content_editor: "✎ Editor — Content contributor & curator",
-  registered_photographer: "📷 Photographer — Verified photography professional",
-  student: "🎓 Student — Photography learner & enthusiast",
-  user: "👤 User — Community member",
-};
-
-const getRoleDescription = (key: string, label: string, icon: string) => {
-  if (ROLE_DESCRIPTIONS[key]) return ROLE_DESCRIPTIONS[key];
-  return `${icon} ${label} — Platform role`;
-};
-
-const UserRoleInline = ({ roles, size = "compact" }: Props) => {
+const UserRoleInline = ({ roles, size = "compact", userId }: Props) => {
   const defs = useRoleDefinitions();
 
   const visibleRoles = useMemo(() => {
@@ -40,19 +28,12 @@ const UserRoleInline = ({ roles, size = "compact" }: Props) => {
       {visibleRoles.map((r) => {
         const cfg = defs.get(r);
         if (!cfg) return null;
-        const description = getRoleDescription(r, cfg.label, cfg.icon);
         return (
-          <Tooltip key={r}>
-            <TooltipTrigger asChild>
-              <span className={solidPillClass(cfg.pill_class, size)}>
-                {cfg.icon && <span className={BADGE_ICON_SIZE}>{cfg.icon}</span>}
-                <span className="truncate">{cfg.label}</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs font-medium px-3 py-2 max-w-[240px]">
-              {description}
-            </TooltipContent>
-          </Tooltip>
+          <LazyBadgeTrigger key={r} badge={r} role userId={userId} label={cfg.label} className={solidPillClass(cfg.pill_class, size)}>
+            {cfg.icon && <span className={BADGE_ICON_SIZE}>{cfg.icon}</span>}
+            {/* A role without an icon keeps its name: with neither there would be nothing to tap. */}
+            {(cfg.show_label !== false || !cfg.icon) && <span className="truncate">{cfg.label}</span>}
+          </LazyBadgeTrigger>
         );
       })}
     </span>
