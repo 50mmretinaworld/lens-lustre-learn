@@ -37,7 +37,7 @@ const AutoRole = ({ userId, size = "compact" }: AutoRoleProps) => {
 
   const roles = profileMap[userId]?.roles || [];
   if (roles.length === 0) return null;
-  return <UserRoleInline roles={roles} size={size} />;
+  return <UserRoleInline roles={roles} size={size} userId={userId} />;
 };
 
 export default React.memo(AutoRole);
