@@ -31,6 +31,9 @@ const bodyFont = { fontFamily: "var(--font-body)" };
 export default function FeedPremiumMembers() {
   const { data: members = [] } = usePremiumMembers();
   const { isFollowing, follow, busyId, prompt, selfId } = usePremiumFollow(members);
+  // The row invites you to meet OTHERS: your own card is never in it (Owner 27 Nov).
+  // The /premium-members honour list still shows everyone.
+  const shown = members.filter((m) => m.user_id !== selfId);
 
   const railRef = useRef<HTMLDivElement | null>(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -48,10 +51,10 @@ export default function FeedPremiumMembers() {
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [measure, members.length]);
+  }, [measure, shown.length]);
   const nudge = (dir: -1 | 1) => railRef.current?.scrollBy({ left: dir * CARD_STEP, behavior: "smooth" });
 
-  if (members.length === 0) return null;
+  if (shown.length === 0) return null;
 
   const arrow = "absolute -translate-y-1/2 flex h-11 w-11 items-center justify-center";
   const arrowFace = "flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-foreground shadow-sm active:scale-95 transition-transform";
@@ -85,12 +88,11 @@ export default function FeedPremiumMembers() {
           onScroll={measure}
           className="flex gap-2.5 overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-px-4 scrollbar-hide px-4 pb-4 pt-1"
         >
-          {members.map((m) => (
+          {shown.map((m) => (
             <PremiumMemberCard
               key={m.user_id}
               member={m}
               following={isFollowing(m.user_id)}
-              self={m.user_id === selfId}
               busy={busyId === m.user_id}
               onFollow={follow}
               className="shrink-0 snap-start"
