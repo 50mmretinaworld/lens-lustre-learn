@@ -1,4 +1,4 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import LazyBadgeTrigger from "@/components/badges/LazyBadgeTrigger";
 import VerifiedTick from "@/components/VerifiedTick";
 import { useBadgeDefinitions } from "@/hooks/profile/useBadgeDefinitions";
 import { solidPillClass, BADGE_ICON_SIZE, BADGE_ROW_SHRINK } from "@/lib/badgePalette";
@@ -28,29 +28,20 @@ interface Props {
   name?: string | null;
 }
 
-const BADGE_DESCRIPTIONS: Record<string, string> = {
-  top_rated: "Top Rated — Recognized for exceptional quality",
-  most_popular: "Most Popular — Loved by the community",
-  most_trusted: "Most Trusted — A reliable community member",
-  rising_star: "Rising Star — Rapidly gaining recognition",
-};
-
-const getBadgeDescription = (key: string, label: string, icon: string) => {
-  if (BADGE_DESCRIPTIONS[key]) return BADGE_DESCRIPTIONS[key];
-  return `${icon} ${label} — Awarded by 50mm Retina`;
-};
-
 const UserBadgeInline = ({ badges, size = "compact", only = "all", userId, name }: Props) => {
   const defs = useBadgeDefinitions();
 
   if (!badges || badges.length === 0) return null;
 
-  const isVerified = badges.includes("verified") && only !== "pills";
-  const otherBadges = only === "verified" ? [] : badges.filter((b) => b !== "verified");
+  // ONE tick: gold Elite Member over blue Verified (the latest wins — SQL 7000 removes the gold when blue
+  // is given later). A switched-off Elite badge type (definitions loaded, without it) falls back to blue.
+  const isElite = badges.includes("elite_member") && (defs.size === 0 || defs.has("elite_member"));
+  const hasTick = (isElite || badges.includes("verified")) && only !== "pills";
+  const otherBadges = only === "verified" ? [] : badges.filter((b) => b !== "verified" && b !== "elite_member");
 
   // Nothing left to draw for this half — render nothing rather than an empty
   // inline box, which would still take the row's gap.
-  if (!isVerified && otherBadges.length === 0) return null;
+  if (!hasTick && otherBadges.length === 0) return null;
 
   // Size + colour now come from ONE place (src/lib/badgePalette.ts) and the
   // stored class string is normalised there, so a badge cannot render
@@ -60,23 +51,15 @@ const UserBadgeInline = ({ badges, size = "compact", only = "all", userId, name 
 
   return (
     <span className={`inline-flex items-center gap-1 align-middle ${BADGE_ROW_SHRINK}`}>
-      {isVerified && <VerifiedTick userId={userId} name={name} className={tickSize} />}
+      {hasTick && <VerifiedTick userId={userId} name={name} className={tickSize} gold={isElite} />}
       {otherBadges.map((b) => {
         const cfg = defs.get(b);
         if (!cfg) return null;
-        const description = getBadgeDescription(b, cfg.label, cfg.icon);
         return (
-          <Tooltip key={b}>
-            <TooltipTrigger asChild>
-              <span className={solidPillClass(cfg.badge_class, size)}>
-                <span className={BADGE_ICON_SIZE}>{cfg.icon}</span>
-                <span className="truncate">{cfg.label}</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs font-medium px-3 py-2 max-w-[240px]">
-              {description}
-            </TooltipContent>
-          </Tooltip>
+          <LazyBadgeTrigger key={b} badge={b} userId={userId} name={name} label={cfg.label} className={solidPillClass(cfg.badge_class, size)}>
+            <span className={BADGE_ICON_SIZE}>{cfg.icon}</span>
+            {cfg.show_label !== false && <span className="truncate">{cfg.label}</span>}
+          </LazyBadgeTrigger>
         );
       })}
     </span>

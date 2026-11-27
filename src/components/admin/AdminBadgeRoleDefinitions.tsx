@@ -4,6 +4,7 @@ import { solidPillClass, BADGE_ICON_SIZE } from "@/lib/badgePalette";
 import { toast } from "@/hooks/core/use-toast";
 import { Plus, Pencil, Trash2, Save, XCircle, Loader2, Award, Shield, Eye, EyeOff, GripVertical } from "lucide-react";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import BadgePopupFields, { EMPTY_POPUP, popupColumns, popupValues, type PopupValues } from "@/components/admin/BadgePopupFields";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
 import { invalidateBadgeDefs } from "@/hooks/profile/useBadgeDefinitions";
 import { invalidateRoleDefs } from "@/hooks/profile/useRoleDefinitions";
@@ -37,6 +38,9 @@ interface BadgeDef {
   ribbon_class: string;
   sort_order: number;
   is_active: boolean;
+  show_label?: boolean;
+  popup_title?: string | null;
+  popup_message?: string | null;
 }
 
 interface RoleDef {
@@ -47,6 +51,9 @@ interface RoleDef {
   pill_class: string;
   show_inline: boolean;
   sort_order: number;
+  show_label?: boolean;
+  popup_title?: string | null;
+  popup_message?: string | null;
 }
 
 const AdminBadgeRoleDefinitions = () => {
@@ -60,6 +67,9 @@ const AdminBadgeRoleDefinitions = () => {
   const [editBadge, setEditBadge] = useState<BadgeDef | null>(null);
   const [newBadge, setNewBadge] = useState(false);
   const [badgeForm, setBadgeForm] = useState({ type_key: "", label: "", icon: "⭐", badge_class: COLOR_PRESETS[0].badge, ribbon_class: COLOR_PRESETS[0].ribbon });
+
+  const [badgePopup, setBadgePopup] = useState<PopupValues>(EMPTY_POPUP);
+  const [rolePopup, setRolePopup] = useState<PopupValues>(EMPTY_POPUP);
 
   // Edit state for roles
   const [editRole, setEditRole] = useState<RoleDef | null>(null);
@@ -96,6 +106,7 @@ const AdminBadgeRoleDefinitions = () => {
         icon: badgeForm.icon,
         badge_class: badgeForm.badge_class,
         ribbon_class: badgeForm.ribbon_class,
+        ...popupColumns(badgePopup),
       }).eq("id", editBadge.id);
       if (error) toast({ title: "Update failed", description: error.message, variant: "destructive" });
       else {
@@ -110,6 +121,7 @@ const AdminBadgeRoleDefinitions = () => {
         badge_class: badgeForm.badge_class,
         ribbon_class: badgeForm.ribbon_class,
         sort_order: badges.length + 1,
+        ...popupColumns(badgePopup),
       });
       if (error) {
         if (error.code === "23505") toast({ title: "A badge with this key already exists", variant: "destructive" });
@@ -162,6 +174,7 @@ const AdminBadgeRoleDefinitions = () => {
         icon: roleForm.icon,
         pill_class: roleForm.pill_class,
         show_inline: roleForm.show_inline,
+        ...popupColumns(rolePopup),
       }).eq("id", editRole.id);
       if (error) toast({ title: "Update failed", description: error.message, variant: "destructive" });
       else {
@@ -176,6 +189,7 @@ const AdminBadgeRoleDefinitions = () => {
         pill_class: roleForm.pill_class,
         show_inline: roleForm.show_inline,
         sort_order: roles.length + 1,
+        ...popupColumns(rolePopup),
       });
       if (error) {
         if (error.code === "23505") toast({ title: "A role with this key already exists", variant: "destructive" });
@@ -211,11 +225,13 @@ const AdminBadgeRoleDefinitions = () => {
     setEditBadge(b);
     setNewBadge(false);
     setBadgeForm({ type_key: b.type_key, label: b.label, icon: b.icon, badge_class: b.badge_class, ribbon_class: b.ribbon_class });
+    setBadgePopup(popupValues(b));
   };
 
   const startNewBadge = () => {
     setEditBadge(null);
     setNewBadge(true);
+    setBadgePopup(EMPTY_POPUP);
     setBadgeForm({ type_key: "", label: "", icon: "⭐", badge_class: COLOR_PRESETS[0].badge, ribbon_class: COLOR_PRESETS[0].ribbon });
   };
 
@@ -223,11 +239,13 @@ const AdminBadgeRoleDefinitions = () => {
     setEditRole(r);
     setNewRole(false);
     setRoleForm({ role_key: r.role_key, label: r.label, icon: r.icon, pill_class: r.pill_class, show_inline: r.show_inline });
+    setRolePopup(popupValues(r));
   };
 
   const startNewRole = () => {
     setEditRole(null);
     setNewRole(true);
+    setRolePopup(EMPTY_POPUP);
     setRoleForm({ role_key: "", label: "", icon: "", pill_class: COLOR_PRESETS[0].badge, show_inline: true });
   };
 
@@ -355,6 +373,8 @@ const AdminBadgeRoleDefinitions = () => {
                   ))}
                 </div>
               </div>
+
+              <BadgePopupFields badgeKey={badgeForm.type_key} label={badgeForm.label} value={badgePopup} onChange={setBadgePopup} />
 
               {/* Preview */}
               <div className="flex items-center gap-3">
@@ -512,6 +532,8 @@ const AdminBadgeRoleDefinitions = () => {
                 />
                 <span className="text-xs text-foreground">Show inline next to username</span>
               </label>
+
+              <BadgePopupFields role badgeKey={roleForm.role_key} label={roleForm.label} value={rolePopup} onChange={setRolePopup} />
 
               {/* Preview */}
               <div className="flex items-center gap-3">

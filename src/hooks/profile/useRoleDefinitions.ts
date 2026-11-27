@@ -7,6 +7,10 @@ export interface RoleDefinition {
   icon: string;
   pill_class: string;
   show_inline: boolean;
+  /** SQL 7000: name next to the icon, and the popup's words (null → defaults). */
+  show_label?: boolean;
+  popup_title?: string | null;
+  popup_message?: string | null;
 }
 
 const ROLE_DEFS_CACHE_TTL_MS = 60_000;

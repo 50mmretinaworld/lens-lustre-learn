@@ -990,6 +990,8 @@ jobs:
       # (#1297) and no crash screen while reloading for a new version (#1301). For the Owner's phone test only.
       # 2026-11-27: bumped 1.2.61 -> 1.2.62 (Owner: "build both the App"). The feed row "Meet our Premium Members"
       # no longer shows the viewer's own card.
+      # 2026-11-27: bumped 1.2.62 -> 1.2.63 (Owner: "matches ... and build too"). Badge and role popups written by
+      # Admin (name next to the icon on/off, heading, message) and the gold Elite Member tick (SQL 7000).
       - name: Set app version (monotonic versionCode from run number)
         run: |
           VC=$(( 1000 + ${{ github.run_number }} ))
@@ -1003,8 +1005,8 @@ jobs:
             exit 1
           fi
           # Version history + the versionCode rules: the comment block ABOVE this step. Kept out of this script on purpose: GitHub refuses a run step over 21,000 characters (1.2.59 run 45679260559, 25 Nov).
-          sed -i 's/versionName "1.0"/versionName "1.2.62"/' android/app/build.gradle
-          echo "versionCode=${VC} versionName=1.2.62 (1.2.61 handed to the Owner 27 Nov)"
+          sed -i 's/versionName "1.0"/versionName "1.2.63"/' android/app/build.gradle
+          echo "versionCode=${VC} versionName=1.2.63 (1.2.62 handed to the Owner 27 Nov)"
           grep -E "versionCode|versionName" android/app/build.gradle
           cat android/variables.gradle
           # S11: prove both edits landed — exactly one versionCode, the derived

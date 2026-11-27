@@ -24,21 +24,23 @@ interface Props {
   userId?: string | null;
   name?: string | null;
   className?: string;
+  /** The gold Elite Member tick (Owner 27 Nov 2026) instead of the blue Verified one. */
+  gold?: boolean;
 }
 
 // userId / name accepted (and unused) so it can stand in for VerifiedTickMember.
-const PlainTick = ({ className }: { className: string; userId?: string; name?: string | null }) => <VerifiedBadge className={`${className} shrink-0`} />;
+const PlainTick = ({ className, gold }: { className: string; userId?: string; name?: string | null; gold?: boolean }) => <VerifiedBadge className={`${className} shrink-0`} gold={gold} />;
 
 // A failed load must never take the name row's screen down with it.
 const VerifiedTickMember = lazy(() =>
   import("@/components/premium/VerifiedTickMember").catch(() => ({ default: PlainTick })),
 );
 
-const VerifiedTick = ({ userId, name, className = "h-4 w-4" }: Props) => {
-  const plain = <PlainTick className={className} />;
+const VerifiedTick = ({ userId, name, className = "h-4 w-4", gold }: Props) => {
+  const plain = <PlainTick className={className} gold={gold} />;
   return userId ? (
     <Suspense fallback={plain}>
-      <VerifiedTickMember userId={userId} name={name} className={className} />
+      <VerifiedTickMember userId={userId} name={name} className={className} gold={gold} />
     </Suspense>
   ) : (
     plain

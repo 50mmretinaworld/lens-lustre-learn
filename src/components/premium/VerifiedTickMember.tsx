@@ -1,5 +1,5 @@
 /**
- * A MEMBER'S blue tick: tap → the Verified Photographer card. Loaded by
+ * A MEMBER'S tick — blue Verified or gold Elite Member: mouse over / tap → its popup. Loaded by
  * VerifiedTick when a named tick is first drawn, so none of this rides in the
  * first download (P13 byte ceiling).
  *
@@ -7,10 +7,8 @@
  * tooltip): its tick is the brand's, not an honour, and it is never on the
  * Premium Members page.
  */
-import { useCallback, useRef, useState } from "react";
-import type React from "react";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import VerifiedTickCard from "@/components/premium/VerifiedTickCard";
+import BadgeCardTrigger from "@/components/badges/BadgeCardTrigger";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAdminIds } from "@/hooks/core/useAdminIds";
 
@@ -21,6 +19,7 @@ interface Props {
   userId: string;
   name?: string | null;
   className: string;
+  gold?: boolean;
 }
 
 const BrandTick = ({ className }: { className: string }) => (
@@ -36,38 +35,21 @@ const BrandTick = ({ className }: { className: string }) => (
   </Tooltip>
 );
 
-const VerifiedTickMember = ({ userId, name, className }: Props) => {
+const VerifiedTickMember = ({ userId, name, className, gold }: Props) => {
   const admins = useAdminIds();
-  const trigger = useRef<HTMLSpanElement>(null);
-  const [anchor, setAnchor] = useState<DOMRect | null>(null);
-
-  const close = useCallback(() => setAnchor(null), []);
-  const toggle = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setAnchor((open) => (open ? null : trigger.current?.getBoundingClientRect() ?? null));
-  };
 
   if (admins.has(userId)) return <BrandTick className={className} />;
 
   return (
-    <>
-      <span
-        ref={trigger}
-        role="button"
-        tabIndex={0}
-        aria-label="Verified Photographer"
-        aria-expanded={!!anchor}
-        onClick={toggle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") toggle(e);
-        }}
-        className="inline-flex shrink-0 cursor-pointer"
-      >
-        <VerifiedBadge className={className} />
-      </span>
-      {anchor && <VerifiedTickCard userId={userId} name={name} anchor={anchor} trigger={trigger} onClose={close} />}
-    </>
+    <BadgeCardTrigger
+      badge={gold ? "elite_member" : "verified"}
+      userId={userId}
+      name={name}
+      label={gold ? "Elite Member" : "Verified Photographer"}
+      className="inline-flex shrink-0"
+    >
+      <VerifiedBadge className={className} gold={gold} />
+    </BadgeCardTrigger>
   );
 };
 
