@@ -8,6 +8,10 @@ export interface BadgeDefinition {
   badge_class: string;
   ribbon_class: string;
   is_active: boolean;
+  /** SQL 7000: name next to the icon, and the popup's words (null → defaults). */
+  show_label?: boolean;
+  popup_title?: string | null;
+  popup_message?: string | null;
 }
 
 const BADGE_DEFS_CACHE_TTL_MS = 60_000;
