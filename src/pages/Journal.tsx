@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfileLink from "@/components/ProfileLink";
+import AutoBadge from "@/components/AutoBadge";
 import PageSEO from "@/components/PageSEO";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -183,6 +184,7 @@ const Journal = () => {
                           )}
                           <div className="flex items-center gap-4 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                             <ProfileLink userId={hero.author_id} handle={hero.profiles?.custom_url} className="hover:text-primary hover:underline transition-colors">{hero.profiles?.full_name || "Unknown"}</ProfileLink>
+                            {hero.author_id && <AutoBadge userId={hero.author_id} only="verified" />}
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               {new Date(hero.published_at || hero.created_at).toLocaleDateString("en-US", {
@@ -261,6 +263,7 @@ const Journal = () => {
                             )}
                             <div className="flex items-center gap-4 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                               <ProfileLink userId={article.author_id} handle={article.profiles?.custom_url} className="hover:text-primary hover:underline transition-colors">{article.profiles?.full_name || "Unknown"}</ProfileLink>
+                              {article.author_id && <AutoBadge userId={article.author_id} only="verified" />}
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", {

@@ -67,7 +67,7 @@ function MembersDialog({ conversationId, open, onOpenChange, meId }: { conversat
                   {addable.map((f) => (
                     <li key={f.userId} className="flex items-center gap-3 rounded-xl px-2 py-1.5">
                       <PersonAvatar person={f} size={32} />
-                      <span className="min-w-0 flex-1 truncate text-sm">{f.fullName || f.username || "Member"}</span>
+                      <span className="flex min-w-0 flex-1 items-center gap-1"><span className="min-w-0 truncate text-sm">{f.fullName || f.username || "Member"}</span><AutoBadge userId={f.userId} only="verified" /></span>
                       <Button size="sm" variant="outline" disabled={change.isPending} onClick={() => change.mutate({ kind: "add", userId: f.userId })}>{t("messages.group.addShort", "Add")}</Button>
                     </li>
                   ))}
