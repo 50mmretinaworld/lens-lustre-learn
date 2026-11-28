@@ -30,6 +30,7 @@ import { copyAddress, shareAddress, sharePostToWall } from "@/lib/share/shareAct
 import { shareLink } from "@/lib/publicUrl";
 import { postMedia } from "@/lib/posts/subjectMedia";
 import OptimizedImage from "@/components/OptimizedImage";
+import AutoBadge from "@/components/AutoBadge";
 import { toast } from "@/hooks/core/use-toast";
 import { logger } from "@/lib/logger";
 import { fetchUserStories, type StoryComment, type StoryPerson, type StorySlide } from "@/lib/stories/storyData";
@@ -320,7 +321,7 @@ function SeenByList({ storyId, onOpenProfile }: { storyId: string; onOpenProfile
           ) : (
             <div className="h-10 w-10 rounded-full bg-white/20" />
           )}
-          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{v.full_name || "Member"}</span>
+          <span className="flex min-w-0 flex-1 items-center gap-1"><span className="min-w-0 truncate text-sm font-semibold">{v.full_name || "Member"}</span><AutoBadge userId={v.viewer_id} only="verified" /></span>
           {v.liked && <Heart className="h-4 w-4 fill-destructive text-destructive" />}
           <span className="text-xs text-white/60">{storyAge(v.viewed_at)}</span>
         </button>

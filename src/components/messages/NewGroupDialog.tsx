@@ -4,6 +4,7 @@
  */
 import { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
+import AutoBadge from "@/components/AutoBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -59,7 +60,7 @@ export default function NewGroupDialog({ open, onOpenChange, onCreated }: { open
             <label key={f.userId} className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-muted">
               <input type="checkbox" checked={picked.includes(f.userId)} onChange={() => toggle(f.userId)} className="h-4 w-4 accent-primary" data-testid="new-group-friend" />
               <PersonAvatar person={f} size={34} />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{f.fullName || f.username || "Member"}</span>
+              <span className="flex min-w-0 flex-1 items-center gap-1"><span className="min-w-0 truncate text-sm font-medium">{f.fullName || f.username || "Member"}</span><AutoBadge userId={f.userId} only="verified" /></span>
             </label>
           ))}
         </div>

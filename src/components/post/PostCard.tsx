@@ -17,6 +17,7 @@ import { type ReactionType } from "@/components/ReactionPicker";
 import PostActionRow, { ActionCount } from "@/components/post/PostActionRow";
 import ShareSummaryTooltip from "@/components/ShareSummaryTooltip";
 import UserIdentityBlock from "@/components/UserIdentityBlock";
+import UserBadgeInline from "@/components/UserBadgeInline";
 import ContributorScore from "@/components/ContributorScore";
 import TaggedPeople from "@/components/post/TaggedPeople";
 import PostMedia from "@/components/post/PostMedia";
@@ -903,6 +904,10 @@ const PostCard = ({
               className="font-semibold text-foreground hover:text-primary transition-colors mr-1.5"
             >
               {displayName(post.author_name)}
+              {/* the caption's name carries the same tick as the header (one badge rule, Owner 28 Nov) */}
+              {post.author_badges && post.author_badges.length > 0 && (
+                <span className="ml-1 inline-flex align-middle"><UserBadgeInline badges={post.author_badges} only="verified" userId={post.user_id} name={post.author_name} /></span>
+              )}
             </ProfileLink>
           }
         />

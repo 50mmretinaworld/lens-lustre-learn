@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/core/useAuth";
 import { fetchProfileMap, type ProfileMapEntry } from "@/lib/profileMapCache";
 import { memberPath } from "@/lib/urlHelpers";
 import OptimizedImage from "@/components/OptimizedImage";
+import AutoBadge from "@/components/AutoBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 /**
@@ -78,6 +79,7 @@ function ConnectionsList({ kind, targetUserId, onPick }: { kind: ConnectionKind;
               <span className="h-10 w-10 rounded-full bg-muted" />
             )}
             <span className="min-w-0 truncate text-sm font-semibold">{p.full_name || "Member"}</span>
+            <AutoBadge userId={p.id} only="verified" />
           </>
         );
         return (
