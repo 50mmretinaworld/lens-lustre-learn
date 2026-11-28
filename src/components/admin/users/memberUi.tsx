@@ -111,6 +111,20 @@ export function istDateTime(iso: string | null | undefined): string | null {
   return Number.isFinite(t) ? `${IST.format(new Date(t)).replace(/\b(am|pm)\b/i, (x) => x.toLowerCase())} IST` : null;
 }
 
+/**
+ * EVERY platform the member is known to use, latest first (Owner 28 Nov: "Neil Basu uses App and Web both but
+ * showing only Web"). `last_platform` is only where the LATEST session was; a phone that reported an app version
+ * proves the app is used too, so it is listed even when the latest visit was the website. One rule for the table,
+ * the phone list and the drawer.
+ */
+export function platformsUsed(m: { last_platform?: string | null; app_version?: string | null; app_os?: string | null }):
+  Array<{ kind: "app" | "web"; label: string; latest: boolean }> {
+  const out: Array<{ kind: "app" | "web"; label: string; latest: boolean }> = [];
+  if (m.last_platform === "web") out.push({ kind: "web", label: "Website", latest: true });
+  if (m.last_platform === "app" || m.app_version) out.push({ kind: "app", label: appLabel(m), latest: m.last_platform === "app" });
+  return out;
+}
+
 /** "App 1.2.63 · Android" when the phone reported its version, else just "App". */
 export function appLabel(m: { app_version?: string | null; app_os?: string | null }): string {
   if (!m.app_version) return "App";

@@ -17,7 +17,7 @@ import { toast } from "@/hooks/core/use-toast";
 import type { AdminMember } from "@/hooks/admin/useAdminMembers";
 import type { PendingAccountAction } from "@/components/admin/AccountActionDialog";
 import { AccountHistoryList } from "@/components/admin/AccountActionDialog";
-import { MemberAvatar, StatusChip, STATUS_META, appLabel, fmtDate, istDateTime, statusDetail, type MemberLabels } from "./memberUi";
+import { MemberAvatar, StatusChip, STATUS_META, appLabel, fmtDate, istDateTime, platformsUsed, statusDetail, type MemberLabels } from "./memberUi";
 
 export interface MemberActions {
   setRole: (m: AdminMember, role: string, on: boolean) => void;
@@ -93,8 +93,15 @@ export function MemberDrawer({
               <div><dt className="text-xs text-muted-foreground">App version</dt><dd>{m.app_version ? appLabel(m).replace(/^App /, "") : "Not reported"}</dd></div>
               <div>
                 <dt className="text-xs text-muted-foreground">Signs in from</dt>
-                <dd className="flex items-center gap-1">
-                  {m.last_platform === "app" ? <><Smartphone className="h-3.5 w-3.5" />App</> : m.last_platform === "web" ? <><Globe className="h-3.5 w-3.5" />Website</> : <span className="text-muted-foreground">Unknown</span>}
+                <dd className="flex flex-col gap-0.5">
+                  {platformsUsed(m).length === 0 && <span className="text-muted-foreground">Unknown</span>}
+                  {platformsUsed(m).map((u) => (
+                    <span key={u.kind} className="flex items-center gap-1">
+                      {u.kind === "app" ? <Smartphone className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
+                      {u.kind === "app" ? "App" : "Website"}
+                      {platformsUsed(m).length > 1 && u.latest && <span className="text-xs text-muted-foreground">(latest)</span>}
+                    </span>
+                  ))}
                 </dd>
               </div>
               <div><dt className="text-xs text-muted-foreground">Member ID</dt><dd className="truncate font-mono text-xs" title={m.id}>{m.id.slice(0, 8)}…</dd></div>
