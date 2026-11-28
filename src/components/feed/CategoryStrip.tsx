@@ -130,6 +130,8 @@ function Chip({
       aria-pressed={active}
       className={cn(
         "flex shrink-0 flex-col items-center gap-1 px-3 py-2 transition-colors",
+        // icons only: 2.5 keeps the strip (and the grid button beside it) 46 px tall — still a full tap size (UI gate)
+        compact && "max-md:py-2.5",
         "border-b-2",
         // ⚠ AMBER, NOT `primary`. Owner's app mock, 2026-08-12: the selected
         // chip and its underline are orange. `text-primary` is the site's
