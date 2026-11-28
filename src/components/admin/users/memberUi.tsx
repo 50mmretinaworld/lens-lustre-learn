@@ -97,3 +97,23 @@ export function RolePills({ m, labels, max }: { m: AdminMember; labels: MemberLa
 }
 
 export const fmtDate = shortDate;
+
+/**
+ * Admin → Users shows EXACT times, always in India time (Owner bug list 28 Nov, item 17: "don't show 15w ago …
+ * exact date and time … always IST"). e.g. "28 Nov 2026, 10:15 am IST". null / bad input → null.
+ */
+const IST = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true,
+});
+export function istDateTime(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? `${IST.format(new Date(t)).replace(/\b(am|pm)\b/i, (x) => x.toLowerCase())} IST` : null;
+}
+
+/** "App 1.2.63 · Android" when the phone reported its version, else just "App". */
+export function appLabel(m: { app_version?: string | null; app_os?: string | null }): string {
+  if (!m.app_version) return "App";
+  const os = m.app_os === "ios" ? "iPhone" : m.app_os === "android" ? "Android" : null;
+  return `App ${m.app_version}${os ? ` · ${os}` : ""}`;
+}

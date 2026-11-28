@@ -49,7 +49,7 @@ import {
   DEFAULT_MEMBER_FILTERS, MembersRpcMissing, useAdminMembers, useMemberWrites,
   type AdminMember, type MemberFilters, type MemberSort, type MemberStatus,
 } from "@/hooks/admin/useAdminMembers";
-import { MemberAvatar, RolePills, StatusChip, STATUS_META, fmtDate, statusDetail, useMemberLabels } from "./memberUi";
+import { MemberAvatar, RolePills, StatusChip, STATUS_META, appLabel, fmtDate, istDateTime, statusDetail, useMemberLabels } from "./memberUi";
 import { MemberDrawer, type MemberActions } from "./MemberDrawer";
 
 const AdminUsersPrevious = lazy(() => import("@/components/admin/AdminUsers"));
@@ -89,8 +89,8 @@ function loadColumns(): Set<ColumnKey> {
   return new Set(OPTIONAL_COLUMNS.map((c) => c.key));
 }
 
-const PlatformLine = ({ p }: { p: AdminMember["last_platform"] }) =>
-  p === "app" ? <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Smartphone className="h-3 w-3" />App</span>
+const PlatformLine = ({ p, m }: { p: AdminMember["last_platform"]; m: AdminMember }) =>
+  p === "app" ? <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Smartphone className="h-3 w-3" />{appLabel(m)}</span>
   : p === "web" ? <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Globe className="h-3 w-3" />Website</span>
   : <span className="text-[11px] text-muted-foreground/70" title="No app or website session recorded yet">Platform unknown</span>;
 
@@ -99,8 +99,9 @@ const ActiveCell = ({ m, online }: { m: AdminMember; online: boolean }) => (
   <div>
     {online
       ? <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Active now</span>
-      : <span className="text-sm">{formatLastSeen(m.last_active_at) || "Never"}</span>}
-    <div><PlatformLine p={m.last_platform} /></div>
+      : <span className="text-sm whitespace-nowrap" title={formatLastSeen(m.last_active_at) || undefined}>{istDateTime(m.last_active_at) || "Never"}</span>}
+    <div><PlatformLine p={m.last_platform} m={m} /></div>
+    {m.last_sign_in_at && <div className="whitespace-nowrap text-[11px] text-muted-foreground">Last login {istDateTime(m.last_sign_in_at)}</div>}
   </div>
 );
 
@@ -466,9 +467,10 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                       <StatusChip status={m.status} />
                       <span className="whitespace-nowrap">
-                        {m.last_platform === "app" ? "App" : m.last_platform === "web" ? "Website" : "Unknown"} ·{" "}
-                        <span className={online.has(m.id) ? "text-emerald-600" : undefined}>{online.has(m.id) ? "Active now" : formatLastSeen(m.last_active_at) || "Never"}</span>
+                        {m.last_platform === "app" ? appLabel(m) : m.last_platform === "web" ? "Website" : "Unknown"} ·{" "}
+                        <span className={online.has(m.id) ? "text-emerald-600" : undefined}>{online.has(m.id) ? "Active now" : istDateTime(m.last_active_at) || "Never"}</span>
                       </span>
+                      {m.last_sign_in_at && <span className="block whitespace-nowrap">Last login {istDateTime(m.last_sign_in_at)}</span>}
                     </span>
                     {(m.roles.some((r) => r !== "user") || m.badges.length > 0) && <RolePills m={m} labels={labels} max={3} />}
                   </span>
@@ -524,7 +526,7 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                     </TableCell>
                     {cols.has("roles") && <TableCell className="max-w-[220px]"><RolePills m={m} labels={labels} max={2} /></TableCell>}
                     {cols.has("active") && <TableCell className="whitespace-nowrap"><ActiveCell m={m} online={online.has(m.id)} /></TableCell>}
-                    {cols.has("joined") && <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{fmtDate(m.created_at)}</TableCell>}
+                    {cols.has("joined") && <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{istDateTime(m.created_at) ?? fmtDate(m.created_at)}</TableCell>}
                     <TableCell onClick={(e) => e.stopPropagation()}><RowMenu m={m} open={(x) => setOpenId(x.id)} actions={actions} /></TableCell>
                   </TableRow>
                 );
