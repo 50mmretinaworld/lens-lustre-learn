@@ -96,7 +96,7 @@ describe("every type that actually exists on this platform has a destination", (
     ["entry_rejected", POST, `/competitions/${POST}`],
     ["course_published", POST, `/courses/${POST}`],
     ["certificate_issued", POST, "/certificates"],
-    ["badge_awarded", POST, "/certificates"],
+    ["badge_awarded", POST, "/premium-members"],
     ["deposit_approved", POST, "/wallet"],
     ["potd_featured", POST, "/"],
     ["ticket_reply", POST, "/help-support"],

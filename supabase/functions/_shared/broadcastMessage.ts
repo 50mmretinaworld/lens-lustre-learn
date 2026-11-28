@@ -78,7 +78,8 @@ export function legacyTapTarget(link: string | null | undefined): { type: string
     case "journal": return listOrItem("journal_published");
     case "courses": return listOrItem("course_published");
     case "friends": return only("friend_request");
-    case "certificates": return only("badge_awarded");
+    // certificate_issued opens /certificates on every build; badge_awarded now opens /premium-members (bug list item 4)
+    case "certificates": return only("certificate_issued");
     case "discover": return only("image_reaction");
     case "help-support": return only("ticket_reply");
     case "wallet": return only("deposit_approved");

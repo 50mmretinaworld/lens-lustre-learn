@@ -740,9 +740,9 @@ const Feed = () => {
         )}
       </div>
 
-      {/* Back to top */}
+      {/* Back to top — website only; the Android and iPhone apps have none (Owner bug list 28 Nov, item 11) */}
       <AnimatePresence>
-        {showBackToTop && (
+        {showBackToTop && !isNativeCapacitorApp() && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

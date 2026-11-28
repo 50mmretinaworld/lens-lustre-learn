@@ -38,7 +38,9 @@ const BrandTick = ({ className }: { className: string }) => (
 const VerifiedTickMember = ({ userId, name, className, gold }: Props) => {
   const admins = useAdminIds();
 
-  if (admins.has(userId)) return <BrandTick className={className} />;
+  // The brand tick is the official account's BLUE tick; once an admin gives it Elite Member, gold wins there too
+  // (Owner bug list 27 Nov, item 3: one rule for every member).
+  if (admins.has(userId) && !gold) return <BrandTick className={className} />;
 
   return (
     <BadgeCardTrigger
