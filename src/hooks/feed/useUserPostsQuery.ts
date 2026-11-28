@@ -157,7 +157,7 @@ export async function enrichPostRows(postsData: any[], currentUserId: string | u
         // resolveBadges as the author line, so an admin keeps the tick.
         badges: resolveBadges(
           r.tagged_user_id,
-          tagProfiles.get(r.tagged_user_id)?.badges || [],
+          tagProfiles.get(r.tagged_user_id)?.badges,
           adminIds,
         ),
       });
@@ -205,7 +205,7 @@ export async function enrichPostRows(postsData: any[], currentUserId: string | u
       author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
       author_handle: profileMap.get(p.user_id)?.custom_url ?? null,
       author_last_active: profileMap.get(p.user_id)?.last_active_at ?? null,
-      author_badges: resolveBadges(p.user_id, profileMap.get(p.user_id)?.badges || [], adminIds),
+      author_badges: resolveBadges(p.user_id, profileMap.get(p.user_id)?.badges, adminIds),
       like_count: p.likes_count || 0,
       comment_count: p.comments_count || 0,
       share_count: p.shares_count || 0,

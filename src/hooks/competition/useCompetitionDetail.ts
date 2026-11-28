@@ -239,7 +239,7 @@ export const useCompetitionEntries = (competitionId: string | undefined, userId:
           profiles: prof ? { full_name: prof.full_name!, custom_url: prof.custom_url } : null,
           vote_count: finalTotals[entry.id] ?? 0,
           user_voted: false, // per-photo voting — entry-level voted is deprecated
-          badges: resolveBadges(entry.user_id, prof?.badges || [], adminIds),
+          badges: resolveBadges(entry.user_id, prof?.badges, adminIds),
           _photoVoteMap: mergedPhotoVoteMap,
           _userVotedPhotos: bucket?.userVotedPhotos ?? [],
           // BUG-040: _visibleStatus removed. It exposed the RAW entry.status the

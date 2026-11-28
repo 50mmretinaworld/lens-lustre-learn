@@ -110,7 +110,7 @@ const ImageEngagement = ({ imageType, imageId, photoIndex = 0, panelScrolls = fa
       profile_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
       avatar_url: profileMap.get(c.user_id)?.avatar_url || null,
       author_handle: profileMap.get(c.user_id)?.custom_url ?? null,
-      badges: resolveBadges(c.user_id, profileMap.get(c.user_id)?.badges || [], adminIds),
+      badges: resolveBadges(c.user_id, profileMap.get(c.user_id)?.badges, adminIds),
     }));
 
     // Build thread tree

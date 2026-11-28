@@ -102,7 +102,7 @@ const Winners = () => {
               profile: prof
                 ? { full_name: prof.full_name, avatar_url: prof.avatar_url, custom_url: prof.custom_url }
                 : null,
-              badges: resolveBadges(row.user_id, profileMap.get(row.user_id)?.badges || [], adminIds),
+              badges: resolveBadges(row.user_id, profileMap.get(row.user_id)?.badges, adminIds),
             };
           });
         setCandidates(mapped);

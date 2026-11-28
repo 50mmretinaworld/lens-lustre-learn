@@ -73,7 +73,7 @@ const AutoBadge = ({ userId, size = "compact", only = "all" }: AutoBadgeProps) =
 
   const entry = userId ? profileMap[userId] : undefined;
   const badges = useMemo(
-    () => (userId ? resolveBadges(userId, entry?.badges || [], adminIds ?? NO_ADMINS) : []),
+    () => (userId ? resolveBadges(userId, entry?.badges, adminIds ?? NO_ADMINS) : []),
     [userId, entry?.badges, adminIds],
   );
 

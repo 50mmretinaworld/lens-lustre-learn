@@ -114,7 +114,7 @@ export const useDashboardData = (userId: string | undefined) => {
       ]);
 
       const entry = profileMapRes.get(userId);
-      const userBadges = resolveBadges(userId, entry?.badges || [], adminIds);
+      const userBadges = resolveBadges(userId, entry?.badges, adminIds);
       const roles = rolesRes.data || [];
 
       // Friend requests with profiles
