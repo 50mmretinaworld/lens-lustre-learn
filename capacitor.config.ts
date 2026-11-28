@@ -27,6 +27,13 @@ const config: CapacitorConfig = {
       backgroundColor: '#0b1020',
       showSpinner: false,
     },
+    // iPhone (Owner bug list 27-28 Nov, item 2): with the keyboard open, the comment box, Sign in and Sign out
+    // screens were pushed up behind the clock. 'native' shrinks the app's screen above the keyboard instead of
+    // letting iOS slide the page up. Installed in the iPhone build only (ios-build.yml); Android ignores it.
+    Keyboard: {
+      resize: 'native',
+      resizeOnFullScreen: true,
+    },
   },
 };
 
