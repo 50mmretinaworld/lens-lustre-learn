@@ -12,6 +12,7 @@
  * to `hideComposer`, this is what the caller renders instead, and the two are
  * expected to be visually identical.
  */
+import AutoBadge from "@/components/AutoBadge";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import MentionInput from "@/components/MentionInput";
@@ -190,6 +191,7 @@ const CommentComposer = ({
         <div data-replying-to="" className="mb-1.5 flex min-w-0 items-center gap-1 ps-10 text-xs text-muted-foreground">
           <span className="shrink-0">Replying to</span>
           <span className="shrink-0 font-semibold text-foreground">{replyTo.name}</span>
+          <AutoBadge userId={replyTo.userId} only="verified" />
           {replyTo.preview && <span className="min-w-0 truncate">· <MemberText text={replyTo.preview} max={REPLY_PREVIEW_MAX} /></span>}
           <button
             type="button"

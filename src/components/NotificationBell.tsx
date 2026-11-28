@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useState, useEffect, useRef } from "react";
 import { useMemberHandles } from "@/hooks/profile/useMemberHandles";
 import ProfileLink from "@/components/ProfileLink";
@@ -522,6 +523,7 @@ const NotificationBell = () => {
                                   <ProfileLink userId={fr.requester_id} handle={fr.requester_handle} onClick={() => setOpen(false)} className="font-medium hover:text-primary transition-colors">
                                     {fr.requester_name || "Someone"}
                                   </ProfileLink>
+                                  <AutoBadge userId={fr.requester_id} only="verified" />
                                 </span>
                                 {" "}sent you a friend request
                               </p>

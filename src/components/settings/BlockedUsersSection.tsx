@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { Ban } from "lucide-react";
 import { useBlockedUsers } from "@/hooks/core/useBlockedUsers";
 import { useProfileMap } from "@/hooks/profile/useProfileMap";
@@ -28,7 +29,7 @@ const BlockedUsersSection = () => {
             const name = prof?.full_name || "Member";
             return (
               <li key={r.blocked_id} className="flex items-center justify-between gap-3 py-2.5">
-                <span className="text-xs text-foreground truncate" style={bodyFont}>{name}</span>
+                <span className="flex min-w-0 items-center gap-1"><span className="text-xs text-foreground truncate" style={bodyFont}>{name}</span><AutoBadge userId={r.blocked_id} only="verified" /></span>
                 <button
                   type="button"
                   onClick={() => unblock(r.blocked_id)}
