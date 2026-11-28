@@ -111,7 +111,7 @@ export async function fetchProfileExtended(userId: string, currentUserId: string
     featuredPhotos: (featuredPhotosRes.data as any[]) || [],
     isVerifiedPhotographer: userRoles.includes("registered_photographer"),
     isStudent: userRoles.includes("student"),
-    userBadges: resolveBadges(userId, profileEntry?.badges || [], adminIds),
+    userBadges: resolveBadges(userId, profileEntry?.badges, adminIds),
     isFriend: !!(friendRes as any)?.data,
     privacySettings: (privacyRes.data as any)?.privacy_settings ?? null,
     // BUG-112: caller-resolved privacy fields (null when RPC returned nothing).

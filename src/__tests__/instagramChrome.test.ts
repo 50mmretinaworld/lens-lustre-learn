@@ -116,7 +116,9 @@ describe("nothing in the feed is drawn as an inset box", () => {
     // missing here ??" — every other post by this same account carries it, and
     // a name verified on one card but not the next reads as a different
     // account. Same glyph and same 14px size UserBadgeInline uses.
-    expect(block, "the ad header lost its verified tick").toContain('<VerifiedBadge className="h-3.5 w-3.5" />');
+    // Owner 28 Nov 2026: the tick is the official account's CURRENT badge through the one rule (OfficialAccountTick
+    // → AutoBadge), not a fixed blue glyph — Elite stayed blue here when it was drawn by hand.
+    expect(block, "the ad header lost its tick").toContain("<OfficialAccountTick />");
     expect(block).toContain('className="text-xs text-muted-foreground"');
     expect(block).toContain("Sponsored");
     expect(block, "the bare one-word label is back").not.toMatch(
@@ -140,7 +142,7 @@ describe("nothing in the feed is drawn as an inset box", () => {
     expect(block).toContain('{advertiser || "50mm Retina World"}');
     // The tick is drawn ONLY in the ours branch. This is the assertion that
     // matters: a tick over a third party's ad is the harm.
-    expect(block).toMatch(/\{!advertiser && \(\s*<span className="inline-flex shrink-0">\s*<VerifiedBadge/);
+    expect(block).toMatch(/\{!advertiser && <span className="inline-flex shrink-0"><OfficialAccountTick \/><\/span>\}/);
     // And the site logo is not put above someone else's ad either — the avatar
     // branches on the advertiser before it ever reaches the site logo.
     expect(block).toContain("{advertiser && advertiserLogo ? (");

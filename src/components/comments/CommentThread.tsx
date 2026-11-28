@@ -95,7 +95,8 @@ export interface ThreadComment {
   /** F-95 — the name-URL handle, carried beside the name it belongs to. */
   author_handle?: string | null;
   author_avatar: string | null;
-  author_badges: string[];
+  /** undefined = not carried (a comment just posted): the name row looks the badge up itself. */
+  author_badges?: string[];
   author_last_active: string | null;
   like_count: number;
   is_liked: boolean;

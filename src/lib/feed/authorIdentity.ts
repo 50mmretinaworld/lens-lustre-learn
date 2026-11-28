@@ -35,7 +35,7 @@ export function authorIdentity(
     author_avatar: row?.avatar ?? entry?.avatar_url ?? null,
     author_handle: entry?.custom_url ?? null,
     author_last_active: entry?.last_active_at ?? null,
-    author_badges: resolveBadges(userId, entry?.badges || [], adminIds),
+    author_badges: resolveBadges(userId, entry?.badges, adminIds),
   };
 }
 

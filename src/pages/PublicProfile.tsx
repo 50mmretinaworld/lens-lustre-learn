@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import UserIdentityBlock from "@/components/UserIdentityBlock";
 import { useParams, Link } from "react-router-dom";
-import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, BadgeCheck, Check, X, Play, Briefcase, Phone, Mail, Heart, Lock, Users as UsersIcon, Star, FileText, Layers, MessageSquare, BarChart3, Pencil, Menu, MoreVertical, Settings as SettingsIcon, WifiOff } from "lucide-react";
+import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, Check, X, Play, Briefcase, Phone, Mail, Heart, Lock, Users as UsersIcon, Star, FileText, Layers, MessageSquare, BarChart3, Pencil, Menu, MoreVertical, Settings as SettingsIcon, WifiOff } from "lucide-react";
 import { useNetworkQuality } from "@/hooks/core/useNetworkQuality";
 import { screenState } from "@/lib/offline/screenState";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
