@@ -88,9 +88,9 @@ export default function AdminCommentSuggestions({ user }: { user: User | null })
             </div>
             {open === i && (
               <div className="mt-2 grid gap-2 ps-7 sm:grid-cols-2">
-                {OTHER_LANGS.map(([l, name]) => (
+                {OTHER_LANGS.map(([l, language]) => (
                   <label key={l} className="flex items-center gap-2 text-xs">
-                    <span className="w-16 shrink-0 text-muted-foreground">{name}</span>
+                    <span className="w-16 shrink-0 text-muted-foreground">{language}</span>
                     <Input value={p[l] ?? ""} maxLength={MAX_PHRASE_LENGTH} className="h-8"
                       onChange={(e) => setPhrase(i, { [l]: e.target.value })} />
                   </label>

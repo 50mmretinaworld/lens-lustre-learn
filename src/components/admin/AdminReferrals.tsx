@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Save, UserPlus, Shield, DollarSign, AlertTriangle, Users, CheckCircle, XCircle } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import MemberName from "@/components/MemberName";
 
 interface ReferralSettings {
   enabled: boolean;
@@ -321,8 +322,8 @@ const AdminReferrals = ({ user }: { user: User | null }) => {
               <TableBody>
                 {pendingReferrals.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="text-sm">{r.referrer_name}</TableCell>
-                    <TableCell className="text-sm">{r.referred_name}</TableCell>
+                    <TableCell className="text-sm"><MemberName userId={r.referrer_id} name={r.referrer_name} /></TableCell>
+                    <TableCell className="text-sm"><MemberName userId={r.referred_id} name={r.referred_name} /></TableCell>
                     <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1.5 justify-end">
@@ -367,8 +368,8 @@ const AdminReferrals = ({ user }: { user: User | null }) => {
               <TableBody>
                 {referrals.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="text-sm">{r.referrer_name}</TableCell>
-                    <TableCell className="text-sm">{r.referred_name}</TableCell>
+                    <TableCell className="text-sm"><MemberName userId={r.referrer_id} name={r.referrer_name} /></TableCell>
+                    <TableCell className="text-sm"><MemberName userId={r.referred_id} name={r.referred_name} /></TableCell>
                     <TableCell>
                       <Badge
                         variant={r.status === "rewarded" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}

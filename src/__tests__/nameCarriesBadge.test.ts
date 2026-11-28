@@ -60,13 +60,43 @@ const REVIEWED: Record<string, Record<string, string>> = {
   "src/components/messages/ChatMenu.tsx": { blocked: "menu wording" },
   "src/components/messages/GroupChatPane.tsx": { iAmOwner: "help wording" },
   "src/components/post/TagPeopleModal.tsx": { searchTerm: "empty-search wording" },
+  // ── Admin screens (Owner 28 Nov: admin names carry the badge too; these are the spots that are not a member's name) ──
+  "src/components/admin/AccountActionDialog.tsx": { "h.actor_name": "admin_account_state_history returns the actor's name only, no id (server function, not changed here)" },
+  "src/components/admin/AdminActivityLogs.tsx": { "r.user_name = nameMap": "code that fills the name, not printed; the printed row draws AutoBadge" },
+  "src/components/admin/AdminAnalyticsReports.tsx": { "name: string; value: number": "a TypeScript prop type, not printed" },
+  "src/components/admin/AdminAppEvents.tsx": { "row.members": "a count of members", "One member action": "heading wording" },
+  "src/components/admin/AdminBadgeRoleDefinitions.tsx": { "c.name": "a colour choice's name in the badge/role editor" },
+  "src/components/admin/AdminCompetitionJudges.tsx": { "j.full_name || j.user_id": "text of a <select> <option>; an option can only hold plain text (assigned judges above draw the badge)" },
+  "src/components/admin/AdminCompetitionRounds.tsx": { "r.name": "a judging round's name" },
+  "src/components/admin/AdminEmailTemplates.tsx": { "t.name": "an e-mail template's name" },
+  "src/components/admin/AdminEmployee.tsx": { "s.full_name": "office staff ID card register (office_staff row, not a member account; no member id)" },
+  "src/components/admin/AdminFeaturedArtist.tsx": { "form.artist_bio": "the artist's bio text, not a name" },
+  "src/components/admin/AdminFirstPostRate.tsx": { "r.members": "a count of members" },
+  "src/components/admin/AdminHealth.tsx": { "b.name": "a storage bucket's name" },
+  "src/components/admin/AdminNewsletterFaq.tsx": { "s.user_name = nameMap": "code that fills the name, not printed; the printed cell draws AutoBadge" },
+  "src/components/admin/AdminPhotoOfDay.tsx": { "p.photographer_name": "editorial text typed by an admin; the photo-of-the-day row has no member id" },
+  "src/components/admin/AdminPushBroadcast.tsx": { "result.people": "a count wording (person/people)" },
+  "src/components/admin/AdminSupportTickets.tsx": { 'name || "attachment"': "an attachment's file name" },
+  "src/components/admin/ClientFailuresAudit.tsx": { "r.members": "a count of members" },
+  "src/components/admin/JudgeUIvsDBGateAudit.tsx": { "row.assigned_judges": "a count of judges", "short(s.judge_id)": "a shortened judge id in a diagnostics sample, not a name" },
+  "src/components/admin/ads/AdCreativeLibrary.tsx": { "advertiser_name: e.target.value": "code (an update payload), not printed" },
+  "src/components/admin/messages/MembersPanel.tsx": { "m.chats === 1": "a count wording (person/people)" },
+  "src/components/admin/messages/SwitchPanel.tsx": { "id: string; full_name: string | null": "a TypeScript parameter type, not printed", "id: p.id, full_name: p.full_name": "code (an object passed to a handler), not printed" },
+  "src/components/admin/push/AdminPushCentre.tsx": { "c.reachable_members": "a count of members" },
+  "src/components/admin/push/PushLists.tsx": {
+    "b.sent_by_name": "admin_push_broadcasts returns the sender's name only, no id (server function, not changed here)",
+    "b.audience_members": "a count of members",
+    "b.reached_members": "a count of members",
+  },
+  "src/pages/AdminPanel.tsx": { "currentRoute ===": "route switch code (module names), not a person's name" },
+  "src/pages/admin/AdminAccountReviews.tsx": { "row.set_by_name": "admin_list_account_reviews returns who set the state by name only, no id (server function, not changed here)" },
 };
 
-/** Admin screens are staff tools with their own tables; they are reviewed separately (bug list item 16, admin part). */
+/** Admin screens are covered too (Owner 28 Nov: every member name on an admin screen carries its badge as well). */
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
     const p = join(dir, n);
-    if (statSync(p).isDirectory()) return n === "__tests__" || n === "uiharness" || n === "admin" ? [] : files(p);
+    if (statSync(p).isDirectory()) return n === "__tests__" || n === "uiharness" ? [] : files(p);
     return p.endsWith(".tsx") ? [p] : [];
   });
 }
@@ -81,7 +111,7 @@ describe("a member's name carries the badge (one rule, v2: matched by what is pr
     const bad: string[] = [];
     for (const f of files(ROOT)) {
       const rel = relative(process.cwd(), f).replace(/\\/g, "/");
-      if (/\/Admin[A-Z]/.test(rel) || /UserIdentityBlock\.tsx$|MemberName\.tsx$|UserBadgeInline\.tsx$|VerifiedTick\.tsx$/.test(rel)) continue;
+      if (/UserIdentityBlock\.tsx$|MemberName\.tsx$|UserBadgeInline\.tsx$|VerifiedTick\.tsx$/.test(rel)) continue;
       const lines = readFileSync(f, "utf8").split(/\r?\n/);
       lines.forEach((line, i) => {
         if (!/>\s*\{|^\s*\{|\}\s*</.test(line) || /^\s*\{\s*\/\*/.test(line) || /^\s*(\/\/|\*)/.test(line)) return; // JSX text only

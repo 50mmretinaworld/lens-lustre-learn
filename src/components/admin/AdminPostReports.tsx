@@ -8,6 +8,7 @@ import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
 import type { User } from "@supabase/supabase-js";
 import { takedownVideo, COPYRIGHT_REASON } from "@/lib/video/takedown";
+import MemberName from "@/components/MemberName";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 
@@ -245,12 +246,12 @@ const AdminPostReports = ({ user }: Props) => {
                       <span className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider ${
                         r.status === "pending" ? "border-destructive/40 text-destructive" : "border-primary/40 text-primary"
                       }`}>{r.status}</span>
-                      <span className="text-[9px] text-muted-foreground">Reported by: {r.reporter_name || "Unknown"}</span>
+                      <span className="text-[9px] text-muted-foreground">Reported by: <MemberName userId={r.reporter_id} name={r.reporter_name || "Unknown"} /></span>
                       <span className="text-[9px] text-muted-foreground">· {new Date(r.created_at).toLocaleDateString()}</span>
                       <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded-sm">{r.reason === COPYRIGHT_REASON ? "Copyright (music)" : r.reason}</span>
                     </div>
                     <div className="mt-1.5 p-2 bg-muted/30 border border-border/50 rounded-sm">
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Post by <strong>{r.post_user_name || "Unknown"}</strong>:</p>
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Post by <MemberName userId={r.post_user_id}><strong>{r.post_user_name || "Unknown"}</strong></MemberName>:</p>
                       <p className="text-xs line-clamp-3" style={{ fontFamily: "var(--font-body)" }}>
                         {r.post_content}
                       </p>

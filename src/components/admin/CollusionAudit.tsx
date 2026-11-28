@@ -8,6 +8,7 @@ import { ShieldAlert, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveJudgeDisplay, useJudgeReveal } from "@/lib/judgeAnonymizer";
 import JudgeRevealToggle from "@/components/admin/JudgeRevealToggle";
+import AutoBadge from "@/components/AutoBadge";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
 
 interface Pair {
@@ -140,10 +141,13 @@ const CollusionAudit = ({ competitionId }: Props) => {
               <span className="text-foreground font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>
                 {resolveJudgeDisplay(p.competition_id, p.judge_a, nameMap.get(p.judge_a) || null, reveal)}
               </span>
+              {/* Badge only with the real name: on the anonymous handle it would give the judge away. */}
+              {reveal && nameMap.get(p.judge_a) && <AutoBadge userId={p.judge_a} only="verified" />}
               <span className="text-muted-foreground/50 shrink-0">×</span>
               <span className="text-foreground font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>
                 {resolveJudgeDisplay(p.competition_id, p.judge_b, nameMap.get(p.judge_b) || null, reveal)}
               </span>
+              {reveal && nameMap.get(p.judge_b) && <AutoBadge userId={p.judge_b} only="verified" />}
               <span className="ml-auto flex items-center gap-3 text-[10px] text-muted-foreground shrink-0">
                 <span>n={p.shared_entries}</span>
                 <span className="font-bold text-foreground">r={Number(p.pearson_r).toFixed(3)}</span>

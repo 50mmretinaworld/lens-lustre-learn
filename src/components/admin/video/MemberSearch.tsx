@@ -18,6 +18,7 @@ import { Check, Loader2, Search, UserPlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SEARCH_MIN, shortId, type FeatureKey } from "@/lib/admin/featureSwitches";
 import { MemberAvatar, RoleBadges } from "./memberBits";
+import AutoBadge from "@/components/AutoBadge";
 
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
 const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
@@ -157,6 +158,7 @@ export default function MemberSearch({ feature, memberIds, onAdd, busy }: {
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-center gap-1.5">
                       <span className="truncate font-medium">{f.full_name || f.username || shortId(f.user_id)}</span>
+                      <AutoBadge userId={f.user_id} only="verified" />
                       {f.username && <span className="truncate text-xs text-muted-foreground">@{f.username}</span>}
                       <RoleBadges roles={roles.get(f.user_id) ?? []} />
                     </div>

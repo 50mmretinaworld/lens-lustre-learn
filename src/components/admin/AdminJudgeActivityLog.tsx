@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
 import { resolveJudgeDisplay, useJudgeReveal } from "@/lib/judgeAnonymizer";
 import JudgeRevealToggle from "@/components/admin/JudgeRevealToggle";
+import AutoBadge from "@/components/AutoBadge";
 
 interface Props {
   competitionId?: string;
@@ -132,6 +133,8 @@ const AdminJudgeActivityLog = ({ competitionId }: Props) => {
                 {log.action_type}
               </span>
               <span className="text-foreground font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{displayName(log)}</span>
+              {/* Badge only with the real name: on the anonymous handle it would give the judge away. */}
+              {reveal && log.judge_real_name && <AutoBadge userId={log.judge_id} only="verified" />}
               {log.round_number && (
                 <span className="text-[9px] text-muted-foreground shrink-0">R{log.round_number}</span>
               )}

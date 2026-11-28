@@ -12,6 +12,7 @@ import { acceptAttributeFor } from "@/lib/fileSecurityScanner";
 import { prepareSupportAttachment } from "@/lib/supportAttachment";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useT } from "@/i18n/I18nContext";
+import MemberName from "@/components/MemberName";
 
 interface Ticket {
   id: string;
@@ -336,7 +337,7 @@ const AdminSupportTickets = ({ user }: Props) => {
                       {ticket.subject}
                     </p>
                     <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                      <span className="text-foreground/70">{ticket.user_name}</span>
+                      <MemberName userId={ticket.user_id}><span className="text-foreground/70">{ticket.user_name}</span></MemberName>
                       {" · "}
                       {new Date(ticket.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       {" · "}
@@ -394,7 +395,7 @@ const AdminSupportTickets = ({ user }: Props) => {
                           {reply.is_admin ? (
                             <span className="text-primary">{t("ast.youAdmin")}</span>
                           ) : (
-                            <span className="text-muted-foreground">{ticket.user_name}</span>
+                            <MemberName userId={ticket.user_id}><span className="text-muted-foreground">{ticket.user_name}</span></MemberName>
                           )}
                           <span className="text-muted-foreground/50 ml-2 font-normal">
                             {new Date(reply.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

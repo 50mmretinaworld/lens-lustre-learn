@@ -7,6 +7,8 @@ import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
 import { Star, Award, Quote, Trophy, Users, Loader2, Trash2, Plus, XCircle, Eye, EyeOff, GripVertical } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 
 const DEFAULT_TIERS = [
   { name: "Bronze", min_certs: 1, color: "#CD7F32" },
@@ -21,6 +23,7 @@ interface FeaturedCert {
   is_featured: boolean;
   featured_quote: string | null;
   featured_order: number;
+  user_id: string;
   user_name: string | null;
   issued_at: string;
 }
@@ -256,7 +259,7 @@ const AdminExcellence = ({ user }: { user: User | null }) => {
                         {cert.type.replace(/_/g, " ")}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">{cert.user_name || "Unknown"} · {new Date(cert.issued_at).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-muted-foreground"><MemberName userId={cert.user_id} name={cert.user_name || "Unknown"} /> · {new Date(cert.issued_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 {cert.is_featured && (
@@ -326,7 +329,7 @@ const AdminExcellence = ({ user }: { user: User | null }) => {
                   <Quote className="h-4 w-4 text-primary/40 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs italic text-muted-foreground leading-relaxed mb-1" style={{ fontFamily: "var(--font-body)" }}>"{t.testimonial}"</p>
-                    <span className="text-[10px] text-muted-foreground">— {t.user_name || "Unknown"} · {t.cert_title || "Certificate"}</span>
+                    <span className="text-[10px] text-muted-foreground">— <MemberName userId={t.user_id} name={t.user_name || "Unknown"} /> · {t.cert_title || "Certificate"}</span>
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => toggleTestimonialVisibility(t.id, t.is_visible)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title={t.is_visible ? "Hide" : "Show"}>
@@ -403,7 +406,10 @@ const AdminExcellence = ({ user }: { user: User | null }) => {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium truncate block" style={{ fontFamily: "var(--font-body)" }}>{entry.full_name || "Unknown"}</span>
+                  <span className="flex items-center gap-1 min-w-0">
+                    <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{entry.full_name || "Unknown"}</span>
+                    <AutoBadge userId={entry.user_id} only="verified" />
+                  </span>
                 </div>
                 <span className="text-[10px] tracking-wider uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                   {entry.cert_count} cert{entry.cert_count !== 1 ? "s" : ""}

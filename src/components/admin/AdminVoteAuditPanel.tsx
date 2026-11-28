@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import AutoBadge from "@/components/AutoBadge";
 
 interface Props {
   competitionId: string;
@@ -22,6 +23,7 @@ interface PhotoVoteRow {
   photoIndex: number;
   totalPhotos: number;
   entryTitle: string;
+  photographerId: string;
   photographerName: string;
   submissionDate: string;
   /** Full-res — used by preview lightbox. */
@@ -129,6 +131,7 @@ const AdminVoteAuditPanel = ({ competitionId, adminId }: Props) => {
             photoIndex: idx,
             totalPhotos: total,
             entryTitle: e.title,
+            photographerId: e.user_id,
             photographerName: profileMap.get(e.user_id) || "Unknown",
             submissionDate: e.created_at,
             photoUrl: fullUrl,
@@ -305,7 +308,7 @@ const AdminVoteAuditPanel = ({ competitionId, adminId }: Props) => {
                               {a.adjustment_value > 0 ? "+" : ""}{a.adjustment_value}
                             </span>
                             <span className="truncate flex-1">{a.reason || "—"}</span>
-                            <span className="shrink-0">{a.admin_name}</span>
+                            <span className="shrink-0 inline-flex items-center gap-1">{a.admin_name}<AutoBadge userId={a.admin_id} only="verified" /></span>
                             <span className="shrink-0 text-muted-foreground/50">{new Date(a.created_at).toLocaleDateString()}</span>
                             <button
                               onClick={() => revertAdjustment(a)}
@@ -322,7 +325,7 @@ const AdminVoteAuditPanel = ({ competitionId, adminId }: Props) => {
                   </td>
                   {/* Photographer */}
                   <td className="px-3 py-2 text-xs text-foreground whitespace-nowrap" style={{ fontFamily: "var(--font-body)" }}>
-                    {r.photographerName}
+                    <span className="inline-flex items-center gap-1">{r.photographerName}<AutoBadge userId={r.photographerId} only="verified" /></span>
                   </td>
                   {/* Submission Date */}
                   <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap" style={{ fontFamily: "var(--font-body)" }}>
