@@ -23,13 +23,17 @@ interface Props {
   name: string;
   handle: string | null;
   onClose: () => void;
+  /** Heading instead of "Share my honour" (the once-only app popup says "You've been honoured"). */
+  heading?: string;
+  /** Opened by the app itself, not by a tap: no error toast — when there is nothing to share, it just closes. */
+  quiet?: boolean;
 }
 
 type Made = Record<HonourSize, { blob: Blob; url: string }>;
 
 const NO_PHOTO = "Choose a Featured photo first: open one of your public photos, tap ⋯ and pick “Set as Featured photo”.";
 
-const ShareHonourSheet = ({ userId, name, handle, onClose }: Props) => {
+const ShareHonourSheet = ({ userId, name, handle, onClose, heading, quiet = false }: Props) => {
   const [made, setMade] = useState<Made | null>(null);
   const [busy, setBusy] = useState<HonourSize | null>(null);
 
@@ -40,7 +44,7 @@ const ShareHonourSheet = ({ userId, name, handle, onClose }: Props) => {
       const photo = await resolveHonourPhoto(userId);
       if (!live) return;
       if (!photo) {
-        toast({ title: "No photo to share yet", description: NO_PHOTO, variant: "destructive" });
+        if (!quiet) toast({ title: "No photo to share yet", description: NO_PHOTO, variant: "destructive" });
         onClose();
         return;
       }
@@ -55,7 +59,7 @@ const ShareHonourSheet = ({ userId, name, handle, onClose }: Props) => {
         setMade(next);
       } catch {
         if (!live) return;
-        toast({ title: "Couldn't make your image", description: HONOUR_IMAGE_FAILED, variant: "destructive" });
+        if (!quiet) toast({ title: "Couldn't make your image", description: HONOUR_IMAGE_FAILED, variant: "destructive" });
         onClose();
       }
     })();
@@ -63,7 +67,7 @@ const ShareHonourSheet = ({ userId, name, handle, onClose }: Props) => {
       live = false;
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
-  }, [userId, name, handle, onClose]);
+  }, [userId, name, handle, onClose, quiet]);
 
   const share = async (size: HonourSize) => {
     if (!made) return;
@@ -105,7 +109,7 @@ const ShareHonourSheet = ({ userId, name, handle, onClose }: Props) => {
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent style={{ maxWidth: "min(480px, calc(100vw - 32px))" }}>
-        <DialogTitle>{SHARE_HONOUR_TEXT}</DialogTitle>
+        <DialogTitle>{heading ?? SHARE_HONOUR_TEXT}</DialogTitle>
         <DialogDescription>Made on your phone from your Featured photo. Post size or story size.</DialogDescription>
         <div className="flex items-start gap-3">
           {tile("post", "Post", "aspect-[4/5]")}

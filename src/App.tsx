@@ -130,6 +130,8 @@ const PhotoUploadBridge = lazyRetry(() => import("./components/upload/PhotoUploa
 const CropTest = lazyRetry(() => import("./pages/CropTest"), "CropTest");
 // App links: in-app only, loaded lazily so the web entry bundle does not grow.
 const AppLinkGate = lazy(() => import("@/components/AppLinkGate"));
+// "Share my honour" once after being honoured: in-app only, lazy (Owner bug list item 6).
+const HonourSharePrompt = lazy(() => import("@/components/premium/HonourSharePrompt"));
 const Login = lazyRetry(() => import("./pages/Login"), "Login");
 const Signup = lazyRetry(() => import("./pages/Signup"), "Signup");
 const ForgotPassword = lazyRetry(() => import("./pages/ForgotPassword"), "ForgotPassword");
@@ -403,6 +405,7 @@ const App = () => {
           <Suspense fallback={null}><PhotoUploadBridge /></Suspense>
           <PushNotificationsGate />
           {isNativeCapacitorApp() && <Suspense fallback={null}><AppLinkGate /></Suspense>}
+          {isNativeCapacitorApp() && <Suspense fallback={null}><HonourSharePrompt /></Suspense>}
           <AdFullscreenProvider>
           <AppErrorBoundary>
           <Suspense fallback={allowSuspenseFallback ? <PageLoader /> : null}>
