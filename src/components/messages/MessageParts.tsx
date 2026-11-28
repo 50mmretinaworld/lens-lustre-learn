@@ -12,7 +12,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import AutoBadge from "@/components/AutoBadge";
 import { signedPhotoUrl, type SendRefusal, type ThreadMessage, type MessagePerson, type MessageTick } from "@/lib/messages/api";
 import { clockText } from "@/lib/messages/format";
-import { keepPhotoOnDevice, readLocalPhoto } from "@/lib/messages/photoCache";
+import { chatPhotoUrl } from "@/lib/messages/photoCache";
 import { useOnline } from "@/lib/presence/online";
 
 const PhotoViewer = lazy(() => import("@/components/messages/PhotoViewer"));
@@ -134,14 +134,8 @@ function PhotoTile({ path, width, height, single, expired }: { path: string; wid
   // and this device has no copy: "Photo no longer available".
   const { data } = useQuery({
     queryKey: ["messages", "photo", path, !!expired],
-    queryFn: async (): Promise<{ url: string | null; gone: boolean }> => {
-      const local = await readLocalPhoto(path);
-      if (local) return { url: local, gone: false };
-      if (expired) return { url: null, gone: true };
-      const url = await signedPhotoUrl(path);
-      if (url) void keepPhotoOnDevice(path, url);
-      return { url, gone: false };
-    },
+    // the same address every time for the same photo, so a chat refresh never redraws it (bug list item 13)
+    queryFn: () => chatPhotoUrl(path, !!expired, signedPhotoUrl),
     staleTime: 4 * 60_000,
   });
   const ratio = single && width && height ? `${width} / ${height}` : "1 / 1";

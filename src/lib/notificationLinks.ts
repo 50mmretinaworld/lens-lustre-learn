@@ -94,7 +94,10 @@ export function getNotifLink(notif: NotifLinkInput): string {
     case "deposit_approved":
     case "deposit_rejected":
       return isNativeIOSApp() ? "/dashboard" : "/wallet";
+    // A badge is an honour an admin gives (Owner 26 Nov): its notice opens the
+    // Premium Members page, not My Certificates (Owner bug list 27 Nov, item 4).
     case "badge_awarded":
+      return "/premium-members"; // PREMIUM_MEMBERS_PATH (not imported: this file stays light for the push handler)
     case "certificate_issued":
       return "/certificates";
     case "potd_featured":
