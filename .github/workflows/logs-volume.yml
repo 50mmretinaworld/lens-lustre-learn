@@ -103,17 +103,27 @@ jobs:
           # ClickHouse SQL over ONE table `logs` (a source column says which part wrote the line; nested fields are in the
           # log_attributes map). Supabase changelog 48235.
           SECRET="password|secret|token|apikey|api_key|jwt|bearer|key="
-          # v4 learnt the source column is not called source_name: read the column NAMES of one row (never values)
-          # and take the one that names the source.
+          # v4 learnt the source column is not called source_name; v5 learnt `SELECT *` is refused ("restricted
+          # wildcard"). v6: ask the table's own column list, else try each candidate name alone (count only, no values).
           echo "== 0 · columns of the logs table (names only)"
           SRC=""
-          if q "SELECT * FROM logs LIMIT 1"; then
-            cols=$(jq -r '.result[0] // {} | keys[]' /tmp/out.json)
-            echo "  $(echo $cols | tr '\n' ' ')"
-            for c in source_name source log_source source_type service_name service; do
-              if echo "$cols" | grep -qx "$c"; then SRC="$c"; break; fi
-            done
-            [ -n "$SRC" ] || SRC=$(echo "$cols" | grep -i -m1 -E 'source|service' || true)
+          for meta in "DESCRIBE TABLE logs" "SELECT name FROM system.columns WHERE table = 'logs'"; do
+            if q "$meta"; then
+              cols=$(jq -r '.result[]? | (.name // .column_name // empty)' /tmp/out.json)
+              echo "  ($meta) $(echo $cols | tr '\n' ' ')"
+              [ -n "$cols" ] && break
+            fi
+          done
+          for c in source_name source log_source source_type service_name service log_type type; do
+            if [ -n "${cols:-}" ]; then
+              echo "$cols" | grep -qx "$c" && { SRC="$c"; break; }
+            elif q "SELECT count() AS n FROM logs WHERE $c IS NOT NULL"; then
+              echo "  column '$c' exists"; SRC="$c"; break
+            fi
+          done
+          if [ -z "$SRC" ] && [ -n "${cols:-}" ]; then SRC=$(echo "$cols" | grep -i -m1 -E 'source|service' || true); fi
+          if [ -n "$SRC" ] && q "SELECT $SRC AS s, count() AS n FROM logs GROUP BY s ORDER BY n DESC LIMIT 15"; then
+            echo "  values of $SRC: $(jq -c '[.result[] | {s, n}]' /tmp/out.json | cut -c1-600)"
           fi
           if [ -z "$SRC" ]; then echo "  no source column found; sections A-F skipped"; SRC="__none__"; fi
           echo "  source column: $SRC"
