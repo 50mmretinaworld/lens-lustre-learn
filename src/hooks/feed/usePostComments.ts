@@ -337,7 +337,7 @@ export function usePostComments(
         author_name: resolveName(c.user_id, profileMap[c.user_id]?.full_name ?? null, adminIds),
         author_avatar: profileMap[c.user_id]?.avatar_url ?? null,
         author_handle: profileMap[c.user_id]?.custom_url ?? null,
-        author_badges: resolveBadges(c.user_id, profileMap[c.user_id]?.badges || [], adminIds),
+        author_badges: resolveBadges(c.user_id, profileMap[c.user_id]?.badges, adminIds),
         author_last_active: profileMap[c.user_id]?.last_active_at ?? null,
         like_count: rawReactions.likeCountMap.get(c.id) || 0,
         is_liked: rawReactions.userLikedSet.has(c.id),

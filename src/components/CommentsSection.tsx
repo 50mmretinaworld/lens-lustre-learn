@@ -142,7 +142,7 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
           custom_url: profileMap[c.user_id]?.custom_url ?? null,
         },
         last_active: profileMap[c.user_id]?.last_active_at ?? null,
-        badges: resolveBadges(c.user_id, profileMap[c.user_id]?.badges || [], adminIds),
+        badges: resolveBadges(c.user_id, profileMap[c.user_id]?.badges, adminIds),
         like_count: rawReactions.likeCountMap.get(c.id) || 0,
         is_liked: rawReactions.userLikedSet.has(c.id),
         replies: [] as Comment[],

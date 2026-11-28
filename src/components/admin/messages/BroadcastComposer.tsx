@@ -4,7 +4,8 @@
  * the server to send; the server cuts the audience into batches (500, a minute apart) — nothing goes out from the browser.
  */
 import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, BadgeCheck, ImagePlus, Loader2, Send, Smile, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, Send, Smile, X } from "lucide-react";
+import OfficialAccountTick from "@/components/OfficialAccountTick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -244,7 +245,7 @@ export default function BroadcastComposer({ onBack, onSent }: { onBack: () => vo
           <div className="overflow-hidden rounded-[28px] border border-border bg-gradient-to-b from-background to-muted/30 shadow-sm" data-testid="bc-preview">
             <div className="flex items-center gap-2.5 border-b border-border/70 px-3 py-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/15 text-sm font-bold text-primary">50</span>
-              <span className="text-sm font-bold">50mm Retina World</span><BadgeCheck className="h-4 w-4 text-sky-500" aria-label="Official" />
+              <span className="text-sm font-bold">50mm Retina World</span><OfficialAccountTick />
             </div>
             <div className="min-h-[180px] space-y-1 px-3 py-4">
               {empty ? <p className="px-2 py-8 text-center text-sm text-muted-foreground">Your message appears here.</p> : (

@@ -589,7 +589,7 @@ async function enrichPosts(
         // up with no tick. Carried now, same as the author line.
         badges: resolveBadges(
           r.tagged_user_id,
-          tagProfiles.get(r.tagged_user_id)?.badges || [],
+          tagProfiles.get(r.tagged_user_id)?.badges,
           adminIds,
         ),
       });

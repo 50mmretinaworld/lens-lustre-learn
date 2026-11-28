@@ -26,7 +26,8 @@ export interface OptimisticComment {
   author_avatar: string | null;
   /** F-95 — the name-URL handle, carried beside the name it belongs to. */
   author_handle: string | null;
-  author_badges: string[];
+  /** undefined = not carried: the name row looks the badge up itself (AutoBadge), as every other name does. */
+  author_badges?: string[];
   like_count: number;
   is_liked: boolean;
   replies: OptimisticComment[];
@@ -118,7 +119,9 @@ export function useAddComment(
         author_name: cached?.full_name || "You",
         author_avatar: cached?.avatar_url || null,
         author_handle: (cached as { custom_url?: string | null } | undefined)?.custom_url ?? null,
-        author_badges: [],
+        // Not an empty list: [] meant "this member has no badge", so a fresh comment showed the name without its
+        // tick until the reload (Owner 28 Nov screenshot). Left out, the row looks the badge up like every name.
+        author_badges: undefined,
         like_count: 0,
         is_liked: false,
         replies: [],
