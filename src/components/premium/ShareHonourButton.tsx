@@ -4,7 +4,7 @@
  * user_badges 'verified' row — the brand account's injected tick does not count)
  * and draws nothing otherwise. The image maker loads only on the first tap.
  */
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useVerifiedHonour } from "@/hooks/profile/usePremiumHonour";
 
@@ -25,6 +25,17 @@ const ShareHonourButton = ({ userId, name, handle, isOwner, className = "" }: Pr
   const [open, setOpen] = useState(false);
   // Stable: the sheet draws the image in an effect keyed on it.
   const close = useCallback(() => setOpen(false), []);
+  // The honour e-mail's button opens the member's profile with ?share=honour: the sheet opens by itself, once
+  // (Owner bug list 28 Nov, item 6). The mark is taken off the address so a refresh does not open it again.
+  const fromEmail = isOwner && !!honour.data;
+  useEffect(() => {
+    if (!fromEmail) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("share") !== "honour") return;
+    url.searchParams.delete("share");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    setOpen(true);
+  }, [fromEmail]);
   if (!isOwner || !honour.data) return null;
 
   return (
