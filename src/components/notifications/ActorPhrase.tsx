@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { memberPath } from "@/lib/urlHelpers";
+import MemberName from "@/components/MemberName";
 import { actorPhraseParts } from "@/lib/notifications/describe";
 import type { NotificationSubject } from "@/lib/notifications/describe";
 
@@ -36,7 +37,13 @@ export default function ActorPhrase({ subject, plain = false }: { subject: Notif
     return (
       <>
         {parts.map((part, i) =>
-          part.actor ? <strong key={i} className="font-semibold">{part.text}</strong> : <span key={i}>{part.text}</span>,
+          part.actor ? (
+            <MemberName key={i} userId={part.actor.id}>
+              <strong className="font-semibold">{part.text}</strong>
+            </MemberName>
+          ) : (
+            <span key={i}>{part.text}</span>
+          ),
         )}
       </>
     );
@@ -47,14 +54,16 @@ export default function ActorPhrase({ subject, plain = false }: { subject: Notif
       {parts.map((part, i) => {
         if (!part.actor) return <span key={i}>{part.text}</span>;
         const href = memberPath(part.actor.username);
-        return href ? (
-          <Link key={i} to={href} className="hover:underline">
-            {part.text}
-          </Link>
-        ) : (
-          <span key={i} data-unlinked="missing">
-            {part.text}
-          </span>
+        return (
+          <MemberName key={i} userId={part.actor.id}>
+            {href ? (
+              <Link to={href} className="hover:underline">
+                {part.text}
+              </Link>
+            ) : (
+              <span data-unlinked="missing">{part.text}</span>
+            )}
+          </MemberName>
         );
       })}
     </>

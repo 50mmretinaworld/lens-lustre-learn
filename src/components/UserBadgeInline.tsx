@@ -49,9 +49,20 @@ const UserBadgeInline = ({ badges, size = "compact", only = "all", userId, name 
   // fill, which failed WCAG AA in both modes for all ten colours.
   const tickSize = size === "compact" ? "h-3.5 w-3.5" : "h-4 w-4";
 
+  // The tick is its OWN box that never shrinks (28 Nov 2026: a long name — "Ranjana Bhattacharya Chowdhury" — took
+  // the whole row and the tick, inside the shrinking pill row, was clipped to nothing). Only the award pills, which
+  // are words, give way to the name; the tick always shows next to it.
+  const tick = hasTick ? (
+    <span className="inline-flex shrink-0 items-center align-middle">
+      <VerifiedTick userId={userId} name={name} className={tickSize} gold={isElite} />
+    </span>
+  ) : null;
+  if (otherBadges.length === 0) return tick;
+
   return (
+    <>
+    {tick}
     <span className={`inline-flex items-center gap-1 align-middle ${BADGE_ROW_SHRINK}`}>
-      {hasTick && <VerifiedTick userId={userId} name={name} className={tickSize} gold={isElite} />}
       {otherBadges.map((b) => {
         const cfg = defs.get(b);
         if (!cfg) return null;
@@ -63,6 +74,7 @@ const UserBadgeInline = ({ badges, size = "compact", only = "all", userId, name 
         );
       })}
     </span>
+    </>
   );
 };
 

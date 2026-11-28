@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { memo, useCallback, useEffect, useState } from "react";
 import { SITE_ORIGIN } from "@/lib/publicUrl";
 import { createPortal } from "react-dom";
@@ -272,6 +273,7 @@ const CompetitionLightbox = memo(({
                         >
                           {current.photographerName || "Anonymous"}
                         </ProfileLink>
+                        <AutoBadge userId={current.userId} only="verified" />
                       </p>
                     )}
                     {current.competitionTitle && (

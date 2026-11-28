@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { memo, useState, useEffect } from "react";
 import ProfileLink from "@/components/ProfileLink";
 import { Link } from "react-router-dom";
@@ -185,6 +186,7 @@ const DiscoverCard = memo(({ profile, onDismiss }: Props) => {
                   <ProfileLink userId={mutualFriends[0].id} handle={mutualFriends[0].custom_url} className="text-foreground font-medium hover:text-primary transition-colors">
                     {mutualFriends[0].full_name || "a friend"}
                   </ProfileLink>
+                  <AutoBadge userId={mutualFriends[0].id} only="verified" />
                 </>
               )}
             </span>

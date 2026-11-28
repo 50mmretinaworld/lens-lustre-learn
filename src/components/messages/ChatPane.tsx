@@ -241,7 +241,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         {!thread.isLoading && items.length === 0 && (
           <div className="px-8 py-20 text-center">
             <PersonAvatar person={person} size={72} />
-            <p className="mt-3 text-base font-semibold" style={headingFont}>{name}</p>
+            <p className="mt-3 flex items-center gap-1 text-base font-semibold" style={headingFont}>{name}{otherId && <AutoBadge userId={otherId} only="verified" />}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("messages.thread.empty", "Say hello and start the conversation.")}</p>
           </div>
         )}

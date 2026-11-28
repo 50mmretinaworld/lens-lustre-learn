@@ -16,6 +16,7 @@
  * Signed out, the feed beneath is not shown (as /feed is not); the author's
  * public posts still are, by the same rules as their wall.
  */
+import AutoBadge from "@/components/AutoBadge";
 import { useCallback, useMemo } from "react";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import ProfileLink from "@/components/ProfileLink";
@@ -87,6 +88,7 @@ const PostPageMore = ({ postId, authorId, authorName, authorHandle, currentUserI
             <ProfileLink userId={authorId} handle={authorHandle} className="text-foreground hover:text-primary">
               {name}
             </ProfileLink>
+            <AutoBadge userId={authorId} only="verified" />
           </h2>
           <ProfilePostGrid posts={morePosts} />
         </section>
