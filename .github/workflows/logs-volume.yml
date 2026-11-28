@@ -100,23 +100,28 @@ jobs:
             fi
             return 0
           }
-          echo "== A · lines per log source"
-          for t in edge_logs postgres_logs postgrest_logs function_edge_logs function_logs auth_logs realtime_logs storage_logs supavisor_logs; do
-            if q "select count(*) as n from $t"; then printf '  %-20s %s\n' "$t" "$(jq -r '.result[0].n // 0' /tmp/out.json)"; else echo "  ^ $t"; fi
-          done
+          # ClickHouse SQL over ONE table `logs` (source_name says which part wrote the line; nested fields are in the
+          # log_attributes map). Supabase changelog 48235.
+          SECRET="password|secret|token|apikey|api_key|jwt|bearer|key="
+          echo "== A · lines and size per log source (size = message + attributes, in MB)"
+          q "SELECT source_name AS s, count() AS n, round(sum(length(event_message) + length(toString(log_attributes))) / 1048576, 1) AS mb FROM logs GROUP BY s ORDER BY mb DESC" \
+            && jq -r '.result[]? | "  \(.s)\t\(.n) lines\t\(.mb) MB"' /tmp/out.json
           echo "== B · busiest API paths (edge_logs, query strings dropped, ids masked)"
-          q "select regexp_replace(r.path, r'[0-9a-f-]{8,}|[0-9]+', ':id') as p, r.method as m, count(*) as n from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as r group by p, m order by n desc limit 30" \
+          q "SELECT replaceRegexpAll(log_attributes['request.path'], '[0-9a-f-]{8,}|[0-9]+', ':id') AS p, log_attributes['request.method'] AS m, count() AS n FROM logs WHERE source_name = 'edge_logs' GROUP BY p, m ORDER BY n DESC LIMIT 30" \
             && jq -r '.result[]? | "  \(.n)\t\(.m) \(.p)"' /tmp/out.json
           echo "== C · busiest edge functions"
-          q "select regexp_replace(r.pathname, r'[0-9a-f-]{8,}|[0-9]+', ':id') as p, count(*) as n from function_edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as r group by p order by n desc limit 15" \
+          q "SELECT replaceRegexpAll(log_attributes['request.pathname'], '[0-9a-f-]{8,}|[0-9]+', ':id') AS p, count() AS n FROM logs WHERE source_name = 'function_edge_logs' GROUP BY p ORDER BY n DESC LIMIT 15" \
             && jq -r '.result[]? | "  \(.n)\t\(.p)"' /tmp/out.json
           echo "== D · database log message kinds (first 60 letters, digits masked)"
-          q "select regexp_replace(substr(event_message, 1, 60), r'[0-9]+', '#') as k, count(*) as n from postgres_logs where not regexp_contains(lower(event_message), r'password|secret|token|apikey|api_key|jwt|bearer|key=') group by k order by n desc limit 25" \
+          q "SELECT replaceRegexpAll(substring(event_message, 1, 60), '[0-9]+', '#') AS k, count() AS n FROM logs WHERE source_name = 'postgres_logs' AND NOT match(lower(event_message), '$SECRET') GROUP BY k ORDER BY n DESC LIMIT 25" \
             && jq -r '.result[]? | "  \(.n)\t\(.k)"' /tmp/out.json
-          echo "== E · database warnings and errors, per minute (first 90 letters, digits masked)"
-          q "select format_timestamp('%m-%d %H:%M', t.timestamp) as at, p.error_severity as sev, regexp_replace(substr(t.event_message, 1, 90), r'[0-9]+', '#') as k, count(*) as n from postgres_logs as t cross join unnest(t.metadata) as md cross join unnest(md.parsed) as p where p.error_severity in ('WARNING', 'ERROR', 'FATAL', 'PANIC') and not regexp_contains(lower(t.event_message), r'password|secret|token|apikey|api_key|jwt|bearer|key=') group by at, sev, k order by at limit 80" \
-            && jq -r '.result[]? | "  \(.at) UTC \(.sev) x\(.n)\t\(.k)"' /tmp/out.json
-          echo "== F · connection pooler errors, per minute (supavisor, first 90 letters)"
-          q "select format_timestamp('%m-%d %H:%M', timestamp) as at, regexp_replace(substr(event_message, 1, 90), r'[0-9]+', '#') as k, count(*) as n from supavisor_logs where regexp_contains(lower(event_message), r'error|timeout|max|limit|refus|too many') and not regexp_contains(lower(event_message), r'password|secret|token|apikey|api_key|jwt|bearer|key=') group by at, k order by at limit 40" \
+          echo "== E · database problems per minute (first 90 letters, digits masked)"
+          q "SELECT formatDateTime(timestamp, '%m-%d %H:%i') AS at, replaceRegexpAll(substring(event_message, 1, 90), '[0-9]+', '#') AS k, count() AS n FROM logs WHERE source_name = 'postgres_logs' AND match(lower(event_message), 'fatal|error|too many|remaining connection|timeout|terminat|could not|out of|deadlock|checkpoint') AND NOT match(lower(event_message), '$SECRET') GROUP BY at, k ORDER BY at LIMIT 80" \
             && jq -r '.result[]? | "  \(.at) UTC x\(.n)\t\(.k)"' /tmp/out.json
+          echo "== F · connection pooler problems per minute (supavisor, first 90 letters)"
+          q "SELECT formatDateTime(timestamp, '%m-%d %H:%i') AS at, replaceRegexpAll(substring(event_message, 1, 90), '[0-9]+', '#') AS k, count() AS n FROM logs WHERE source_name = 'supavisor_logs' AND match(lower(event_message), 'error|timeout|max|limit|refus|too many') AND NOT match(lower(event_message), '$SECRET') GROUP BY at, k ORDER BY at LIMIT 40" \
+            && jq -r '.result[]? | "  \(.at) UTC x\(.n)\t\(.k)"' /tmp/out.json
+          echo "== G · lines per 10 minutes, all sources (spikes)"
+          q "SELECT formatDateTime(toStartOfTenMinutes(timestamp), '%m-%d %H:%i') AS at, count() AS n FROM logs GROUP BY at ORDER BY at LIMIT 150" \
+            && jq -r '.result[]? | "  \(.at) UTC\t\(.n)"' /tmp/out.json
           echo "Read only: nothing was changed."
