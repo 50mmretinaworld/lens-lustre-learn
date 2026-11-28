@@ -7,6 +7,8 @@ import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
 import { Plus, Pencil, Trash2, Eye, EyeOff, XCircle, Loader2, Upload, Image as ImageIcon, ZoomIn, ZoomOut, Move, RotateCcw } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 import EmailRichTextToolbar from "./EmailRichTextToolbar";
 import ImageCropModal from "./ImageCropModal";
 import { generateImagePath, uploadImage } from "@/lib/imageUpload";
@@ -206,8 +208,9 @@ function LivePreview({ form }: { form: typeof emptyForm }) {
               <img referrerPolicy="no-referrer" loading="lazy" decoding="async" src={form.artist_avatar_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border" />
             )}
             <div>
-              <span className="text-[10px] tracking-[0.1em] uppercase block" style={{ fontFamily: "var(--font-heading)" }}>
+              <span className="text-[10px] tracking-[0.1em] uppercase flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
                 {form.artist_name || "Artist Name"}
+                <AutoBadge userId={form.author_profile_id} only="verified" />
               </span>
             </div>
           </div>
@@ -677,7 +680,7 @@ export default function AdminFeaturedArtist({ user }: { user: User | null }) {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{item.title}</p>
-              <p className="text-[10px] text-muted-foreground">{item.artist_name || "No artist"} · {item.is_active ? "Active" : "Hidden"}</p>
+              <p className="text-[10px] text-muted-foreground"><MemberName userId={item.author_profile_id} name={item.artist_name || "No artist"} /> · {item.is_active ? "Active" : "Hidden"}</p>
             </div>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onClick={() => toggleActive(item.id, item.is_active)} className="p-1.5 hover:text-primary">

@@ -9,6 +9,8 @@ import AdminDataTable, { type DTColumn } from "@/components/admin/AdminDataTable
 import AdminSidePanel, { PanelField } from "@/components/admin/AdminSidePanel";
 import { cmpDate, cmpText, downloadCsv, useClientTable } from "@/components/admin/useClientTable";
 import { MemberAvatar } from "@/components/admin/users/memberUi";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -93,7 +95,7 @@ function RuleEditor({ target, current, onClose, onSaved }: {
     <Dialog open={!!target} onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Rules for {target?.name}</DialogTitle>
+          <DialogTitle>Rules for <MemberName userId={target?.user_id} name={target?.name} /></DialogTitle>
           <DialogDescription>Own rules for this member, used instead of the default rule. "Clear rules" in the list puts them back on the default.</DialogDescription>
         </DialogHeader>
         <div className="divide-y divide-border">
@@ -157,7 +159,7 @@ function ListTable({ state, onRules, onRemove }: { state: MessageAdminState; onR
   const columns: DTColumn<ListedMember>[] = [
     { key: "member", header: "Member", sortKey: "member", cell: (m) => (
       <div className="flex items-center gap-3"><MemberAvatar m={{ avatar_url: m.avatar_url, full_name: m.full_name, email: null }} size={32} />
-        <div className="min-w-0"><p className="truncate font-medium">{nameOf(m)}</p>{m.username && <p className="truncate text-xs text-muted-foreground">@{m.username}</p>}</div></div>) },
+        <div className="min-w-0"><p className="flex items-center gap-1 font-medium"><span className="truncate">{nameOf(m)}</span><AutoBadge userId={m.user_id} only="verified" /></p>{m.username && <p className="truncate text-xs text-muted-foreground">@{m.username}</p>}</div></div>) },
     { key: "rules", header: "Rules", cell: (m) => { const r = ruleOf(m.user_id); return r ? <RuleBadges r={r} /> : <span className="text-sm text-muted-foreground">Normal</span>; } },
     { key: "added", header: "Added", sortKey: "added", className: "whitespace-nowrap", cell: (m) => <span className="text-sm text-muted-foreground">{dayText(m.listed_at)}</span> },
     { key: "act", header: "", className: "w-28 text-right", cell: (m) => (
@@ -177,7 +179,7 @@ function ListTable({ state, onRules, onRemove }: { state: MessageAdminState; onR
         page={t.page} pageSize={t.pageSize} total={t.total} onPage={t.setPage} onPageSize={t.setPageSize}
         emptyText={t.search ? `No one matches “${t.search}”.` : state.mode === "allowed_selected" ? "No one is on the list, so nobody can message yet." : "No one is on the list."}
         onRowClick={setOpen}
-        phoneCard={(m) => <div className="flex items-center gap-2"><p className="min-w-0 flex-1 truncate font-medium">{nameOf(m)}</p>{ruleOf(m.user_id) && <Badge variant="outline">Has rules</Badge>}</div>}
+        phoneCard={(m) => <div className="flex items-center gap-2"><p className="flex min-w-0 flex-1 items-center gap-1 font-medium"><span className="truncate">{nameOf(m)}</span><AutoBadge userId={m.user_id} only="verified" /></p>{ruleOf(m.user_id) && <Badge variant="outline">Has rules</Badge>}</div>}
       />
       <AdminSidePanel open={!!open} onClose={() => setOpen(null)} testId="list-side-panel" title={open ? nameOf(open) : ""} subtitle={open?.username ? `@${open.username}` : "On the list"}
         footer={open && (<>
@@ -207,7 +209,7 @@ function RulesTable({ state, onEdit, onClear }: { state: MessageAdminState; onEd
     keep: (r) => tab === "all" || isPaused(r),
   });
   const columns: DTColumn<MemberRule>[] = [
-    { key: "member", header: "Member", sortKey: "member", cell: (r) => <span className="font-medium">{nameOf(r)}</span> },
+    { key: "member", header: "Member", sortKey: "member", cell: (r) => <span className="inline-flex items-center gap-1 font-medium">{nameOf(r)}<AutoBadge userId={r.user_id} only="verified" /></span> },
     { key: "rules", header: "Rules", cell: (r) => <RuleBadges r={r} /> },
     { key: "reason", header: "Reason", className: "max-w-[260px]", cell: (r) => <span className="line-clamp-2 text-sm text-muted-foreground">{r.reason ? `“${r.reason}”` : "—"}</span> },
     { key: "set", header: "Set", sortKey: "set", className: "whitespace-nowrap", cell: (r) => <span className="text-sm text-muted-foreground">{dayText(r.set_at)}</span> },
@@ -232,7 +234,7 @@ function RulesTable({ state, onEdit, onClear }: { state: MessageAdminState; onEd
         page={t.page} pageSize={t.pageSize} total={t.total} onPage={t.setPage} onPageSize={t.setPageSize}
         emptyText={t.search ? `No one matches “${t.search}”.` : "No member has special rules."}
         onRowClick={setOpen}
-        phoneCard={(r) => <div className="space-y-1"><p className="font-medium">{nameOf(r)}</p><RuleBadges r={r} /></div>}
+        phoneCard={(r) => <div className="space-y-1"><p className="flex items-center gap-1 font-medium">{nameOf(r)}<AutoBadge userId={r.user_id} only="verified" /></p><RuleBadges r={r} /></div>}
       />
       <AdminSidePanel open={!!open} onClose={() => setOpen(null)} testId="rule-side-panel" title={open ? nameOf(open) : ""} subtitle="Special rules"
         footer={open && (<>

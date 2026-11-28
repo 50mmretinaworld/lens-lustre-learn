@@ -8,6 +8,7 @@ import {
   useInvalidateJudges,
 } from "@/hooks/competition/useCompetitionJudges";
 import { useState } from "react";
+import AutoBadge from "@/components/AutoBadge";
 
 interface Props {
   competitionId: string;
@@ -96,6 +97,7 @@ const AdminCompetitionJudges = ({ competitionId, adminId }: Props) => {
               style={{ fontFamily: "var(--font-body)" }}
             >
               {j.full_name || "Unknown"}
+              <AutoBadge userId={j.judge_id} only="verified" />
               <button
                 onClick={() => removeJudge(j.id)}
                 className="hover:text-destructive transition-colors"

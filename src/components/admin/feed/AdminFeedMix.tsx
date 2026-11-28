@@ -146,9 +146,9 @@ export default function AdminFeedMix() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(([name, f]) => (
-              <tr key={name} className="border-t border-border">
-                <td className="py-1.5">{name}</td>
+            {rows.map(([metric, f]) => (
+              <tr key={metric} className="border-t border-border">
+                <td className="py-1.5">{metric}</td>
                 <td className="py-1.5 text-right tabular-nums">{f(stats.groups.with)}</td>
                 <td className="py-1.5 text-right tabular-nums">{f(stats.groups.without)}</td>
               </tr>

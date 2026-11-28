@@ -57,7 +57,7 @@ function BoxViewer({ member, onBack }: { member: MsgMember; onBack: () => void }
         <Button variant="outline" size="sm" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />All members</Button>
         <MemberAvatar m={member} size={36} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{name}</p>
+          <p className="flex items-center gap-1 text-sm font-semibold"><span className="truncate">{name}</span><AutoBadge userId={member.user_id} only="verified" /></p>
           <p className="truncate text-xs text-muted-foreground">{member.email ?? ""}{member.username ? ` · @${member.username}` : ""}</p>
         </div>
         {chatId && <ExportChatButton userId={member.user_id} conversationId={chatId} />}
@@ -172,7 +172,7 @@ export default function MembersPanel() {
           <div className="flex items-start gap-3">
             <MemberAvatar m={m} size={40} />
             <div className="min-w-0 flex-1 space-y-1">
-              <p className="truncate font-medium">{nameOf(m)}</p>
+              <p className="flex items-center gap-1 font-medium"><span className="truncate">{nameOf(m)}</span><AutoBadge userId={m.user_id} only="verified" /></p>
               <p className="truncate text-xs text-muted-foreground">{m.email ?? "—"}</p>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                 <span>{m.chats === 0 ? "No chats yet" : `Chatting with ${m.chatting_with.map((w) => w.name).join(", ")}${m.chats > m.chatting_with.length ? ` +${m.chats - m.chatting_with.length} more` : ""}`}</span><span>· last {when(m.last_message_at)}</span>

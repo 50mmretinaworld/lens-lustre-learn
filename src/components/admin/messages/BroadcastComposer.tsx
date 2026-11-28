@@ -6,6 +6,7 @@
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus, Loader2, Send, Smile, X } from "lucide-react";
 import OfficialAccountTick from "@/components/OfficialAccountTick";
+import AutoBadge from "@/components/AutoBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -200,7 +201,7 @@ export default function BroadcastComposer({ onBack, onSent }: { onBack: () => vo
                   <ul className="flex flex-wrap gap-1.5" aria-label="Chosen members">
                     {chosen.map((c) => (
                       <li key={c.id} className="inline-flex items-center gap-1 rounded-full border border-border bg-card py-0.5 pl-2.5 pr-1 text-sm">
-                        {c.name}<button type="button" aria-label={`Remove ${c.name}`} onClick={() => setChosen((x) => x.filter((y) => y.id !== c.id))} className="grid h-5 w-5 place-items-center rounded-full hover:bg-muted"><X className="h-3 w-3" /></button>
+                        {c.name}<AutoBadge userId={c.id} only="verified" /><button type="button" aria-label={`Remove ${c.name}`} onClick={() => setChosen((x) => x.filter((y) => y.id !== c.id))} className="grid h-5 w-5 place-items-center rounded-full hover:bg-muted"><X className="h-3 w-3" /></button>
                       </li>
                     ))}
                   </ul>

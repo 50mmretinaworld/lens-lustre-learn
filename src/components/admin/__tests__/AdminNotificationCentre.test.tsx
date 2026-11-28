@@ -7,6 +7,8 @@ import { render, screen, waitFor, fireEvent, within } from "@testing-library/rea
 
 const rpc = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (...a: unknown[]) => rpc(...a) } }));
+// Names on admin screens carry the badge (AutoBadge reads the shared profile cache); not under test here.
+vi.mock("@/components/AutoBadge", () => ({ default: () => <span data-testid="auto-badge" /> }));
 
 import AdminNotificationCentre from "@/components/admin/AdminNotificationCentre";
 
@@ -26,7 +28,7 @@ beforeEach(() => {
   rpc.mockImplementation(async (fn: string) => {
     if (fn === "admin_notif_switches") return { data: SWITCHES, error: null };
     if (fn === "admin_notif_types") return { data: TYPES, error: null };
-    if (fn === "admin_notif_history") return { data: [{ changed_at: "2026-10-31T12:00:00Z", changed_by_name: "Neil", subject: "post_reaction", field: "enabled", old_value: true, new_value: false }], error: null };
+    if (fn === "admin_notif_history") return { data: [{ changed_at: "2026-10-31T12:00:00Z", changed_by: "u-neil", changed_by_name: "Neil", subject: "post_reaction", field: "enabled", old_value: true, new_value: false }], error: null };
     return { data: null, error: null };
   });
 });
@@ -80,7 +82,10 @@ describe("Admin → Notification Centre", () => {
     fireEvent.click(screen.getByRole("button", { name: /Send a test to me/ }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("notification_centre_send_test", { _type: "post_reaction" }));
     fireEvent.click(screen.getByRole("button", { name: /Change history/ }));
-    expect(await screen.findByText(/Neil changed/)).toBeInTheDocument();
+    // The actor's name is drawn by MemberName (its own span, badge beside it), so the sentence is read as a whole.
+    const name = await screen.findByText("Neil");
+    expect(name.parentElement?.textContent).toMatch(/Neil\s*changed/);
+    expect(name.parentElement?.querySelector('[data-testid="auto-badge"]')).not.toBeNull();
   });
 
   it("unticking On turns the type off — the label says it acts only where its group is switched on", async () => {

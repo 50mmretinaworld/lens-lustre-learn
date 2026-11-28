@@ -24,6 +24,7 @@ import {
 } from "@/lib/admin/featureSwitches";
 import MemberSearch from "./MemberSearch";
 import { MemberAvatar, StatusPill } from "./memberBits";
+import AutoBadge from "@/components/AutoBadge";
 
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
 const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
@@ -239,9 +240,10 @@ export default function AdminVideoFeature({ feature }: { feature: FeatureKey }) 
                         onChange={(e) => setPicked((p) => { const n = new Set(p); if (e.target.checked) n.add(m.user_id); else n.delete(m.user_id); return n; })}
                         className="h-3.5 w-3.5 accent-primary" />
                       <MemberAvatar m={m} size="chip" />
-                      <span className="min-w-0 flex-1 truncate">
-                        <span className="font-medium">{name}</span>
-                        {m.username && <span className="text-xs text-muted-foreground"> @{m.username}</span>}
+                      <span className="flex min-w-0 flex-1 items-center gap-1">
+                        <span className="truncate font-medium">{name}</span>
+                        <AutoBadge userId={m.user_id} only="verified" />
+                        {m.username && <span className="truncate text-xs text-muted-foreground">@{m.username}</span>}
                       </span>
                       <time dateTime={m.added_at} className="hidden text-[11px] text-muted-foreground sm:inline">added {new Date(m.added_at).toLocaleDateString()}</time>
                       <button type="button" aria-label={`Remove ${name}`} disabled={busy} onClick={() => void change("feature_remove_member", [m.user_id])}

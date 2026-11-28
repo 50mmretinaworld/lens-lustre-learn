@@ -11,6 +11,8 @@ import AdminDataTable, { type DTColumn } from "@/components/admin/AdminDataTable
 import AdminSidePanel, { PanelField } from "@/components/admin/AdminSidePanel";
 import { cmpDate, cmpText, downloadCsv, useClientTable } from "@/components/admin/useClientTable";
 import type { ControlLogRow } from "@/hooks/admin/useAdminMessages";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 
 export const AREA_TEXT: Record<string, string> = {
   mode: "Who can message", groups: "Groups", list: "Member list", member_rule: "Member rules",
@@ -43,8 +45,8 @@ export default function HistoryPanel({ log, me, names }: { log: ControlLogRow[];
   const columns: DTColumn<ControlLogRow>[] = [
     { key: "when", header: "When", sortKey: "when", className: "whitespace-nowrap", cell: (l) => <span className="text-sm text-muted-foreground">{when(l.at)}</span> },
     { key: "area", header: "Area", sortKey: "area", cell: (l) => <Badge variant="secondary">{AREA_TEXT[l.area] ?? l.area}</Badge> },
-    { key: "who", header: "Done by", sortKey: "who", cell: (l) => <span className="font-medium">{actor(l)}</span> },
-    { key: "about", header: "About", cell: (l) => <span className="text-sm">{about(l) || "—"}</span> },
+    { key: "who", header: "Done by", sortKey: "who", cell: (l) => <span className="inline-flex items-center gap-1 font-medium">{actor(l)}<AutoBadge userId={l.actor} only="verified" /></span> },
+    { key: "about", header: "About", cell: (l) => <span className="inline-flex items-center gap-1 text-sm">{about(l) || "—"}<AutoBadge userId={l.user_id} only="verified" /></span> },
     { key: "change", header: "Change", className: "max-w-[260px]", cell: (l) => <span className="line-clamp-2 text-sm text-muted-foreground">{change(l) || "—"}</span> },
     { key: "reason", header: "Reason", className: "max-w-[280px]", cell: (l) => <span className="line-clamp-2 text-sm">“{l.reason}”</span> },
   ];
@@ -67,7 +69,7 @@ export default function HistoryPanel({ log, me, names }: { log: ControlLogRow[];
         phoneCard={(l) => (
           <div className="space-y-1">
             <div className="flex items-center gap-2"><Badge variant="secondary">{AREA_TEXT[l.area] ?? l.area}</Badge><span className="text-xs text-muted-foreground">{when(l.at)}</span></div>
-            <p className="text-sm"><b>{actor(l)}</b>{about(l) ? <> about <b>{about(l)}</b></> : null}</p>
+            <p className="text-sm"><MemberName userId={l.actor}><b>{actor(l)}</b></MemberName>{about(l) ? <> about <MemberName userId={l.user_id}><b>{about(l)}</b></MemberName></> : null}</p>
             <p className="text-xs">“{l.reason}”</p>
           </div>
         )}
@@ -76,7 +78,7 @@ export default function HistoryPanel({ log, me, names }: { log: ControlLogRow[];
         title={open ? (AREA_TEXT[open.area] ?? open.area) : ""} subtitle={open ? `${actor(open)} · ${when(open.at)}` : undefined}>
         {open && (
           <>
-            {about(open) && <PanelField label="About">{about(open)}</PanelField>}
+            {about(open) && <PanelField label="About"><MemberName userId={open.user_id} name={about(open)} /></PanelField>}
             {change(open) && <PanelField label="Change">{change(open)}</PanelField>}
             <PanelField label="Reason">“{open.reason}”</PanelField>
           </>

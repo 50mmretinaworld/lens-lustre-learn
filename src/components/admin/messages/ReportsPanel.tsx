@@ -14,6 +14,7 @@ import AdminSidePanel, { PanelField } from "@/components/admin/AdminSidePanel";
 import { cmpDate, cmpNum, cmpText, downloadCsv, useClientTable } from "@/components/admin/useClientTable";
 import { MemberAvatar } from "@/components/admin/users/memberUi";
 import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 import ChatPane from "@/components/messages/ChatPane";
 import ExportChatButton from "./ExportChatButton";
 import { ViewAsProvider } from "@/components/messages/viewAs";
@@ -150,7 +151,7 @@ export default function ReportsPanel() {
           phoneCard={(r) => (
             <div className="space-y-1">
               <div className="flex items-center gap-2"><Badge variant={r.reason === "threat" || r.reason === "nudity" ? "destructive" : "secondary"}>{REASON_TEXT[r.reason]}</Badge><span className="text-xs text-muted-foreground">{when(r.created_at)}</span></div>
-              <p className="text-sm"><b>{who(r.reporter_name, r.reporter_id)}</b> reported <b>{who(r.reported_name, r.reported_id)}</b></p>
+              <p className="text-sm"><MemberName userId={r.reporter_id}><b>{who(r.reporter_name, r.reporter_id)}</b></MemberName> reported <MemberName userId={r.reported_id}><b>{who(r.reported_name, r.reported_id)}</b></MemberName></p>
               {r.note && <p className="text-xs text-muted-foreground">“{r.note}”</p>}
             </div>
           )}
@@ -190,7 +191,7 @@ export default function ReportsPanel() {
 
       <AdminSidePanel
         wide open={!!picked} onClose={() => setPicked(null)} testId="report-side-panel"
-        title={picked ? <>{REASON_TEXT[picked.reason]} · {who(picked.reported_name, picked.reported_id)}</> : ""}
+        title={picked ? <>{REASON_TEXT[picked.reason]} · <MemberName userId={picked.reported_id} name={who(picked.reported_name, picked.reported_id)} /></> : ""}
         subtitle={picked ? `Reported by ${who(picked.reporter_name, picked.reporter_id)} · ${when(picked.created_at)}` : undefined}
         footer={picked && picked.status === "open" && (
           <Button disabled={busy} onClick={() => void closeMany([picked.id]).then(() => setPicked(null))}><CheckCircle2 className="mr-1 h-4 w-4" aria-hidden="true" />Mark done</Button>

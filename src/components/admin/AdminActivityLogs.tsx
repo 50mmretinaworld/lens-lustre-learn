@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
+import AutoBadge from "@/components/AutoBadge";
 import { Loader2, Download, Trash2, Archive, Search, Calendar, Filter } from "lucide-react";
 import { toast } from "@/hooks/core/use-toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -311,7 +312,10 @@ const AdminActivityLogs = () => {
                 <span className="w-36 text-muted-foreground shrink-0" style={bodyFont}>
                   {new Date(log.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </span>
-                <span className="w-32 truncate" style={bodyFont}>{log.user_name || log.user_id.slice(0, 8)}</span>
+                <span className="w-32 flex items-center gap-1 min-w-0" style={bodyFont}>
+                  <span className="truncate">{log.user_name || log.user_id.slice(0, 8)}</span>
+                  <AutoBadge userId={log.user_id} only="verified" />
+                </span>
                 <span className="w-24 shrink-0">
                   <span className={`text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border ${categoryColor(log.action_category)}`} style={headingFont}>
                     {log.action_category}

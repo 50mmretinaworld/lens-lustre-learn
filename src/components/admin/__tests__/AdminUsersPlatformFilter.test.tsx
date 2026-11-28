@@ -90,6 +90,8 @@ vi.mock("@/hooks/profile/useBadgeDefinitions", () => ({ useBadgeDefinitions: () 
 vi.mock("@/hooks/profile/useRoleDefinitions", () => ({ useRoleDefinitions: () => new Map() }));
 vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQueries: () => Promise.resolve() }) }));
 vi.mock("@/components/AutoRole", () => ({ invalidateRoleCache: () => {} }));
+// Names on admin screens carry the badge (AutoBadge reads the shared profile cache); not under test here.
+vi.mock("@/components/AutoBadge", () => ({ default: () => <span data-testid="auto-badge" /> }));
 vi.mock("@/hooks/core/use-toast", () => ({ toast: () => {} }));
 vi.mock("@/i18n/I18nContext", () => ({
   useT: () => (k: string, fallback?: string) =>

@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 import { toast } from "@/hooks/core/use-toast";
 import { Plus, Pencil, Trash2, XCircle, Loader2, Award, Upload, Image as ImageIcon, Ban, ShieldCheck, Download, Search } from "lucide-react";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -509,7 +511,7 @@ const CertificatesList = ({ user }: { user: User | null }) => {
                   {searching && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-muted-foreground" />}
                 </div>
                 {resolvedUserId && (
-                  <span className="text-xs text-primary shrink-0 inline-flex items-center gap-1">✓ {resolvedUserName}</span>
+                  <span className="text-xs text-primary shrink-0 inline-flex items-center gap-1">✓ <MemberName userId={resolvedUserId} name={resolvedUserName} /></span>
                 )}
               </div>
 
@@ -528,6 +530,7 @@ const CertificatesList = ({ user }: { user: User | null }) => {
                         ? <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover shrink-0" />
                         : <span className="h-5 w-5 rounded-full bg-muted shrink-0" />}
                       <span className="text-xs truncate">{m.full_name || "(no name)"}</span>
+                      <AutoBadge userId={m.id} only="verified" />
                       <span className="text-[10px] text-muted-foreground truncate ml-auto">{m.email || "no email"}</span>
                     </button>
                   ))}
@@ -703,7 +706,7 @@ const CertificatesList = ({ user }: { user: User | null }) => {
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground flex-wrap">
-                  <span>{c.user_name || "Unknown"}</span>
+                  <span className="inline-flex items-center gap-1">{c.user_name || "Unknown"}<AutoBadge userId={c.user_id} only="verified" /></span>
                   <span>·</span>
                   <span>{new Date(c.issued_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" })}</span>
                   {c.is_revoked && c.revoked_reason && (

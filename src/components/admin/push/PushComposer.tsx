@@ -12,6 +12,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import AutoBadge from "@/components/AutoBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -75,7 +76,7 @@ function MemberPicker({ ids, onChange }: { ids: string[]; onChange: (ids: string
                   onChange(on ? ids.filter((x) => x !== m.id) : [...ids, m.id].slice(0, 500));
                 }} className={cn("flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs hover:bg-muted", on && "bg-primary/5")}>
                   <MemberAvatar m={m} size={24} />
-                  <span className="min-w-0 flex-1 truncate">{m.full_name || "Member"}</span>
+                  <span className="flex min-w-0 flex-1 items-center gap-1"><span className="truncate">{m.full_name || "Member"}</span><AutoBadge userId={m.id} only="verified" /></span>
                   <span className={cn("text-[10px]", on ? "text-primary" : "text-muted-foreground")}>{on ? "Added" : "Add"}</span>
                 </button>
               </li>
@@ -88,6 +89,7 @@ function MemberPicker({ ids, onChange }: { ids: string[]; onChange: (ids: string
           {ids.map((id) => (
             <span key={id} className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 py-0.5 pl-2 pr-1 text-[11px]">
               {names[id]?.name ?? "Member"}
+              <AutoBadge userId={id} only="verified" />
               <button type="button" aria-label="Remove" onClick={() => onChange(ids.filter((x) => x !== id))} className="rounded-full p-0.5 hover:bg-muted"><X className="h-3 w-3" /></button>
             </span>
           ))}
