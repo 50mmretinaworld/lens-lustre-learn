@@ -148,4 +148,13 @@ jobs:
           echo "== G · lines per 10 minutes, all sources (spikes)"
           q "SELECT formatDateTime(toStartOfTenMinutes(timestamp), '%m-%d %H:%i') AS at, count() AS n FROM logs GROUP BY at ORDER BY at LIMIT 150" \
             && jq -r '.result[]? | "  \(.at) UTC\t\(.n)"' /tmp/out.json
+          # v7 (Owner 28 Nov: "no guessing — proof"): per MINUTE, which rose first — member requests, or database refusals.
+          echo "== H · per minute: API requests (all / messages / other), and database trouble lines"
+          q "SELECT formatDateTime(toStartOfMinute(timestamp), '%m-%d %H:%i') AS at, count() AS n, countIf(log_attributes['request.path'] LIKE '%/rpc/message%') AS msg FROM logs WHERE $SRC = 'edge_logs' GROUP BY at ORDER BY at LIMIT 300" \
+            && jq -r '.result[]? | "  \(.at) UTC\trequests=\(.n)\tmessages=\(.msg)\tother=\(.n - .msg)"' /tmp/out.json
+          q "SELECT formatDateTime(toStartOfMinute(timestamp), '%m-%d %H:%i') AS at, countIf(event_message ILIKE '%statement timeout%') AS stmt_timeout, countIf(event_message ILIKE '%could not accept SSL%') AS ssl_reset, countIf(event_message ILIKE '%job startup timeout%') AS cron_timeout, countIf(event_message ILIKE '%too many%connection%' OR event_message ILIKE '%remaining connection slots%') AS too_many FROM logs WHERE $SRC = 'postgres_logs' GROUP BY at HAVING stmt_timeout + ssl_reset + cron_timeout + too_many > 0 ORDER BY at LIMIT 300" \
+            && jq -r '.result[]? | "  \(.at) UTC\tstatement_timeout=\(.stmt_timeout)\tssl_reset=\(.ssl_reset)\tcron_timeout=\(.cron_timeout)\ttoo_many_conn=\(.too_many)"' /tmp/out.json
+          echo "== I · response codes per 10 minutes (edge_logs)"
+          q "SELECT formatDateTime(toStartOfTenMinutes(timestamp), '%m-%d %H:%i') AS at, toString(log_attributes['response.status_code']) AS code, count() AS n FROM logs WHERE $SRC = 'edge_logs' GROUP BY at, code ORDER BY at, n DESC LIMIT 300" \
+            && jq -r '.result[]? | "  \(.at) UTC\tcode=\(.code)\t\(.n)"' /tmp/out.json
           echo "Read only: nothing was changed."
