@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { X, Search, MapPin } from "lucide-react";
+import AutoBadge from "@/components/AutoBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -416,6 +417,7 @@ export default function TagPeopleModal({
                           </div>
                         )}
                         <span className="text-xs truncate">{f.full_name || "Unknown"}</span>
+                        <AutoBadge userId={f.id} only="verified" />
                       </button>
                     ))
                   )}

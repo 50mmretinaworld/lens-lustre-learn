@@ -3,6 +3,7 @@ import { getAdminIds } from "@/lib/adminBrand";
 import AdZone from "@/components/ads/AdZone";
 import { Link } from "react-router-dom";
 import ProfileLink from "@/components/ProfileLink";
+import AutoBadge from "@/components/AutoBadge";
 import { UserPlus, Users, Trophy, Clock, BookOpen, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -437,6 +438,7 @@ const FeedRightSidebar = ({ sidebarData, isLoading: dashboardLoading }: FeedRigh
                       >
                         {displayName(w.user_name)}
                       </ProfileLink>
+                      {w.user_id && <AutoBadge userId={w.user_id} only="verified" />}
                     </div>
                     <Link to={`/competitions`} className="block min-w-0">
                       <p className="text-xs font-medium truncate" style={headingFont}>{w.title}</p>

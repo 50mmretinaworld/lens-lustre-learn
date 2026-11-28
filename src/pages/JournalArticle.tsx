@@ -12,6 +12,7 @@ import { generateArticlePdf } from "@/lib/generateArticlePdf";
 import PageSEO from "@/components/PageSEO";
 import { toast } from "@/hooks/core/use-toast";
 import UserIdentityBlock from "@/components/UserIdentityBlock";
+import AutoBadge from "@/components/AutoBadge";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useT } from "@/i18n/I18nContext";
 
@@ -97,9 +98,13 @@ const AuthorCard = ({
             </div>
           )}
           <div className="min-w-0">
-            <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate"
-              style={{ fontFamily: "var(--font-display)" }}>
-              {author?.full_name || "Unknown"}
+            {/* Name + the member's badge from the ONE badge rule (Owner 28 Nov: About the Author had no badge) */}
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate"
+                style={{ fontFamily: "var(--font-display)" }}>
+                {author?.full_name || "Unknown"}
+              </span>
+              {authorId && <AutoBadge userId={authorId} />}
             </div>
             <div className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
               {date}
@@ -148,9 +153,12 @@ const AuthorCard = ({
           {t("jart.writtenBy")}
         </span>
         <ProfileLink userId={authorId} handle={authorHandle} className="block">
-          <div className="text-base font-medium text-foreground hover:text-primary transition-colors"
-            style={{ fontFamily: "var(--font-display)" }}>
-            {author?.full_name || "Unknown"}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="text-base font-medium text-foreground hover:text-primary transition-colors"
+              style={{ fontFamily: "var(--font-display)" }}>
+              {author?.full_name || "Unknown"}
+            </span>
+            {authorId && <AutoBadge userId={authorId} />}
           </div>
         </ProfileLink>
         {author?.bio && (
