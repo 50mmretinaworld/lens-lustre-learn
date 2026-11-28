@@ -67,11 +67,61 @@ const NUDGE_PX = 320;
  * arrow state, and the focused chip was destroyed (focus fell to <body>).
  * src/__tests__/categoryStripFocus.test.tsx pins this.
  */
+/**
+ * ICONS ONLY WHILE READING (Owner bug list 28 Nov, item 12; sample approved:
+ * _control/out/OWNER/category-strip-preview/sample.png).
+ * Finger swipes UP (reading on, page scrolls down) → the names hide, icons stay.
+ * Finger swipes DOWN, or back near the top → the names come back.
+ * Phones only (below md); a computer keeps the names.
+ *
+ * The strip is sticky, so its height change moves the posts under it, and the
+ * browser's scroll anchoring may answer with a scroll of the same size. That
+ * scroll must not flip the strip back: after each change, scrolls are ignored
+ * for a moment and the next one is measured from where the page then is.
+ */
+const COMPACT_STEP_PX = 24;
+const NEAR_TOP_PX = 120;
+const SETTLE_MS = 400;
+
+function useCompactOnScroll(): boolean {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    let quietUntil = 0;
+    let state = false;
+    let frame = 0;
+    const set = (next: boolean) => {
+      if (next === state) return;
+      state = next;
+      quietUntil = Date.now() + SETTLE_MS;
+      setCompact(next);
+    };
+    const read = () => {
+      frame = 0;
+      const y = window.scrollY;
+      if (Date.now() < quietUntil) { last = y; return; }
+      if (y < NEAR_TOP_PX) { set(false); last = y; return; }
+      const moved = y - last;
+      if (moved > COMPACT_STEP_PX) { set(true); last = y; }
+      else if (moved < -COMPACT_STEP_PX) { set(false); last = y; }
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+  return compact;
+}
+
 function Chip({
-  slug, label, Icon, active, onPick,
+  slug, label, Icon, active, onPick, compact = false,
 }: {
   slug: string; label: string; Icon: ReturnType<typeof categoryIcon>;
   active: boolean; onPick: (slug: string, active: boolean) => void;
+  /** Icons only on a phone (the name stays for screen readers and on a computer). */
+  compact?: boolean;
 }) {
   return (
     <button
@@ -80,6 +130,8 @@ function Chip({
       aria-pressed={active}
       className={cn(
         "flex shrink-0 flex-col items-center gap-1 px-3 py-2 transition-colors",
+        // icons only: 2.5 keeps the strip (and the grid button beside it) 46 px tall — still a full tap size (UI gate)
+        compact && "max-md:py-2.5",
         "border-b-2",
         // ⚠ AMBER, NOT `primary`. Owner's app mock, 2026-08-12: the selected
         // chip and its underline are orange. `text-primary` is the site's
@@ -90,7 +142,7 @@ function Chip({
       )}
     >
       <Icon className="h-6 w-6" aria-hidden="true" />
-      <span className="whitespace-nowrap text-xs font-medium">{label}</span>
+      <span className={cn("whitespace-nowrap text-xs font-medium", compact && "max-md:sr-only")}>{label}</span>
     </button>
   );
 }
@@ -126,6 +178,7 @@ export default function CategoryStrip({ value, onChange, className }: CategorySt
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
   const [gridOpen, setGridOpen] = useState(false);
+  const compact = useCompactOnScroll();
 
   /**
    * Which arrows are live. Recomputed on scroll, on resize, and whenever the
@@ -210,7 +263,7 @@ export default function CategoryStrip({ value, onChange, className }: CategorySt
       >
         {/* Always first, always present, default selection. */}
         <Chip slug={ALL_FILTER} label={t("cat.all", "All")} Icon={ALL_ICON}
-          active={value === ALL_FILTER} onPick={pick} />
+          active={value === ALL_FILTER} onPick={pick} compact={compact} />
         {categories.map((c) => (
           <Chip
             key={c.slug}
@@ -220,6 +273,7 @@ export default function CategoryStrip({ value, onChange, className }: CategorySt
             Icon={categoryIcon(c.icon_name)}
             active={value === c.slug}
             onPick={pick}
+            compact={compact}
           />
         ))}
       </div>
