@@ -7,6 +7,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import PresenceAvatar from "@/components/PresenceAvatar";
 import { honouredLabel, premiumPhotoSrc } from "@/lib/premium/premiumMember";
 import type { PremiumMember } from "@/hooks/feed/usePremiumMembers";
+import { useProfileMap } from "@/hooks/profile/useProfileMap";
 
 /**
  * THE ONE PREMIUM MEMBER CARD (Owner-approved plan, 26 Nov 2026, Parts 3 + 4).
@@ -21,6 +22,7 @@ import type { PremiumMember } from "@/hooks/feed/usePremiumMembers";
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
 const VERIFIED = ["verified"];
+const ELITE = ["verified", "elite_member"];
 /** One-off sizes as inline styles: no new rules in the one shared stylesheet (P13 initial budget). */
 const AVATAR_POS = { bottom: -16 };
 
@@ -38,6 +40,9 @@ interface Props {
 export default function PremiumMemberCard({ member: m, following, self = false, busy = false, onFollow, className = "", style }: Props) {
   const photo = premiumPhotoSrc(m);
   const honoured = honouredLabel(m.honoured_at);
+  // Every card holds a Verified member; one who was also given Elite Member shows the gold tick (bug list item 3).
+  const { profileMap } = useProfileMap([m.user_id]);
+  const tick = profileMap[m.user_id]?.badges?.includes("elite_member") ? ELITE : VERIFIED;
 
   /*
    * BLUR → SHARP with the EXISTING ThumbHash codes (lib/photoBlur.ts, as PostMedia):
@@ -101,7 +106,7 @@ export default function PremiumMemberCard({ member: m, following, self = false, 
             {m.full_name}
           </ProfileLink>
           <span className="shrink-0">
-            <UserBadgeInline badges={VERIFIED} only="verified" userId={m.user_id} name={m.full_name} />
+            <UserBadgeInline badges={tick} only="verified" userId={m.user_id} name={m.full_name} />
           </span>
         </div>
         {m.line && (
