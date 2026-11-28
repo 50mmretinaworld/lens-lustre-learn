@@ -17,7 +17,7 @@ import { toast } from "@/hooks/core/use-toast";
 import type { AdminMember } from "@/hooks/admin/useAdminMembers";
 import type { PendingAccountAction } from "@/components/admin/AccountActionDialog";
 import { AccountHistoryList } from "@/components/admin/AccountActionDialog";
-import { MemberAvatar, StatusChip, STATUS_META, fmtDate, statusDetail, type MemberLabels } from "./memberUi";
+import { MemberAvatar, StatusChip, STATUS_META, appLabel, fmtDate, istDateTime, statusDetail, type MemberLabels } from "./memberUi";
 
 export interface MemberActions {
   setRole: (m: AdminMember, role: string, on: boolean) => void;
@@ -84,11 +84,13 @@ export function MemberDrawer({
             )}
 
             <dl className="grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-xs text-muted-foreground">Joined</dt><dd>{fmtDate(m.created_at)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Joined</dt><dd>{istDateTime(m.created_at) ?? fmtDate(m.created_at)}</dd></div>
               <div>
                 <dt className="text-xs text-muted-foreground">Last active</dt>
-                <dd className={online ? "font-medium text-emerald-600" : undefined}>{online ? "Active now" : formatLastSeen(m.last_active_at) || "Never recorded"}</dd>
+                <dd className={online ? "font-medium text-emerald-600" : undefined} title={formatLastSeen(m.last_active_at) || undefined}>{online ? "Active now" : istDateTime(m.last_active_at) || "Never recorded"}</dd>
               </div>
+              <div><dt className="text-xs text-muted-foreground">Last login</dt><dd>{istDateTime(m.last_sign_in_at) || "Not recorded"}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">App version</dt><dd>{m.app_version ? appLabel(m).replace(/^App /, "") : "Not reported"}</dd></div>
               <div>
                 <dt className="text-xs text-muted-foreground">Signs in from</dt>
                 <dd className="flex items-center gap-1">
