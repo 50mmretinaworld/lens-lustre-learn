@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Bell, History, Loader2, Search, Send } from "lucide-react";
+import MemberName from "@/components/MemberName";
 
 type Mode = "off" | "me" | "members" | "everyone";
 interface SwitchRow { key: string; label: string; mode: Mode; members: number }
@@ -26,7 +27,7 @@ interface TypeRow {
   rows_24h: number; rows_7d: number; centre_sent_24h: number; centre_skipped_24h: number;
   centre_sent_7d: number; centre_skipped_7d: number;
 }
-interface HistoryRow { changed_at: string; changed_by_name: string; subject: string; field: string; old_value: unknown; new_value: unknown }
+interface HistoryRow { changed_at: string; changed_by: string | null; changed_by_name: string; subject: string; field: string; old_value: unknown; new_value: unknown }
 
 const MODE_LABEL: Record<Mode, string> = { off: "Off", me: "Only me", members: "Chosen members", everyone: "Everyone" };
 const GROUP_LABEL: Record<string, string> = {
@@ -303,7 +304,7 @@ function TypeRowView({ r, open, onToggle, onChanged, onError, onNotice }: {
                   <ul className="text-xs space-y-1">
                     {history.map((h, i) => (
                       <li key={i}>
-                        {new Date(h.changed_at).toLocaleString()} — {h.changed_by_name || "an admin"} changed{" "}
+                        {new Date(h.changed_at).toLocaleString()} — {h.changed_by_name ? <MemberName userId={h.changed_by} name={h.changed_by_name} /> : "an admin"} changed{" "}
                         <strong>{h.field}</strong>: {JSON.stringify(h.old_value)} → {JSON.stringify(h.new_value)}
                       </li>
                     ))}

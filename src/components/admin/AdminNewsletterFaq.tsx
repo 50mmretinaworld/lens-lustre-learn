@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2, Save, Mail, HelpCircle, Search, Download, Sparkl
 import { Switch } from "@/components/ui/switch";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useConfirmAction } from "@/hooks/admin/useConfirmAction";
+import AutoBadge from "@/components/AutoBadge";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -203,7 +204,10 @@ const NewsletterSection = () => {
                   </div>
                 </td>
                 <td className="px-4 py-2.5 hidden md:table-cell">
-                  <span className="text-xs text-muted-foreground truncate" style={bodyFont}>{s.user_name || "—"}</span>
+                  <span className="flex items-center gap-1 min-w-0">
+                    <span className="text-xs text-muted-foreground truncate" style={bodyFont}>{s.user_name || "—"}</span>
+                    <AutoBadge userId={s.user_id} only="verified" />
+                  </span>
                 </td>
                 <td className="px-4 py-2.5 hidden md:table-cell">
                   <span className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground" style={headingFont}>{s.source}</span>

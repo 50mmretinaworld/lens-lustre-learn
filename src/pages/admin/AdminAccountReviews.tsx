@@ -17,6 +17,7 @@
 import { useState } from "react";
 import { Loader2, History, ShieldAlert, UserCheck, Trash2, PauseCircle, CheckCircle2 } from "lucide-react";
 import ProfileTypeaheadPicker from "@/components/admin/ProfileTypeaheadPicker";
+import AutoBadge from "@/components/AutoBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAccountReviews, type AccountReviewRow } from "@/hooks/admin/useAccountReviews";
@@ -36,7 +37,7 @@ function ReviewRow({ row, onAction }: { row: AccountReviewRow; onAction: (p: Pen
   return (
     <li className="space-y-2 rounded-lg border border-border p-3" data-testid="account-review-row">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium">{name}</span>
+        <span className="inline-flex items-center gap-1 font-medium">{name}<AutoBadge userId={row.user_id} only="verified" /></span>
         <Badge variant={row.state === "deletion_requested" ? "destructive" : "secondary"}>{STATE_LABEL[row.state]}</Badge>
         {asked && row.state === "under_review" && <Badge variant="outline">Deletion held</Badge>}
       </div>

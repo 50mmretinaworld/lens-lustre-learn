@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import ProfileLink from "@/components/ProfileLink";
+import MemberName from "@/components/MemberName";
 import { useMemberHandles } from "@/hooks/profile/useMemberHandles";
 import { AlertTriangle, Check, Trash2, Ban, MessageSquare, Loader2, XCircle, Eye, ExternalLink, CheckSquare, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -551,7 +552,7 @@ const AdminCommentReports = ({ user }: Props) => {
                           }`}>{SOURCE_LABEL[r.source_type]}</span>
                           <span className="text-[9px] text-muted-foreground">
                             Reported by: {r.reporter_name ? (
-                              <ProfileLink userId={r.reporter_id} handle={handles.get(r.reporter_id)} className="text-primary hover:underline">{r.reporter_name}</ProfileLink>
+                              <MemberName userId={r.reporter_id}><ProfileLink userId={r.reporter_id} handle={handles.get(r.reporter_id)} className="text-primary hover:underline">{r.reporter_name}</ProfileLink></MemberName>
                             ) : "Unknown"}
                           </span>
                           <span className="text-[9px] text-muted-foreground">· {new Date(r.created_at).toLocaleDateString()}</span>
@@ -561,9 +562,11 @@ const AdminCommentReports = ({ user }: Props) => {
                           <p className="text-[10px] text-muted-foreground mb-0.5">
                             Comment by{" "}
                             {r.comment_user_id ? (
-                              <ProfileLink userId={r.comment_user_id} handle={handles.get(r.comment_user_id)} className="text-primary font-semibold hover:underline">
-                                {r.comment_user_name || "Unknown"}
-                              </ProfileLink>
+                              <MemberName userId={r.comment_user_id}>
+                                <ProfileLink userId={r.comment_user_id} handle={handles.get(r.comment_user_id)} className="text-primary font-semibold hover:underline">
+                                  {r.comment_user_name || "Unknown"}
+                                </ProfileLink>
+                              </MemberName>
                             ) : (
                               <strong>{r.comment_user_name || "Unknown"}</strong>
                             )}:
@@ -676,7 +679,7 @@ const AdminCommentReports = ({ user }: Props) => {
                         }`}>{SOURCE_LABEL[r.source_type]}</span>
                         <span className="text-[9px] text-muted-foreground">
                           By: {r.comment_user_id ? (
-                            <ProfileLink userId={r.comment_user_id} handle={handles.get(r.comment_user_id)} className="text-primary hover:underline">{r.comment_user_name || "Unknown"}</ProfileLink>
+                            <MemberName userId={r.comment_user_id}><ProfileLink userId={r.comment_user_id} handle={handles.get(r.comment_user_id)} className="text-primary hover:underline">{r.comment_user_name || "Unknown"}</ProfileLink></MemberName>
                           ) : "Unknown"}
                         </span>
                         <span className="text-[9px] text-muted-foreground">· {new Date(r.created_at).toLocaleDateString()}</span>
@@ -753,7 +756,7 @@ const AdminCommentReports = ({ user }: Props) => {
                         <span className="text-[8px] px-1.5 py-0.5 border border-destructive/40 text-destructive rounded-sm uppercase tracking-wider">flagged</span>
                         <span className="text-[9px] text-muted-foreground">
                           By: {f.user_id ? (
-                            <ProfileLink userId={f.user_id} handle={handles.get(f.user_id)} className="text-primary hover:underline">{f.user_name || "Unknown"}</ProfileLink>
+                            <MemberName userId={f.user_id}><ProfileLink userId={f.user_id} handle={handles.get(f.user_id)} className="text-primary hover:underline">{f.user_name || "Unknown"}</ProfileLink></MemberName>
                           ) : (f.user_name || "Unknown")}
                         </span>
                         <span className="text-[9px] text-muted-foreground">· {f.image_type}</span>

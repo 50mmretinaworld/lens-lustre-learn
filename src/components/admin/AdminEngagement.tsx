@@ -8,6 +8,8 @@ import { Search, ThumbsUp, Heart, Vote, Plus, Minus, Loader2, Image as ImageIcon
 import { User } from "@supabase/supabase-js";
 import { safeRandomUUID } from "@/lib/safeUuid";
 import MemberText from "@/components/MemberText";
+import MemberName from "@/components/MemberName";
+import AutoBadge from "@/components/AutoBadge";
 
 interface Props {
   user: User | null;
@@ -18,6 +20,7 @@ interface ImageItem {
   title: string;
   image_url: string;
   type: "portfolio" | "competition_entry";
+  owner_id: string | null;
   owner_name: string | null;
   reactions: { like: number; love: number; vote: number };
   is_pinned: boolean;
@@ -116,12 +119,14 @@ const AdminEngagement = ({ user }: Props) => {
     const items: ImageItem[] = [
       ...(portfolio?.map(p => ({
         id: p.id, title: p.title, image_url: p.image_url, type: "portfolio" as const,
+        owner_id: p.uploaded_by ?? null,
         owner_name: profileMap.get(p.uploaded_by) || null,
         reactions: reactionMap[p.id] || { like: 0, love: 0, vote: 0 },
         is_pinned: p.is_pinned, is_trending: p.is_trending, view_count: p.view_count,
       })) || []),
       ...(entries?.map(e => ({
         id: e.id, title: e.title, image_url: e.photos?.[0] || "", type: "competition_entry" as const,
+        owner_id: e.user_id ?? null,
         owner_name: profileMap.get(e.user_id) || null,
         reactions: reactionMap[e.id] || { like: 0, love: 0, vote: 0 },
         is_pinned: e.is_pinned, is_trending: e.is_trending, view_count: e.view_count,
@@ -359,7 +364,7 @@ const AdminEngagement = ({ user }: Props) => {
                             {img.type === "portfolio" ? "Portfolio" : "Entry"}
                           </span>
                         </div>
-                        {img.owner_name && <p className="text-[10px] text-muted-foreground mb-2">by {img.owner_name}</p>}
+                        {img.owner_name && <p className="text-[10px] text-muted-foreground mb-2">by <MemberName userId={img.owner_id} name={img.owner_name} /></p>}
                         <div className="flex items-center gap-4 flex-wrap">
                           {REACTION_TYPES.map(({ type, icon: Icon, color }) => (
                             <div key={type} className="flex items-center gap-1.5">
@@ -494,7 +499,7 @@ const AdminEngagement = ({ user }: Props) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-medium truncate">{img.title}</h4>
-                    <p className="text-[9px] text-muted-foreground">{img.owner_name} • {img.type === "portfolio" ? "Portfolio" : "Entry"}</p>
+                    <p className="text-[9px] text-muted-foreground"><MemberName userId={img.owner_id} name={img.owner_name} /> • {img.type === "portfolio" ? "Portfolio" : "Entry"}</p>
                   </div>
                   <button onClick={() => togglePin(img)}
                     className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 border rounded-sm transition-all ${
@@ -518,7 +523,7 @@ const AdminEngagement = ({ user }: Props) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-medium truncate">{img.title}</h4>
-                    <p className="text-[9px] text-muted-foreground">{img.owner_name}</p>
+                    <p className="text-[9px] text-muted-foreground"><MemberName userId={img.owner_id} name={img.owner_name} /></p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Eye className="h-3.5 w-3.5 text-muted-foreground" />
@@ -553,7 +558,7 @@ const AdminEngagement = ({ user }: Props) => {
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-medium truncate">{img.title}</h4>
                     <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
-                      <span>{img.owner_name}</span>
+                      <span className="inline-flex items-center gap-1">{img.owner_name}<AutoBadge userId={img.owner_id} only="verified" /></span>
                       <span>•</span>
                       <span><Eye className="h-2.5 w-2.5 inline" /> {img.view_count}</span>
                       <span>•</span>

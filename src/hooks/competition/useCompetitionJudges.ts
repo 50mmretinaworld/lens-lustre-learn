@@ -77,26 +77,29 @@ export function useJuryUsers() {
   });
 }
 
+/** One assigned judge: the id travels with the name so the admin list can draw the judge's badge. */
+export interface JudgeName { id: string; name: string }
+
 /** Hook: all judge assignments across all competitions with resolved names */
 export function useAllCompetitionJudgeNames(competitionIds: string[]) {
   const sorted = [...new Set(competitionIds)].sort();
   return useQuery({
     queryKey: queryKeys.allCompetitionJudges(sorted),
     queryFn: async () => {
-      if (sorted.length === 0) return new Map<string, string[]>();
+      if (sorted.length === 0) return new Map<string, JudgeName[]>();
       const { data: judges } = await supabase
         .from("competition_judges")
         .select("competition_id, judge_id")
         .in("competition_id", sorted);
-      if (!judges || judges.length === 0) return new Map<string, string[]>();
+      if (!judges || judges.length === 0) return new Map<string, JudgeName[]>();
 
       const judgeIds = [...new Set(judges.map((j) => j.judge_id))];
       const profileMap = await fetchProfilesByIds(judgeIds);
 
-      const result = new Map<string, string[]>();
+      const result = new Map<string, JudgeName[]>();
       for (const j of judges) {
         const names = result.get(j.competition_id) || [];
-        names.push(profileMap.get(j.judge_id) || "Unknown");
+        names.push({ id: j.judge_id, name: profileMap.get(j.judge_id) || "Unknown" });
         result.set(j.competition_id, names);
       }
       return result;

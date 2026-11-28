@@ -18,6 +18,7 @@ import type { AdminMember } from "@/hooks/admin/useAdminMembers";
 import type { PendingAccountAction } from "@/components/admin/AccountActionDialog";
 import { AccountHistoryList } from "@/components/admin/AccountActionDialog";
 import { MemberAvatar, StatusChip, STATUS_META, appLabel, fmtDate, istDateTime, platformsUsed, statusDetail, type MemberLabels } from "./memberUi";
+import AutoBadge from "@/components/AutoBadge";
 
 export interface MemberActions {
   setRole: (m: AdminMember, role: string, on: boolean) => void;
@@ -59,7 +60,10 @@ export function MemberDrawer({
               <div className="flex items-start gap-3">
                 <MemberAvatar m={m} size={56} />
                 <div className="min-w-0 flex-1 space-y-1">
-                  <SheetTitle className="truncate text-lg">{m.full_name || "No name"}</SheetTitle>
+                  <SheetTitle className="flex items-center gap-1.5 text-lg">
+                    <span className="truncate">{m.full_name || "No name"}</span>
+                    <AutoBadge userId={m.id} only="verified" />
+                  </SheetTitle>
                   <SheetDescription className="truncate">{m.email ?? "—"}</SheetDescription>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusChip status={m.status} />

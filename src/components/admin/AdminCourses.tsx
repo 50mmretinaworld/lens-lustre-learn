@@ -4,6 +4,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatUSDFixed } from "@/lib/currencyFormat";
 import { supabase } from "@/integrations/supabase/client";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
+import AutoBadge from "@/components/AutoBadge";
 import { toast } from "@/hooks/core/use-toast";
 import { Plus, Pencil, Trash2, Eye, BookOpen, Star, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +21,7 @@ interface CourseRow {
   is_free: boolean;
   price: number | null;
   created_at: string;
+  author_id: string;
   author_name: string | null;
   is_featured: boolean;
   labels: string[];
@@ -176,7 +178,7 @@ const AdminCourses = () => {
                     ))}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
-                    <span>{c.author_name || "Unknown"}</span>
+                    <span className="inline-flex items-center gap-1">{c.author_name || "Unknown"}<AutoBadge userId={c.author_id} only="verified" /></span>
                     <span>·</span>
                     <span>{c.category}</span>
                     <span>·</span>

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
 import { resolveJudgeDisplay, useJudgeReveal } from "@/lib/judgeAnonymizer";
 import JudgeRevealToggle from "@/components/admin/JudgeRevealToggle";
+import AutoBadge from "@/components/AutoBadge";
 import { startVisibilityInterval } from "@/lib/timers/visibilityInterval";
 
 import { logger } from "@/lib/logger";
@@ -224,6 +225,8 @@ const AdminJudgeMonitoringPanel = ({ competitionId }: Props) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{resolveJudgeDisplay(competitionId, j.judgeId, j.realName, reveal)}</span>
+                  {/* Badge only with the real name: on the anonymous handle it would give the judge away. */}
+                  {reveal && j.realName && <AutoBadge userId={j.judgeId} only="verified" />}
                   {isInactive && (
                     <span className="text-[8px] tracking-[0.1em] uppercase px-1.5 py-0.5 bg-destructive/10 text-destructive border border-destructive/30" style={{ fontFamily: "var(--font-heading)" }}>
                       Inactive

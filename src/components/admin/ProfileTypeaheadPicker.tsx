@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, X, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import AutoBadge from "@/components/AutoBadge";
 
 interface ProfileRow {
   id: string;
@@ -93,8 +94,9 @@ export default function ProfileTypeaheadPicker({ value, onChange, label = "Link 
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-sm truncate" style={{ fontFamily: "var(--font-body)" }}>
-              {selected.full_name || "Unnamed"}
+            <div className="flex items-center gap-1 text-sm" style={{ fontFamily: "var(--font-body)" }}>
+              <span className="truncate">{selected.full_name || "Unnamed"}</span>
+              <AutoBadge userId={selected.id} only="verified" />
             </div>
             <div className="text-[10px] text-muted-foreground truncate">{selected.email}</div>
           </div>
@@ -133,7 +135,7 @@ export default function ProfileTypeaheadPicker({ value, onChange, label = "Link 
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate">{p.full_name || "Unnamed"}</div>
+                    <div className="flex items-center gap-1 text-sm"><span className="truncate">{p.full_name || "Unnamed"}</span><AutoBadge userId={p.id} only="verified" /></div>
                     <div className="text-[10px] text-muted-foreground truncate">{p.email}</div>
                   </div>
                 </button>
