@@ -9,6 +9,7 @@
 // every function here is a silent no-op. (Same pattern as authDeepLink.ts.)
 
 import { logger } from "@/lib/logger";
+import { recordTiming } from "@/lib/telemetry";
 
 const FILE = "src/lib/native/appUpdate.ts";
 
@@ -64,15 +65,22 @@ export interface UpdateStatus {
 
 /** Ask Google Play whether a newer version of the app exists. */
 export async function checkForAppUpdate(): Promise<UpdateStatus | null> {
+  // Owner bug list item 5 (28 Nov): the popup did not come for 1.2.63 and nothing said why. Every check in the
+  // app now leaves one record: app.update.<Play's answer>, app.update.failed, or app.update.no_plugin.
+  // Play's answer codes: 1 = no update, 2 = update available, 3 = an update is already being installed, 0 = unknown.
+  if (cap()?.isNativePlatform?.() && !plugin()) recordTiming("app.update.no_plugin", 0, false);
   if (!appUpdateSupported()) return null;
+  const started = Date.now();
   try {
     const info = await plugin()!.getAppUpdateInfo();
+    recordTiming(`app.update.${Number(info.updateAvailability ?? 0) || 0}`, Date.now() - started, true);
     return {
       available: info.updateAvailability === 2, // UPDATE_AVAILABLE
       immediateAllowed: !isIos() && !!info.immediateUpdateAllowed,
       availableVersion: info.availableVersionName ?? info.availableVersionCode,
     };
   } catch (err) {
+    recordTiming("app.update.failed", Date.now() - started, false);
     logger.warn({
       code: "SYS-9008",
       event: "APP_UPDATE_CHECK_FAILED",
