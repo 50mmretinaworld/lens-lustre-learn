@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useEffect, useRef, useState } from "react";
 import ProfileLink from "@/components/ProfileLink";
 import { publicUrl, shareLink } from "@/lib/publicUrl";
@@ -104,6 +105,7 @@ function ArtistSpotlight({
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 {author.name}
+                <AutoBadge userId={author.id} only="verified" />
               </h3>
             </ProfileLink>
           ) : (

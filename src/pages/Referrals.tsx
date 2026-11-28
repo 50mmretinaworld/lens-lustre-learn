@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useState, useEffect, useCallback } from "react";
 import { fadeUp } from "@/lib/motionVariants";
 import { publicUrl, shareLink } from "@/lib/publicUrl";
@@ -289,7 +290,7 @@ const Referrals = () => {
                   <TableBody>
                     {referrals.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="text-sm">{r.referred_name}</TableCell>
+                        <TableCell className="text-sm"><span className="inline-flex items-center gap-1">{r.referred_name}<AutoBadge userId={r.referred_id} only="verified" /></span></TableCell>
                         <TableCell>
                           <Badge variant={r.status === "rewarded" ? "default" : "secondary"} className="text-[9px] uppercase tracking-wider">
                             {r.status === "rewarded" ? "Rewarded" : "Pending"}

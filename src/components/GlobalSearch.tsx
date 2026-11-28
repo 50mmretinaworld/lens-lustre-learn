@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { memberPath } from "@/lib/urlHelpers";
 import { createPortal } from "react-dom";
@@ -687,8 +688,9 @@ const GlobalSearch = ({ hideTrigger = false }: { hideTrigger?: boolean } = {}) =
                               </span>
                             )}
                             <span className="flex-1 min-w-0">
-                              <span className="block text-sm font-light truncate text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                                {entry.type === "person" && entry.handle ? `@${entry.handle}` : entry.title}
+                              <span className="flex items-center gap-1 min-w-0 text-sm font-light text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                                <span className="truncate">{entry.type === "person" && entry.handle ? `@${entry.handle}` : entry.title}</span>
+                                {entry.type === "person" && <AutoBadge userId={entry.id} only="verified" />}
                               </span>
                               {entry.type === "person" && entry.handle && (
                                 <span className="block text-[10px] text-muted-foreground truncate" style={{ fontFamily: "var(--font-body)" }}>
@@ -759,8 +761,9 @@ const GlobalSearch = ({ hideTrigger = false }: { hideTrigger?: boolean } = {}) =
                             {isPerson ? (
                               <>
                                 {/* IG row: @handle (when claimed) + name + follower count */}
-                                <p className="text-sm font-light truncate text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                                  {result.handle ? <>@{highlightTitle(result.handle)}</> : highlightTitle(result.title)}
+                                <p className="flex items-center gap-1 min-w-0 text-sm font-light text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                                  <span className="truncate">{result.handle ? <>@{highlightTitle(result.handle)}</> : highlightTitle(result.title)}</span>
+                                  <AutoBadge userId={result.id} only="verified" />
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5 min-w-0">
                                   {result.handle && (

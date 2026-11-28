@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ownDisplayName } from "@/lib/ownDisplayName";
 import { fadeUp } from "@/lib/motionVariants";
@@ -1134,6 +1135,7 @@ const SocialTab = ({ friendRequests, recentPosts, user, profile, handleFriendAct
                 </ProfileLink>
                 <div className="flex-1 min-w-0">
                   <ProfileLink userId={req.requester_id} handle={req.requester_handle} className="text-xs font-light hover:text-primary transition-colors" style={{ fontFamily: "var(--font-heading)" }}>{name}</ProfileLink>
+                  <AutoBadge userId={req.requester_id} only="verified" />
                   <p className="text-[9px] text-muted-foreground"><TimeAgo date={req.created_at} /></p>
                 </div>
                 <div className="flex gap-1.5 shrink-0">

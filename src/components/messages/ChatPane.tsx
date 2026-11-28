@@ -345,7 +345,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
         {!thread.isLoading && items.length === 0 && (
           <div className="flex flex-col items-center px-8 py-16 text-center">
             <PersonAvatar person={person} size={64} />
-            <p className="mt-2.5 text-[15px] font-semibold">{name}</p>
+            <p className="mt-2.5 flex items-center gap-1 text-[15px] font-semibold">{name}{otherId && <AutoBadge userId={otherId} only="verified" />}</p>
             <p className="mt-0.5 text-[13px] text-muted-foreground">{t("messages.thread.empty", "Say hello and start the conversation.")}</p>
           </div>
         )}
@@ -392,7 +392,7 @@ export default function ChatPane({ conversationId, userId, onBack }: { conversat
           {replyTo && (
             <div data-testid="reply-bar" className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-primary bg-foreground/[0.06] px-2.5 py-1.5">
               <div className="min-w-0 flex-1 text-[13px]">
-                <p className="truncate text-[12px] font-semibold text-primary">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</p>
+                <p className="flex min-w-0 items-center gap-1 text-[12px] font-semibold text-primary"><span className="truncate">{t("messages.replyingTo", "Replying to")} {quoteName(replyTo.senderId)}</span>{replyTo.senderId !== meId && <AutoBadge userId={replyTo.senderId} only="verified" />}</p>
                 <p className="line-clamp-1 whitespace-pre-wrap break-words text-muted-foreground">{replyTo.body || (replyTo.photos.length > 0 ? t("messages.photo", "Photo") : "")}</p>
               </div>
               <button type="button" onClick={() => setReplyTo(null)} aria-label={t("messages.cancelReply", "Cancel reply")} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-foreground/10">

@@ -306,6 +306,7 @@ export default function TagPeopleModal({
                   <div className="flex items-center gap-1.5 bg-background/95 backdrop-blur px-2.5 py-1 rounded-full shadow-lg border border-border">
                     <MapPin className="h-3 w-3 text-primary" />
                     <span className="text-xs font-medium max-w-[120px] truncate">{t.taggedUserName}</span>
+                    <AutoBadge userId={t.taggedUserId} only="verified" />
                     <button
                       onClick={() => handleRemoveTag(t.taggedUserId, t.photoIndex)}
                       className="text-muted-foreground hover:text-destructive transition-colors"

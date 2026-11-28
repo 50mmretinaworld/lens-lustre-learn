@@ -198,7 +198,7 @@ export function StoryFrame(p: FrameProps) {
                 ) : (
                   <div className="h-9 w-9 rounded-full border border-white/60 bg-white/20" />
                 )}
-                <p className="text-sm font-semibold" style={hf}>{p.highlightTitle ?? (own ? "Your story" : person.name)}</p>
+                <p className="flex items-center gap-1 text-sm font-semibold" style={hf}>{p.highlightTitle ?? (own ? "Your story" : person.name)}<AutoBadge userId={person.userId} only="verified" /></p>
               </>
             );
             return own || p.highlightTitle !== undefined
@@ -349,7 +349,7 @@ function SideCard({ person, onClick }: { person: StoryPerson; onClick: () => voi
         ) : (
           <div className="h-14 w-14 rounded-full border-2 border-primary bg-white/20" />
         )}
-        <p className="text-sm font-semibold">{person.name}</p>
+        <p className="flex items-center gap-1 text-sm font-semibold">{person.name}<AutoBadge userId={person.userId} only="verified" /></p>
       </div>
     </button>
   );

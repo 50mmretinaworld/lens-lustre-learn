@@ -2,6 +2,7 @@
  * Messages · shared pieces of the messenger: avatar, refusal wording, helpline card, bubbles with photos.
  * Plain text only — a body is rendered as text, never as HTML, and a link in it is not made clickable.
  */
+import AutoBadge from "@/components/AutoBadge";
 import { lazy, Suspense, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, Check, CheckCheck, Clock, Copy, HeartHandshake, ImageOff, Reply } from "lucide-react";
@@ -263,7 +264,10 @@ export function MessageBubble({ m, mine, first, last, onReply, onJump, nameOf, s
             className={`mb-1 flex w-full items-center gap-2 overflow-hidden rounded-lg border-l-[3px] py-1 pl-2 pr-1 text-left text-[12px] leading-snug ${mine ? "border-white bg-black/15" : "border-primary bg-foreground/[0.07]"}`}
           >
             <span className="min-w-0 flex-1">
-              <span className={`block truncate text-[12px] font-semibold ${mine ? "text-white" : "text-primary"}`}>{nameOf ? nameOf(m.reply.senderId) : "Message"}</span>
+              <span className={`flex min-w-0 items-center gap-1 text-[12px] font-semibold ${mine ? "text-white" : "text-primary"}`}>
+                <span className="truncate">{nameOf ? nameOf(m.reply.senderId) : "Message"}</span>
+                {nameOf && nameOf(m.reply.senderId) !== "You" && <AutoBadge userId={m.reply.senderId} only="verified" />}
+              </span>
               <span className="flex items-center gap-1 opacity-85">
                 {m.reply.photo && <Camera aria-hidden className="h-3 w-3 shrink-0" />}
                 <span className="line-clamp-2 whitespace-pre-wrap break-words">{m.reply.body || (m.reply.photo ? "Photo" : "")}</span>

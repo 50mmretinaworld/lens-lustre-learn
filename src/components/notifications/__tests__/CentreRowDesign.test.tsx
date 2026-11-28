@@ -12,6 +12,8 @@ import type { NotificationGroup } from "@/lib/notificationText";
 
 vi.mock("@/i18n/I18nContext", () => ({ useT: () => (_k: string, fb?: string) => fb ?? _k }));
 vi.mock("@/components/video/VideoPoster", () => ({ default: () => <span /> }));
+// The actor's badge (MemberName → AutoBadge) reads the shared profile cache; this test is about the row's layout.
+vi.mock("@/components/AutoBadge", () => ({ default: () => <span data-testid="auto-badge" /> }));
 
 import CentreNotificationRow from "@/components/notifications/CentreNotificationRow";
 

@@ -59,6 +59,7 @@
  *   slots, so a conditional hook there corrupts the hook order. It uses none,
  *   and src/__tests__/noComponentDefinedInRender.test.ts holds it to that.
  */
+import MemberName from "@/components/MemberName";
 import { useEffect, useRef, useState, type HTMLAttributes } from "react";
 import ProfileLink from "@/components/ProfileLink";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -1071,6 +1072,8 @@ const CommentThread = ({
 /** One comment as the floating list needs it (story_comments_list rows fit). */
 export interface FloatComment {
   id: string;
+  /** The commenter — draws their badge beside the name (story_comments_list / _page return it). */
+  user_id?: string | null;
   full_name: string | null;
   avatar_url: string | null;
   content: string;
@@ -1102,7 +1105,7 @@ export function CommentFloatList({ comments, tall, on }: { comments: FloatCommen
           )}
           <p className="max-w-[80%] rounded-2xl bg-black/45 px-3 py-1.5 text-[13px] leading-snug backdrop-blur-sm">
             {/* the ONE renderer: a tag reads "@Name", never the stored @[Name](id) (Owner 18 Nov) */}
-            <span className="font-semibold">{c.full_name || "Member"}</span> <RichContentRenderer content={c.content} />
+            <MemberName userId={c.user_id}><span className="font-semibold">{c.full_name || "Member"}</span></MemberName> <RichContentRenderer content={c.content} />
           </p>
         </div>
       ))}
