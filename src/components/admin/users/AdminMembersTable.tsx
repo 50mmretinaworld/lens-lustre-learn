@@ -51,6 +51,7 @@ import {
 } from "@/hooks/admin/useAdminMembers";
 import { MemberAvatar, RolePills, StatusChip, STATUS_META, fmtDate, istDateTime, platformsUsed, statusDetail, useMemberLabels } from "./memberUi";
 import { MemberDrawer, type MemberActions } from "./MemberDrawer";
+import AutoBadge from "@/components/AutoBadge";
 
 const AdminUsersPrevious = lazy(() => import("@/components/admin/AdminUsers"));
 
@@ -130,7 +131,7 @@ function RowMenu({ m, open, actions }: { m: AdminMember; open: (m: AdminMember) 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuLabel className="truncate">{m.full_name || m.email}</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex items-center gap-1"><span className="truncate">{m.full_name || m.email}</span><AutoBadge userId={m.id} only="verified" /></DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => open(m)}><UserCog className="mr-2 h-4 w-4" />Open details, roles & badges</DropdownMenuItem>
         {href && <DropdownMenuItem asChild><a href={href} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" />View profile</a></DropdownMenuItem>}
         <DropdownMenuSeparator />
@@ -472,8 +473,9 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                     {online.has(m.id) && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-500" />}
                   </span>
                   <span className="min-w-0 flex-1 space-y-1">
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-1">
                       <span className="truncate font-medium">{m.full_name || "No name"}</span>
+                      <AutoBadge userId={m.id} only="verified" />
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">{m.email ?? "—"}</span>
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -525,9 +527,12 @@ export default function AdminMembersTable({ user }: { user: AuthUser | null }) {
                           {online.has(m.id) && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-500" />}
                         </span>
                         <div className="min-w-0">
-                          <button type="button" className="block max-w-full truncate text-left font-medium hover:underline" data-testid="member-open" onClick={(e) => { e.stopPropagation(); setOpenId(m.id); }}>
-                            {m.full_name || "No name"}
-                          </button>
+                          <div className="flex min-w-0 items-center gap-1">
+                            <button type="button" className="block min-w-0 truncate text-left font-medium hover:underline" data-testid="member-open" onClick={(e) => { e.stopPropagation(); setOpenId(m.id); }}>
+                              {m.full_name || "No name"}
+                            </button>
+                            <AutoBadge userId={m.id} only="verified" />
+                          </div>
                           <div className="truncate text-xs text-muted-foreground">{m.email ?? "—"}{m.custom_url ? ` · @${m.custom_url}` : ""}</div>
                         </div>
                       </div>

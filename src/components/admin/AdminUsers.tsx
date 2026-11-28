@@ -16,6 +16,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { invalidateRoleCache } from "@/components/AutoRole";
 import { useT } from "@/i18n/I18nContext";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 
 const ROLE_LABELS: Record<string, string> = {
   user: "User",
@@ -807,7 +809,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         <div className="border border-destructive/40 bg-destructive/5 p-4 rounded-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] tracking-[0.2em] uppercase text-destructive font-medium" style={{ fontFamily: "var(--font-heading)" }}>
-              {t("au.suspendLabel")} {suspendTarget.full_name || suspendTarget.email}
+              {t("au.suspendLabel")} <MemberName userId={suspendTarget.id} name={suspendTarget.full_name || suspendTarget.email} />
             </span>
             <button onClick={() => setSuspendTarget(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="h-4 w-4" /></button>
           </div>
@@ -840,7 +842,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         <div className="border border-border p-4 rounded-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] tracking-[0.2em] uppercase text-primary font-medium" style={{ fontFamily: "var(--font-heading)" }}>
-              {t("au.editLabel")} {editTarget.full_name || editTarget.email}
+              {t("au.editLabel")} <MemberName userId={editTarget.id} name={editTarget.full_name || editTarget.email} />
             </span>
             <button onClick={() => setEditTarget(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="h-4 w-4" /></button>
           </div>
@@ -1005,6 +1007,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                       <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>
                         {u.full_name || "No Name"}
                       </span>
+                      <AutoBadge userId={u.id} only="verified" />
                       {u.is_suspended && (
                         <span className="text-[8px] px-1.5 py-0.5 bg-destructive/10 text-destructive border border-destructive/30 rounded-sm uppercase tracking-wider shrink-0"
                           style={{ fontFamily: "var(--font-heading)" }}>

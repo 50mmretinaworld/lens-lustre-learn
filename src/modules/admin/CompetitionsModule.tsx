@@ -20,13 +20,15 @@ import { toast } from "@/hooks/core/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAdminCompetitions } from "@/hooks/admin/useAdminCompetitions";
-import { useAllCompetitionJudgeNames } from "@/hooks/competition/useCompetitionJudges";
+import { useAllCompetitionJudgeNames, type JudgeName } from "@/hooks/competition/useCompetitionJudges";
 import { competitionService } from "@/services/admin/competitionService";
 import { resolveCompetitionPhase, phaseDisplayLabels } from "@/lib/competitionPhase";
 import ImageCropModal from "@/components/admin/ImageCropModal";
 import CoverImageUploader from "@/components/admin/CoverImageUploader";
 import type { User } from "@supabase/supabase-js";
 import { useT } from "@/i18n/I18nContext";
+import AutoBadge from "@/components/AutoBadge";
+import MemberName from "@/components/MemberName";
 
 const AdminCompetitionJudges = lazy(() => import("@/components/admin/AdminCompetitionJudges"));
 const AdminCompetitionRounds = lazy(() => import("@/components/admin/AdminCompetitionRounds"));
@@ -207,7 +209,7 @@ const CompetitionsModule = ({ user }: Props) => {
   const queryClient = useQueryClient();
   const { competitions } = useAdminCompetitions();
   const compIds = competitions.map((c) => c.id);
-  const { data: judgeNamesMap = new Map<string, string[]>() } = useAllCompetitionJudgeNames(compIds);
+  const { data: judgeNamesMap = new Map<string, JudgeName[]>() } = useAllCompetitionJudgeNames(compIds);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -620,15 +622,17 @@ const CompetitionsModule = ({ user }: Props) => {
                         <TooltipTrigger asChild>
                           <div className="inline-flex items-center gap-1.5 cursor-help">
                             <Users className="h-3 w-3 text-primary/70 shrink-0" />
-                            <span className="text-[10px] text-foreground/80 truncate max-w-[120px]" title={judges.join(", ")}>
-                              {judges[0]}{judges.length > 1 ? ` +${judges.length - 1}` : ""}
+                            <span className="text-[10px] text-foreground/80 truncate max-w-[120px]" title={judges.map((j) => j.name).join(", ")}>
+                              {judges[0].name}
                             </span>
+                            <AutoBadge userId={judges[0].id} only="verified" />
+                            {judges.length > 1 && <span className="text-[10px] text-foreground/80 shrink-0">+{judges.length - 1}</span>}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs max-w-[260px]">
                           <div className="font-semibold mb-1">{judges.length} judge{judges.length !== 1 ? "s" : ""}</div>
                           <div className="space-y-0.5">
-                            {judges.map((n, i) => <div key={i}>· {n}</div>)}
+                            {judges.map((n, i) => <div key={i}>· <MemberName userId={n.id} name={n.name} /></div>)}
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -739,8 +743,8 @@ const CompetitionsModule = ({ user }: Props) => {
               <RemainingTime comp={comp} compact />
             </div>
             {(judgeNamesMap.get(comp.id)?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap gap-1">{judgeNamesMap.get(comp.id)!.map((name, i) => (
-                <span key={i} className="text-[8px] px-1.5 py-0.5 border border-primary/30 bg-primary/5 text-primary rounded-sm">{name}</span>
+              <div className="flex flex-wrap gap-1">{judgeNamesMap.get(comp.id)!.map((jn, i) => (
+                <span key={i} className="inline-flex items-center gap-1 text-[8px] px-1.5 py-0.5 border border-primary/30 bg-primary/5 text-primary rounded-sm">{jn.name}<AutoBadge userId={jn.id} only="verified" /></span>
               ))}</div>
             )}
             <div className="flex items-center gap-1 pt-1 border-t border-border/50" onClick={(e) => e.stopPropagation()}>

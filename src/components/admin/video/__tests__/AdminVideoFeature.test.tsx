@@ -32,6 +32,8 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 vi.mock("@/hooks/core/use-toast", () => ({ toast: vi.fn() }));
+// Names on admin screens carry the badge (AutoBadge reads the shared profile cache); not under test here.
+vi.mock("@/components/AutoBadge", () => ({ default: () => <span data-testid="auto-badge" /> }));
 vi.mock("@/components/ui/avatar", () => ({
   Avatar: ({ children }: { children?: unknown }) => <span data-testid="member-avatar">{children as never}</span>,
   AvatarImage: ({ src, alt }: { src?: string; alt?: string }) => (src ? <img data-testid="member-avatar-img" src={src} alt={alt} /> : null),

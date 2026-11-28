@@ -9,6 +9,7 @@ import { Loader2, CheckCircle, XCircle, Gift, Banknote, IndianRupee, Settings } 
 import WalletReconciliationAudit from "@/components/admin/WalletReconciliationAudit";
 import type { User } from "@supabase/supabase-js";
 import { useT } from "@/i18n/I18nContext";
+import MemberName from "@/components/MemberName";
 
 const PAGE_SIZE = 50;
 
@@ -356,7 +357,7 @@ const AdminWalletTab = ({ user }: { user: User | null }) => {
                 className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm" style={{ fontFamily: "var(--font-body)" }} />
               <button onClick={lookupUser} className="px-4 py-2 border border-border text-xs tracking-[0.15em] uppercase hover:border-primary/50 transition-all" style={{ fontFamily: "var(--font-heading)" }}>{t("aw.find")}</button>
             </div>
-            {targetUserId && <p className="text-xs text-primary mt-1" style={{ fontFamily: "var(--font-body)" }}>✓ {targetName}</p>}
+            {targetUserId && <p className="text-xs text-primary mt-1" style={{ fontFamily: "var(--font-body)" }}>✓ <MemberName userId={targetUserId} name={targetName} /></p>}
           </div>
         </div>
         {targetUserId && (
@@ -408,7 +409,7 @@ const AdminWalletTab = ({ user }: { user: User | null }) => {
               <div key={w.id} className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>{w.user_name} — {formatUSDFixed(Number(w.amount))}</p>
+                    <p className="text-sm" style={{ fontFamily: "var(--font-heading)" }}><MemberName userId={w.user_id} name={w.user_name} /> — {formatUSDFixed(Number(w.amount))}</p>
                     <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                       {new Date(w.created_at).toLocaleDateString()} · {t("wal.bank")} {w.bank_details ? t("aw.bankProvided") : "N/A"}
                     </p>

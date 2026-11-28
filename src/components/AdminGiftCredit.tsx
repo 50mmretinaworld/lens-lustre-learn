@@ -5,6 +5,7 @@ import { toast } from "@/hooks/core/use-toast";
 import { formatUSDFixed } from "@/lib/currencyFormat";
 import type { User } from "@supabase/supabase-js";
 import { useT } from "@/i18n/I18nContext";
+import AutoBadge from "@/components/AutoBadge";
 
 interface Props {
   user: User | null;
@@ -328,8 +329,9 @@ const AdminGiftCredit = ({ user }: Props) => {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-heading)" }}>
-                    {selectedUser.full_name || t("gc.noName")}
+                  <p className="flex items-center gap-1 text-sm font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                    <span className="truncate">{selectedUser.full_name || t("gc.noName")}</span>
+                    <AutoBadge userId={selectedUser.id} only="verified" />
                   </p>
                   <p className="text-[10px] text-muted-foreground truncate">{selectedUser.email}</p>
                 </div>
@@ -366,7 +368,7 @@ const AdminGiftCredit = ({ user }: Props) => {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{u.full_name || "No Name"}</p>
+                          <p className="flex items-center gap-1 text-xs font-medium"><span className="truncate">{u.full_name || "No Name"}</span><AutoBadge userId={u.id} only="verified" /></p>
                           <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
                         </div>
                       </button>

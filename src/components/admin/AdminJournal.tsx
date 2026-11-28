@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { cachedFetchProfilesByIds } from "@/lib/profileBatch";
+import AutoBadge from "@/components/AutoBadge";
 import { toast } from "@/hooks/core/use-toast";
 import { Plus, Pencil, Trash2, Eye, Newspaper, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ interface ArticleRow {
   tags: string[];
   published_at: string | null;
   created_at: string;
+  author_id: string;
   author_name: string | null;
   is_featured: boolean;
 }
@@ -159,7 +161,10 @@ const AdminJournal = () => {
 
                   {/* Author */}
                   <TableCell className="py-2.5 px-4">
-                    <span className="text-xs text-muted-foreground truncate block">{a.author_name || "Unknown"}</span>
+                    <span className="flex items-center gap-1 min-w-0">
+                      <span className="text-xs text-muted-foreground truncate">{a.author_name || "Unknown"}</span>
+                      <AutoBadge userId={a.author_id} only="verified" />
+                    </span>
                   </TableCell>
 
                   {/* Date */}
