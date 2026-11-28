@@ -19,6 +19,15 @@ describe("Admin Users table ↔ 20261116_1400 contract", () => {
     }
   });
 
+  it("v5 (SQL 7200) wraps v4 with the same arguments and adds last log-in + app version; the hook falls back to v4", () => {
+    const v5 = readFileSync(join(root, "supabase", "migrations", "20261128_7200_admin_users_app_version_login.sql"), "utf8");
+    expect(v5).toContain("CREATE FUNCTION public.admin_search_users_v5(");
+    expect(v5).toContain("FROM public.admin_search_users_v4(_query, _role, _badge, _platform, _status, _active, _sort, _limit, _offset)");
+    for (const c of ["last_sign_in_at", "app_version", "app_os"]) { expect(v5).toContain(c); expect(hook).toContain(c); }
+    expect(hook).toContain('"admin_search_users_v5"');
+    expect(hook).toMatch(/isMissing\(v5\.error\) \? await rpc\("admin_search_users_v4"/);
+  });
+
   it("every status the client knows is one the SQL can return, and the facet columns match", () => {
     for (const s of MEMBER_STATUSES) expect(sql).toContain(`'${s}'`);
     for (const c of ["all_count", "active_count", "suspended_count", "banned_count", "under_review_count",

@@ -62,6 +62,10 @@ export interface AdminMember {
   suspended_until: string | null;
   suspension_reason: string | null;
   review_reason: string | null;
+  /** SQL 7200 (v5): last log-in, and the app version / OS the member's phone last reported. null on v4. */
+  last_sign_in_at?: string | null;
+  app_version?: string | null;
+  app_os?: string | null;
 }
 
 export interface MemberFacets {
@@ -87,6 +91,7 @@ export function parseMembers(data: unknown): { rows: AdminMember[]; total: numbe
       last_platform: o.last_platform === "app" || o.last_platform === "web" ? o.last_platform : null,
       roles: arr(o.roles), badges: arr(o.badges), status,
       suspended_until: s(o.suspended_until), suspension_reason: s(o.suspension_reason), review_reason: s(o.review_reason),
+      last_sign_in_at: s(o.last_sign_in_at), app_version: s(o.app_version), app_os: s(o.app_os),
     }];
   });
   const first = data[0] as Record<string, unknown> | undefined;
@@ -118,10 +123,13 @@ export const useAdminMembers = (f: MemberFilters) =>
   useQuery({
     queryKey: [...queryKeys.adminMembers(), f],
     queryFn: async () => {
-      const [list, facets] = await Promise.all([
-        rpc("admin_search_users_v4", { ...baseArgs(f), _sort: f.sort, _limit: f.pageSize, _offset: f.page * f.pageSize }),
+      const listArgs = { ...baseArgs(f), _sort: f.sort, _limit: f.pageSize, _offset: f.page * f.pageSize };
+      // v5 (SQL 7200) adds last log-in + app version; v4 while v5 is not on this database yet.
+      const [v5, facets] = await Promise.all([
+        rpc("admin_search_users_v5", listArgs),
         rpc("admin_user_facets", baseArgs(f)),
       ]);
+      const list = isMissing(v5.error) ? await rpc("admin_search_users_v4", listArgs) : v5;
       if (isMissing(list.error)) throw new MembersRpcMissing("admin_search_users_v4 is not on this database yet");
       if (list.error) throw new Error(list.error.message ?? "search failed");
       return { ...parseMembers(list.data), facets: facets.error ? null : parseFacets(facets.data) };

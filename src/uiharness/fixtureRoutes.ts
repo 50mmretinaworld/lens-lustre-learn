@@ -325,6 +325,8 @@ const RPCS: Record<string, (body: Record<string, unknown>, params: URLSearchPara
   admin_search_users_v3: (b) => (adminUsersSampleOn() ? sampleSearchV3(b) : []),
   admin_user_platform_counts: (b) => (adminUsersSampleOn() ? samplePlatformCounts(b) : []),
   admin_search_users_v4: (b) => (adminUsersSampleOn() ? sampleSearchV4(b) : []),
+  // SQL 7200: v4's rows + last log-in / app version (sample: no phone reported, so "App" with no number)
+  admin_search_users_v5: (b) => (adminUsersSampleOn() ? sampleSearchV4(b) : []),
   admin_user_facets: (b) => (adminUsersSampleOn() ? sampleFacets(b) : []),
   // Feed order switch (screen-admin-feed-order, 20261123_4600): the row as the
   // migration creates it (Off). ?mode=selected shows two members on the list.
