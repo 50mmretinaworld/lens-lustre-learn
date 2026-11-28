@@ -38,7 +38,7 @@ jobs:
   count:
     name: log volume on ${{ inputs.target }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: ${{ inputs.target }}
     env:
       TARGET_LANE: ${{ inputs.target }}
@@ -82,10 +82,18 @@ jobs:
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || { echo "::error::SUPABASE_ACCESS_TOKEN is not set."; exit 1; }
           echo "Window (UTC): $WIN_START .. $WIN_END"
           # q SQL → writes /tmp/out.json; prints the API's own error (trimmed) when it refuses.
+          # Supabase removed .../logs.all (HTTP 410, 28 Nov): the address is .../analytics/endpoints/logs.
+          # The API also throttles (HTTP 429): one question every 6 s, and one retry after 30 s when refused.
           q() {
-            code=$(curl -sS -G -o /tmp/out.json -w '%{http_code}' -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-              "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs.all" \
-              --data-urlencode "sql=$1" --data-urlencode "iso_timestamp_start=$WIN_START" --data-urlencode "iso_timestamp_end=$WIN_END")
+            local try
+            for try in 1 2; do
+              sleep 6
+              code=$(curl -sS -G -o /tmp/out.json -w '%{http_code}' -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs" \
+                --data-urlencode "sql=$1" --data-urlencode "iso_timestamp_start=$WIN_START" --data-urlencode "iso_timestamp_end=$WIN_END")
+              [ "$code" = "429" ] && [ "$try" = "1" ] && { sleep 30; continue; }
+              break
+            done
             if [ "$code" != "200" ] || [ "$(jq -r 'has("error") and .error != null' /tmp/out.json 2>/dev/null)" = "true" ]; then
               echo "  (logs API answered HTTP $code: $(jq -c '.error // .message // .' /tmp/out.json 2>/dev/null | cut -c1-300))"
               return 1
