@@ -19,7 +19,7 @@ import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
 import { useSiteLogo } from "@/hooks/core/useSiteLogo";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import OfficialAccountTick from "@/components/OfficialAccountTick";
 import {
   type AdZoneId,
   type AdZoneConfig,
@@ -493,11 +493,8 @@ const AdZone = ({ zone, className, slotIndex = 0 }: AdZoneProps) => {
               <span className="text-sm font-semibold truncate" style={{ fontFamily: "var(--font-heading)" }}>
                 {advertiser || "50mm Retina World"}
               </span>
-              {!advertiser && (
-                <span className="inline-flex shrink-0">
-                  <VerifiedBadge className="h-3.5 w-3.5" />
-                </span>
-              )}
+              {/* the official account's CURRENT badge through the one rule (Owner 28 Nov: Elite stayed blue here) */}
+              {!advertiser && <span className="inline-flex shrink-0"><OfficialAccountTick /></span>}
             </div>
             <div className="text-xs text-muted-foreground">Sponsored</div>
           </div>

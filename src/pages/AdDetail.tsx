@@ -32,7 +32,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteLogo } from "@/hooks/core/useSiteLogo";
 import { useIsAdmin } from "@/hooks/core/useIsAdmin";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import OfficialAccountTick from "@/components/OfficialAccountTick";
 import AdEngagementBar from "@/components/ads/AdEngagementBar";
 import FeedVideoCard from "@/components/video/FeedVideoCard";
 import { adMedia } from "@/lib/posts/subjectMedia";
@@ -187,11 +187,7 @@ const AdDetail = () => {
                 >
                   {advertiser || "50mm Retina World"}
                 </span>
-                {!advertiser && (
-                  <span className="inline-flex shrink-0">
-                    <VerifiedBadge className="h-3.5 w-3.5" />
-                  </span>
-                )}
+                {!advertiser && <span className="inline-flex shrink-0"><OfficialAccountTick /></span>}
               </div>
               <div className="text-xs text-muted-foreground">Sponsored</div>
             </div>

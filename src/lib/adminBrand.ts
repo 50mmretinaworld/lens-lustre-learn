@@ -60,12 +60,18 @@ export function resolveName(
 
 /**
  * Ensures admin users always have a "verified" badge in their badge list.
+ *
+ * `originalBadges` undefined / null = the member's badges are NOT KNOWN YET (their profile has not arrived): the
+ * answer is an empty list, never a guess. Owner 28 Nov 2026: in comments the official account showed a BLUE tick
+ * first and then turned gold — the blue was this function guessing "verified" before the account's real badges
+ * (Elite Member) had loaded. Callers pass `entry?.badges` (not `|| []`) so "not known" stays distinguishable.
  */
 export function resolveBadges(
   userId: string,
-  originalBadges: string[],
+  originalBadges: string[] | null | undefined,
   adminIds: Set<string>
 ): string[] {
+  if (!originalBadges) return [];
   if (adminIds.has(userId)) {
     return originalBadges.includes("verified") ? originalBadges : ["verified", ...originalBadges];
   }
