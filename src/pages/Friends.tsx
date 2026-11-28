@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { fadeUp } from "@/lib/motionVariants";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -845,11 +846,13 @@ const PersonRow = ({ profile, badges, subtitle, date, actions, mutualCount, mutu
                   <ProfileLink userId={mutualFriends[0].id} handle={mutualFriends[0].custom_url} className="text-foreground font-medium hover:text-primary transition-colors">
                     {mutualFriends[0].full_name || "a friend"}
                   </ProfileLink>
+                  <AutoBadge userId={mutualFriends[0].id} only="verified" />
                   {mutualCount > 1 && mutualFriends.length > 1 && (
                     <> and{" "}
                       <ProfileLink userId={mutualFriends[1].id} handle={mutualFriends[1].custom_url} className="text-foreground font-medium hover:text-primary transition-colors">
                         {mutualFriends[1].full_name || "others"}
                       </ProfileLink>
+                      <AutoBadge userId={mutualFriends[1].id} only="verified" />
                     </>
                   )}
                 </>

@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useCallback, useEffect, forwardRef, useRef, useState } from "react";
 import GroupMentionRow from "@/components/GroupMentionRow";
 import { groupMentionOptions } from "@/lib/groupMentions";
@@ -571,6 +572,7 @@ const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
                   without min-w-0 the row refuses to shrink and the ellipsis
                   never appears. */}
               <span className="truncate font-medium">{highlightedDisplay}</span>
+              <AutoBadge userId={String(suggestion.id)} only="verified" />
             </div>
           )}
           // The name is drawn by the highlighter (the textarea's own text is

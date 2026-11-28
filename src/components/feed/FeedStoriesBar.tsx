@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { memberPhotoSrc } from "@/lib/photoProtection";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -196,8 +197,11 @@ const FeedStoriesBar = () => {
               className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
             >
               <BarTile b={b} />
-              <span className={STORY_TILE_LABEL} style={headingFont}>
-                {b.is_official ? "50mm Retina" : displayName(b.full_name)}
+              <span className="flex items-center justify-center gap-0.5 max-w-[80px]">
+                <span className={STORY_TILE_LABEL} style={headingFont}>
+                  {b.is_official ? "50mm Retina" : displayName(b.full_name)}
+                </span>
+                <AutoBadge userId={b.user_id} only="verified" />
               </span>
             </button>
           ))}
