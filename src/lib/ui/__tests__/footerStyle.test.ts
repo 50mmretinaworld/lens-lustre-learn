@@ -27,9 +27,10 @@ describe("footer classes", () => {
     expect(small.homeLink).toContain("-mt-5");
   });
 
-  it("the 50mm button beats like a heart when floating, and stays still on reduced motion", () => {
-    expect(homePulse(true, false).disc).toHaveProperty("y");
-    expect(homePulse(true, false).transition.duration).toBeLessThan(2);
+  it("the 50mm button zooms slowly and smoothly when floating, and stays still on reduced motion", () => {
+    // Owner 27 Nov 2026 (sample A): no heartbeat — one gentle zoom, no vertical jump.
+    expect(homePulse(true, false).disc).toEqual({ scale: [1, 1.08, 1] });
+    expect(homePulse(true, false).transition.duration).toBe(3.2);
     expect(homePulse(false, false).disc).toEqual({ scale: [1, 1.08, 1] });
     expect(homePulse(true, true).disc).toEqual({});
   });
