@@ -1,3 +1,4 @@
+import MemberName from "@/components/MemberName";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -89,9 +90,9 @@ const MutualFriends = ({ targetUserId }: Props) => {
         ) : (
           <>
             {count === 1 ? "Mutual friend: " : "Mutual friends: "}
-            <strong className="text-foreground">{mutuals[0]?.full_name || "a friend"}</strong>
-            {count === 2 && mutuals[1] && <> and <strong className="text-foreground">{mutuals[1].full_name || "a friend"}</strong></>}
-            {count > 2 && mutuals[1] && <>, <strong className="text-foreground">{mutuals[1].full_name || "a friend"}</strong> and {count - 2} other{count - 2 !== 1 ? "s" : ""}</>}
+            <MemberName userId={mutuals[0]?.id}><strong className="text-foreground">{mutuals[0]?.full_name || "a friend"}</strong></MemberName>
+            {count === 2 && mutuals[1] && <> and <MemberName userId={mutuals[1].id}><strong className="text-foreground">{mutuals[1].full_name || "a friend"}</strong></MemberName></>}
+            {count > 2 && mutuals[1] && <>, <MemberName userId={mutuals[1].id}><strong className="text-foreground">{mutuals[1].full_name || "a friend"}</strong></MemberName> and {count - 2} other{count - 2 !== 1 ? "s" : ""}</>}
           </>
         )}
       </span>

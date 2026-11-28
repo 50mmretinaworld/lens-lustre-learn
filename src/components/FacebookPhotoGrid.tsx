@@ -1,3 +1,4 @@
+import AutoBadge from "@/components/AutoBadge";
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { usePhotoDownload } from "@/hooks/core/usePhotoDownload";
@@ -189,7 +190,7 @@ const PostLightbox = ({ urls, currentIndex, onClose, onNavigate, author, competi
             * region eating the line above).
             */}
           {author?.name && (
-            <div className="absolute top-4 left-4 z-10 max-w-[60vw]" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-4 left-4 z-10 max-w-[60vw] flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
               <ProfileLink
                 userId={author.userId}
                 handle={author.handle}
@@ -197,6 +198,7 @@ const PostLightbox = ({ urls, currentIndex, onClose, onNavigate, author, competi
               >
                 {author.name}
               </ProfileLink>
+              <AutoBadge userId={author.userId} only="verified" />
             </div>
           )}
           <div className="absolute top-4 right-4 z-10 flex items-center gap-2">

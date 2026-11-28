@@ -21,6 +21,7 @@
  */
 
 import { unreadSampleOn, sampleUnreadGroups } from "./storySample";
+import { badgeSampleOn, sampleBadgeRows } from "./badgeSample";
 
 /** A4 sample switch: ?review=1 (under-review banner + admin Account Review rows). */
 const reviewSampleOn = () => typeof location !== "undefined" && new URLSearchParams(location.search).get("review") === "1";
@@ -782,6 +783,8 @@ export const fixtureRoutes: FakeRoute[] = [
     const m = /^\/rest\/v1\/([A-Za-z0-9_]+)$/.exec(path);
     if (!m) return undefined;
     const table = m[1];
+    // ?badges=1: every other member holds Verified, so a shot shows whether each name carries its tick.
+    if (table === "user_badges" && badgeSampleOn()) return countable(sampleBadgeRows(params), method);
     // ?stories=1 only: the profile's highlights row for the Stories renders.
     if (table === "highlights" && storySampleOn()) return countable(sampleHighlights(), method);
     // Messages sample: the harness member follows the second member, so the Message button shows on that wall.
@@ -833,8 +836,12 @@ export const fixtureRoutes: FakeRoute[] = [
     if (path === "/functions/v1/dashboard-init") {
       // P23 S10a-2 — see harnessRoles(). Unset: answered exactly as before.
       const roles = harnessRoles();
-      if (roles) return { body: { ...dashboardInit, roles: { [HARNESS_USER_ID]: roles } } };
-      return { body: dashboardInit };
+      // ?badges=1: the start-up profile cache carries Verified for every member, as live dashboard-init carries real badges.
+      const init = badgeSampleOn()
+        ? { ...dashboardInit, badges: Object.fromEntries((dashboardInit.profiles as Array<{ id: string }>).map((p) => [p.id, ["verified"]])) }
+        : dashboardInit;
+      if (roles) return { body: { ...init, roles: { [HARNESS_USER_ID]: roles } } };
+      return { body: init };
     }
     return undefined;
   },
