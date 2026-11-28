@@ -141,11 +141,15 @@ jobs:
           #    go into AppDelegate.swift in "Wire push into the iOS project" below.
           PUSH_PLUGIN=""
           if [ "${{ steps.apple.outputs.push }}" = "true" ]; then PUSH_PLUGIN="@capacitor-firebase/messaging@8.4.0"; fi
+          #  - @capacitor/keyboard@8.0.6 (iPhone only, Owner bug list item 2): with capacitor.config.ts
+          #    Keyboard.resize = 'native' the app's screen shrinks above the keyboard, so a comment box or the
+          #    Sign in form is no longer slid up behind the clock.
           npm install --no-audit --no-fund \
             @capacitor/core@8.5.0 @capacitor/cli@8.5.0 @capacitor/ios@8.5.0 \
             @capacitor/share@8.0.1 @capacitor/splash-screen@8.0.2 \
             @capacitor/filesystem@8.1.2 @capacitor/camera@8.2.2 \
             @capacitor/app@8.1.1 @capacitor/browser@8.0.4 \
+            @capacitor/keyboard@8.0.6 \
             @capawesome/capacitor-app-update@8.0.3 $PUSH_PLUGIN
 
       - name: Add iOS platform
